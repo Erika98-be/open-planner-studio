@@ -64,6 +64,8 @@ export interface DocumentPayload {
   recordedDates: RecordedDatesState | null;
   /** "Datums zoals opgeslagen" — zie `ScheduleSlice.datesAsRecorded`. */
   datesAsRecorded: boolean;
+  /** Oud bestand: de eerstvolgende blijvende berekening rondt de omzetting af (B5). */
+  minuteModelPending: boolean;
   /** Baselines per document. `statusDate`/`progressMode` rijden mee in `project`. */
   baselines: Baseline[];
   activeBaselineId: string | null;
@@ -270,6 +272,7 @@ export const DOCUMENT_FIELDS = [
   // De invariant uit snapshot.ts geldt: élke mutator van deze velden pusht een snapshot.
   field({ key: 'recordedDates', get: (s) => s.recordedDates, set: (s, v) => { s.recordedDates = v; }, fresh: () => null, snapshot: 'derived', fromPayload: (p) => p.recordedDates ?? null }),
   field({ key: 'datesAsRecorded', get: (s) => s.datesAsRecorded, set: (s, v) => { s.datesAsRecorded = v; }, fresh: () => false, snapshot: 'derived', fromPayload: (p) => p.datesAsRecorded ?? false }),
+  field({ key: 'minuteModelPending', get: (s) => s.minuteModelPending, set: (s, v) => { s.minuteModelPending = v; }, fresh: () => false, snapshot: 'derived', fromPayload: (p) => p.minuteModelPending ?? false }),
   field({ key: 'baselines', get: (s) => s.baselines, set: (s, v) => { s.baselines = v; }, fresh: () => [], snapshot: 'data', fromPayload: (p) => p.baselines ?? [] }),
   // 'data', niet 'derived': de gebruiker kiest hem en hij gaat mee in het bestand. Als 'derived'
   // zag `documentDataChanged` een activatie niet, en telde een MCP-transactie die alleen de actieve

@@ -41,6 +41,7 @@ export interface ScheduleSlice {
   recordedDates: RecordedDatesState | null;
   /** Staat de modus aan: toont de app de opgeslagen datums in plaats van de herberekende? */
   datesAsRecorded: boolean;
+  minuteModelPending: boolean;
   runCPM: () => void;
   /** Herbereken ALLEEN de resource-belasting op de bestaande CPM-datums: pure resource-
    *  mutaties (toewijzen, capaciteit, kalender) verversen zo het histogram direct, ZONDER runCPM en
@@ -77,6 +78,7 @@ export const createScheduleSlice: AppSliceFactory<ScheduleSlice> = (runtime) => 
   scheduleStale: false,
   recordedDates: null,
   datesAsRecorded: false,
+  minuteModelPending: false,
 
   recomputeResourceLoad: () => {
     // Rekenen BUITEN de producer, alleen het resultaat erin — zelfde vorm als `recomputeViewRows`.

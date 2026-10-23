@@ -406,6 +406,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
       // vastlegging/modus tot de kopie zelf een bewerking of berekening krijgt.
       recordedDates: src.recordedDates,
       datesAsRecorded: src.datesAsRecorded,
+      minuteModelPending: src.minuteModelPending,
       selectedTaskIds: [],
       activeTaskId: null,
       view: deepClone(src.view),
