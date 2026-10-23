@@ -10,7 +10,7 @@ import {
   assignTaskActivityCode,
   assignTaskCustomField,
   fillMissingActualStart,
-  isActualPastStatusDate,
+  isActualPastStatusDate, normalizeActualDate, normalizeProgressActuals,
 } from '@/engine/taskMutationRules';
 import type { ActivityCodeType, CustomFieldDef, CustomFieldValue } from '@/types/structure';
 import type {
@@ -49,7 +49,7 @@ import { sameValue } from '@/utils/sameValue';
 import { taskWorkMinutes } from '@/engine/contour/contourEngine';
 import { finishIsActual, shownFinish, shownStart, startAnchorAfterEdit, startIsActual } from '@/utils/taskDates';
 import { CalendarEngine } from '@/engine/scheduler/CalendarEngine';
-import { isPinnedComplete, isZeroDurationMilestone } from '@/engine/scheduler/duration';
+import { isElapsedTask, isPinnedComplete, isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 import { isFiniteNumber } from '@/utils/guards';
 import { isManuallyScheduled } from '@/utils/manualScheduling';
@@ -603,6 +603,13 @@ function applyProgressEdit(
   edit: CellEditIntent,
   environment: TaskEditPlanEnvironment,
 ): GridResult<void, readonly CellValidationError[]> {
+  const calendar = environment.calendarFor?.(task.calendarId) ?? environment.effectiveCalendar;
+  if (edit.columnId === 'task.time.actualStart' || edit.columnId === 'task.time.actualFinish') {
+    const field = edit.columnId === 'task.time.actualFinish' ? 'actualFinish' : 'actualStart';
+    if (optionalString(edit.value)) edit = {
+      ...edit, value: normalizeActualDate(task, field, edit.value, environment.statusDate, calendar),
+    };
+  }
   const id = String(edit.columnId);
   if (id === 'task.status') {
     if (typeof edit.value !== 'string' || !TASK_STATUSES.includes(edit.value as TaskStatus)) {
@@ -615,10 +622,12 @@ function applyProgressEdit(
     // nooit ná het werkelijke einde (100% met een statusdatum vóór de geplande start).
     applyCompletionEdit(task.time, edit.value, environment.statusDate);
     applyProgressInvariants(task, environment.statusDate);
+    normalizeProgressActuals(task, environment.statusDate, calendar);
   } else if (id === 'task.time.actualStart' || id === 'task.time.actualFinish') {
     if (!optionalString(edit.value)) return failure('date', edit);
     if (edit.value && environment.statusDate
-      && isActualPastStatusDate(edit.value, environment.statusDate)) {
+      && isActualPastStatusDate(edit.value, environment.statusDate, isElapsedTask(task) ? undefined : calendar,
+        edit.columnId === 'task.time.actualFinish' ? 'end' : 'start')) {
       return failure('actualAfterStatusDate', edit);
     }
     if (id === 'task.time.actualStart') task.time.actualStart = edit.value || undefined;
@@ -631,6 +640,7 @@ function applyProgressEdit(
       return failure('actualFinishBeforeStart', edit);
     }
     applyProgressInvariants(task, environment.statusDate);
+    normalizeProgressActuals(task, environment.statusDate, calendar);
   } else if (id === 'task.time.actualDuration' || id === 'task.time.remainingTime') {
     if (edit.value !== undefined && (!isFiniteNumber(edit.value) || edit.value < 0)) {
       return failure('duration', edit);
@@ -642,6 +652,7 @@ function applyProgressEdit(
       if (remaining) writeRemaining(task, undefined, environment);
       else task.time.actualDuration = undefined;
       applyProgressInvariants(task, environment.statusDate);
+    normalizeProgressActuals(task, environment.statusDate, calendar);
       return { ok: true, value: undefined };
     }
     if (remaining) writeRemaining(task, edit.value, environment);
@@ -652,6 +663,7 @@ function applyProgressEdit(
       environment.statusDate,
     );
     applyProgressInvariants(task, environment.statusDate);
+    normalizeProgressActuals(task, environment.statusDate, calendar);
     if (remaining) writeRemaining(task, edit.value, environment);
   } else {
     return failure('plannerNotAvailable', edit);
@@ -727,6 +739,16 @@ function applyProgressEdits(
   edits: readonly CellEditIntent[],
   environment: TaskEditPlanEnvironment,
 ): GridResult<void, readonly CellValidationError[]> {
+  const calendar = environment.calendarFor?.(task.calendarId) ?? environment.effectiveCalendar;
+  edits = edits.map(edit => {
+    if ((edit.columnId === 'task.time.actualStart' || edit.columnId === 'task.time.actualFinish')
+      && optionalString(edit.value)) return {
+      ...edit, value: normalizeActualDate(task,
+        edit.columnId === 'task.time.actualFinish' ? 'actualFinish' : 'actualStart',
+        edit.value, environment.statusDate, calendar),
+    };
+    return edit;
+  });
   const byId = new Map(edits.map(edit => [String(edit.columnId), edit] as const));
   const first = edits[0]!;
   const statusEdit = byId.get('task.status');
@@ -743,7 +765,8 @@ function applyProgressEdits(
   for (const edit of [actualStartEdit, actualFinishEdit]) {
     if (!edit) continue;
     if (!optionalString(edit.value)) return failure('date', edit);
-    if (edit.value && environment.statusDate && isActualPastStatusDate(edit.value, environment.statusDate)) {
+    if (edit.value && environment.statusDate && isActualPastStatusDate(edit.value, environment.statusDate, isElapsedTask(task) ? undefined : calendar,
+        edit.columnId === 'task.time.actualFinish' ? 'end' : 'start')) {
       return failure('actualAfterStatusDate', edit);
     }
   }
@@ -843,6 +866,7 @@ function applyProgressEdits(
     fillMissingActualStart(task.time, environment.statusDate);
   }
   applyProgressInvariants(task, environment.statusDate);
+  normalizeProgressActuals(task, environment.statusDate, calendar);
   if (remainingEdit) writeRemaining(task, remainingEdit.value as number | undefined, environment);
   if (desiredStatus !== undefined && task.status !== desiredStatus) {
     return failure('conflictingProgressInputs', statusEdit!);

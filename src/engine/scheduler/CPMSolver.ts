@@ -1007,7 +1007,13 @@ export class CPMSolver {
       && this.snapOnOrBefore(eng, d).getTime() === d.getTime()) return d;
     const p6FinishBoundary = this.p6ZeroDurationUsesFinishBoundary(task, eng);
     if (eng.isHourMode && isZeroDurationMilestone(task)
-      && (task.milestoneKind === 'FINISH' || p6FinishBoundary)) {
+      && (task.milestoneKind === 'FINISH' || p6FinishBoundary
+        || (!task.milestoneKind && (this.predecessors.get(task.id) ?? []).some(seq =>
+          (seq.type === 'FINISH_FINISH' || seq.type === 'START_FINISH')
+          && this.seqConstraint.get(seq.id)?.getTime() === d.getTime()))
+        || (!task.milestoneKind && [task.constraint, task.constraint2].some(c =>
+          (c?.type === 'FNET' || c?.type === 'MFO')
+          && this.constraintInstant(c, eng)?.getTime() === d.getTime())))) {
       if (this.snapOnOrBefore(eng, d).getTime() === d.getTime()) return d;
     }
     return this.snapOnOrAfter(eng, d);
@@ -1477,7 +1483,7 @@ export class CPMSolver {
     if (eng.isHourMode) {
       if (isZeroDurationMilestone(task)) return new Date(finish.getTime());
       if (task.time.durationType === 'ELAPSEDTIME') return subtractElapsedMinutes(finish, elapsedMinutesOf(task, eng));
-      const totalDays = task.time.scheduleDuration;
+      const totalDays = splitTotalSpanDays(task, eng);
       if (totalDays <= 0) return new Date(finish.getTime());
       const firstDay = eng.subtractWorkDays(utcDayStart(finish), totalDays);
       return this.dayFirstBandStart(eng, firstDay) ?? firstDay;
@@ -2102,7 +2108,7 @@ export class CPMSolver {
         // constraint) met zo'n raw anker had hier toch al niets te her-snappen; alleen mét een
         // WERKELIJK bindende (werk-instant-snappende) constraint kan deze tak ooit iets anders dan
         // het rauwe anker geven.
-        earlyStart = (rootElapsed || timephasedAnchor || !constraintMoved) ? earlyStart : this.snapOnOrAfter(cal, earlyStart);
+        earlyStart = (rootElapsed || timephasedAnchor || !constraintMoved) ? earlyStart : this.snapSuccessorEarlyStart(cal, earlyStart, task);
       } else {
         // Early start = max van alle voorganger-constraints, met de projectstart als ondergrens.
         // Die ondergrens is correct vóór ÉLKE relatie: relatie-constraints (FS/SS/FF/SF) zijn
@@ -2267,6 +2273,10 @@ export class CPMSolver {
       // aanroepplek in `backwardPass`. Beide bronnen afwezig/0 ⇒ no-op.
       if (task.levelingDelay) {
         earlyStart = this.shiftByLevelingDelay(cal, task, earlyStart, 1);
+        // N2 geldt ook als een dagenvertraging samen met zijn minutenwaarde is vastgelegd.
+        if (!isElapsedTask(task) && cal.isHourMode) {
+          earlyStart = this.snapSuccessorEarlyStart(cal, earlyStart, task);
+        }
       } else if (!noPreds && task.levelingDelayMinutes) {
         earlyStart = this.shiftByLevelingDelay(cal, task, earlyStart, 1);
         // Een ELAPSED-FORMAAT vertraging
@@ -2795,6 +2805,10 @@ export class CPMSolver {
   private constraintInstant(c: TaskConstraint | undefined, eng: CalendarEngine): Date | null {
     const raw = c?.date;
     if (!raw) return null;
+    // D2: een eindbeperking zonder tijd begrenst het laatste werkblok van die dag.
+    if (eng.isHourMode && c && ['FNET', 'FNLT', 'MFO'].includes(c.type) && !raw.includes('T')) {
+      return deadlineBound(raw, eng);
+    }
     const d = this.parseIn(eng, raw);
     return isNaN(d.getTime()) ? null : d;
   }
@@ -2813,7 +2827,11 @@ export class CPMSolver {
     if (!c?.hard || (c.type !== 'MSO' && c.type !== 'MFO')) return null;
     const d = this.constraintInstant(c, eng);
     if (!d) return null;
-    const snapped = this.snapOnOrAfter(eng, d);
+    // D2/N1: behoud een geldige eindgrens; alleen datumloze invoer of dagenmaat.
+    const snapped = c.type === 'MFO' && eng.isHourMode
+      && (!c.date?.includes('T') || taskDurationUnit(task) !== 'hours')
+      && this.snapOnOrBefore(eng, d).getTime() === d.getTime()
+      ? d : this.snapOnOrAfter(eng, d);
     return c.type === 'MSO' ? snapped : this.startFromFinish(eng, snapped, task);
   }
 
@@ -2824,7 +2842,11 @@ export class CPMSolver {
     if (!c?.hard || (c.type !== 'MSO' && c.type !== 'MFO')) return null;
     const d = this.constraintInstant(c, eng);
     if (!d) return null;
-    const snapped = this.snapOnOrAfter(eng, d);
+    // D2/N1: behoud een geldige eindgrens; alleen datumloze invoer of dagenmaat.
+    const snapped = c.type === 'MFO' && eng.isHourMode
+      && (!c.date?.includes('T') || taskDurationUnit(task) !== 'hours')
+      && this.snapOnOrBefore(eng, d).getTime() === d.getTime()
+      ? d : this.snapOnOrAfter(eng, d);
     return c.type === 'MFO' ? snapped : this.addDuration(eng, snapped, task);
   }
 
@@ -2957,7 +2979,9 @@ export class CPMSolver {
     const noSnap = isZeroDurationMilestone(task) && eng.isHourMode && c.date?.includes('T');
     if (c.type === 'SNET' || c.type === 'MSO') return noSnap ? d : this.snapOnOrAfter(eng, d);
     if (c.type === 'FNET' || c.type === 'MFO') {
-      return this.startFromFinish(eng, noSnap ? d : this.snapOnOrAfter(eng, d), task);
+      const finish = eng.isHourMode && this.snapOnOrBefore(eng, d).getTime() === d.getTime()
+        ? d : noSnap ? d : this.snapOnOrAfter(eng, d);
+      return this.startFromFinish(eng, finish, task);
     }
     return null;
   }
@@ -2973,7 +2997,12 @@ export class CPMSolver {
       && isZeroDurationMilestone(task) && eng.isHourMode && c.date?.includes('T');
     const dW = preserveMilestoneInstant ? d : this.snapOnOrBefore(eng, d);
     if (c.type === 'FNLT' || c.type === 'MFO') return dW;
-    if (c.type === 'SNLT' || c.type === 'MSO') return this.finishFromStart(eng, dW, task);
+    if (c.type === 'SNLT' || c.type === 'MSO') {
+      // Een afgeleide startgrens op een blokbegin hoort bij die werkdag, ook bij dagenmaat (145).
+      const start = eng.isHourMode && !isElapsedTask(task) && !isZeroDurationMilestone(task)
+        ? this.snapOnOrAfter(eng, dW) : dW;
+      return this.finishFromStart(eng, start, task);
+    }
     return null;
   }
 
@@ -3013,7 +3042,9 @@ export class CPMSolver {
     const startSide = rel === 'FS' || rel === 'SS';   // tweede teken S ⇒ mijn start; F ⇒ mijn finish
     if (eng.isHourMode) {
       const shifted = eng.addWorkingMinutesSigned(anchor, this.externalLagMinutes(link, eng));
-      return startSide ? shifted : this.startFromFinish(eng, shifted, task);
+      const finish = !startSide && taskDurationUnit(task) !== 'hours' && !isElapsedTask(task)
+        && !isZeroDurationMilestone(task) ? eng.prevWorkInstant(shifted) : shifted;
+      return startSide ? shifted : this.startFromFinish(eng, finish, task);
     }
     const lag = this.externalLagDays(link, eng);
     // FS: de werkdag ná het finish-anker (finish→start). Anders: het anker zelf (addWorkingDaysSigned

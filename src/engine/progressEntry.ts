@@ -1,8 +1,10 @@
+import { isElapsedTask } from '@/engine/scheduler/duration';
+import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskTime } from '@/types/task';
 import { sameValue } from '@/utils/sameValue';
 import {
   applyActualDateEdit, applyCompletionEdit, applyProgressInvariants, isActualFinishBeforeStart,
-  isActualPastStatusDate,
+  isActualPastStatusDate, normalizeActualDate, normalizeProgressActuals,
 } from '@/engine/taskMutationRules';
 
 /**
@@ -93,11 +95,12 @@ export function actualStartQuestionFor(
   after: Pick<Task, 'id' | 'isMilestone' | 'time'>,
   statusDate: string | undefined,
   supplied: { actualStart?: boolean; actualFinish?: boolean },
+  calendar?: WorkCalendar,
 ): ActualStartQuestion | null {
   if (!statusDate || before.time.actualStart || supplied.actualStart || !after.time.actualStart) return null;
   if (after.isMilestone && supplied.actualFinish) return null;
   const planned = after.time.earlyStart || after.time.scheduleStart;
-  if (!planned || !isActualPastStatusDate(planned, statusDate)) return null;
+  if (!planned || !isActualPastStatusDate(planned, statusDate, calendar, 'start')) return null;
   const latest = supplied.actualFinish && after.time.actualFinish ? after.time.actualFinish : statusDate;
   return { taskId: after.id, statusDate, latest };
 }
@@ -107,8 +110,9 @@ export function actualStartQuestionFor(
 export function actualStartAnswerIssue(
   answer: string,
   question: Pick<ActualStartQuestion, 'statusDate' | 'latest'>,
+  calendar?: WorkCalendar,
 ): 'afterStatusDate' | 'actualFinishBeforeStart' | null {
-  if (isActualPastStatusDate(answer, question.statusDate)) return 'afterStatusDate';
+  if (isActualPastStatusDate(answer, question.statusDate, calendar, 'start')) return 'afterStatusDate';
   if (isActualFinishBeforeStart({ actualStart: answer, actualFinish: question.latest })) return 'actualFinishBeforeStart';
   return null;
 }
@@ -121,6 +125,8 @@ export interface ProgressEntryContext {
   today?: string;
   /** De werkelijke start die de gebruiker op de startvraag opgaf. */
   actualStart?: string;
+  /** Effectieve taakkalender voor D1/D2 en de statuswerkdag. */
+  calendar?: WorkCalendar;
 }
 
 /** Waarom voortgang invullen geweigerd wordt, in de vorm die de UI toont of beantwoordt. */
@@ -167,13 +173,18 @@ export type ProgressEntryPlan =
  */
 export function planProgressEntry(task: Task, edit: ProgressEdit, ctx: ProgressEntryContext): ProgressEntryPlan {
   const statusDate = progressEntryStatusDate(ctx.statusDate, ctx.today);
-  const answer = ctx.today ? ctx.actualStart : undefined;
+  const answer = ctx.today ? normalizeActualDate(task, 'actualStart', ctx.actualStart, statusDate, ctx.calendar) : undefined;
+  if (edit.field !== 'completion') edit = {
+    ...edit, value: normalizeActualDate(task, edit.field, edit.value, statusDate, ctx.calendar),
+  };
   for (const date of [edit.field !== 'completion' ? edit.value : undefined, answer]) {
-    if (date && statusDate && isActualPastStatusDate(date, statusDate)) return { ok: false, reason: 'afterStatusDate' };
+    if (date && statusDate && isActualPastStatusDate(date, statusDate, isElapsedTask(task) ? undefined : ctx.calendar,
+      date === answer || edit.field !== 'actualFinish' ? 'start' : 'end')) return { ok: false, reason: 'afterStatusDate' };
   }
   const run = (date: string | undefined): Task => {
     const next: Task = { ...task, time: { ...task.time } };
     applyProgressEdit(next, edit, date, answer);
+    normalizeProgressActuals(next, date, ctx.calendar);
     return next;
   };
   let next = run(statusDate);
@@ -183,7 +194,7 @@ export function planProgressEntry(task: Task, edit: ProgressEdit, ctx: ProgressE
     const question = actualStartQuestionFor(task, next, statusDate, {
       actualStart: !!answer || (edit.field === 'actualStart' && !!edit.value),
       actualFinish: edit.field === 'actualFinish' && !!edit.value,
-    });
+    }, isElapsedTask(task) ? undefined : ctx.calendar);
     if (question) return { ok: false, reason: 'needsActualStart', question };
   }
   const statusDateToday = !ctx.statusDate && ctx.today && hasRecordedProgress(next.time) ? ctx.today : undefined;
