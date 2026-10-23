@@ -347,6 +347,24 @@ export function captureTriangle(task: Task, assignments: readonly ResourceAssign
 
 const NO_CHANGE: TriangleWriteBack = { durationChanged: false, changedAssignmentIds: [] };
 
+/** Een voltooide taak zonder restwerk heeft geen resterende driehoek om te herleiden.
+ *  Inzet wijzigen of een resource toevoegen legt wel het oude verrichte werk en de nulrest vast.
+ *  Dit pad rekent geen duur of inzet uit; ongeldige inzet en tegenstrijdig restwerk vallen erbuiten. */
+function settleCompletedWork(
+  task: Task,
+  assignments: ResourceAssignment[],
+  captured: CapturedTriangle,
+): TriangleWriteBack | null {
+  if (captured.time.completion !== 1 || captured.state.remainingMinutes !== 0) return null;
+  const after = triangleStateOf(task, assignments, captured.ctx);
+  if (after.assignments.some(a => !Number.isFinite(a.unitsPerDay) || a.unitsPerDay <= 0)) return null;
+  if ([...captured.state.assignments, ...after.assignments]
+    .some(a => a.drivesDuration && (a.remainingWorkMinutes ?? 0) !== 0)) return null;
+  return applyTriangleResult(task, assignments, captured.state, after, captured.ctx, {
+    skipDuration: true, actualWork: captured.actualWork,
+  });
+}
+
 /** Eén toewijzing waarvan een duurbewerking een BEWAARD restwerk herschreef dat afweek van
  *  inzet × restduur (het criterium van het waarschuwingsteken, `storedWorkDeviates`). Zo'n waarde
  *  kwam uit het bestand (P6 `remain_qty`, MSP `RemainingWork`) of uit een eerdere bewerking; de
@@ -477,6 +495,8 @@ export function settleUnitsEdit(
   newUnitsPerDay: number,
 ): TriangleWriteBack {
   if (!captured) return NO_CHANGE;
+  const completed = settleCompletedWork(task, assignments, captured);
+  if (completed) return completed;
   const result = applyUnitsEdit(captured.state, assignmentId, newUnitsPerDay);
   if (!result.ok) return NO_CHANGE;
   return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { actualWork: captured.actualWork });
@@ -530,6 +550,8 @@ export function settleAssignmentAdded(
   added: ResourceAssignment,
 ): TriangleWriteBack {
   if (!captured) return NO_CHANGE;
+  const completed = settleCompletedWork(task, assignments, captured);
+  if (completed) return completed;
   const resource = captured.ctx.resourceById?.(added.resourceId);
   const result = applyAssignmentAdded(captured.state, {
     id: added.id, unitsPerDay: added.unitsPerDay, drivesDuration: resource ? resource.type !== 'MATERIAL' : true,

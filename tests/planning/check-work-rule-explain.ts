@@ -95,10 +95,9 @@ for (const lang of ['nl', 'en'] as const) {
 }
 
 // (b) De rekenkern: 8 u/dag, 5 werkdagen, één werkresource op 1,0 (40 u).
-// Beide maten rekenen exact; ook één dag wordt met een tweede resource een halve dag.
+// De kern rekent in werkminuten; één dag wordt met een tweede resource exact een halve dag.
 const SLOT = 8 * 60;
-type Unit = 'days' | 'hours';
-function base(rule: WorkRule, effortDriven: boolean | undefined, _unit: Unit, days = 5): TriangleState {
+function base(rule: WorkRule, effortDriven: boolean | undefined, days = 5): TriangleState {
   return {
     rule, effortDriven, remainingMinutes: days * SLOT, slotMinutes: SLOT,
     assignments: [{ id: 'a', unitsPerDay: 1, drivesDuration: true }],
@@ -116,9 +115,9 @@ const stateOf = (r: TriangleResult, label: string): TriangleState | null => {
 };
 
 /** Welke grootheid paste zich aan bij een bewerking van `edited`? `null` = geen of meer dan één. */
-function adjusted(rule: WorkRule, ed: boolean | undefined, unit: Unit, edited: Q): Q | null {
-  const s0 = base(rule, ed, unit);
-  const label = `${rule}/${String(ed)}/${unit}/${edited}`;
+function adjusted(rule: WorkRule, ed: boolean | undefined, edited: Q): Q | null {
+  const s0 = base(rule, ed);
+  const label = `${rule}/${String(ed)}/${edited}`;
   const r = edited === 'duration' ? applyDurationEdit(s0, 10 * SLOT)
     : edited === 'units' ? applyUnitsEdit(s0, 'a', 0.5)
       : applyWorkEdit(s0, 'a', 80 * 60);
@@ -130,10 +129,10 @@ function adjusted(rule: WorkRule, ed: boolean | undefined, unit: Unit, edited: Q
   return changed.length === 1 ? changed[0] : null;
 }
 
-function resourceEffects(rule: WorkRule, ed: boolean | undefined, unit: Unit, days: number): Set<ResourceEffect> {
-  const s0 = base(rule, ed, unit, days);
+function resourceEffects(rule: WorkRule, ed: boolean | undefined, days: number): Set<ResourceEffect> {
+  const s0 = base(rule, ed, days);
   const out = new Set<ResourceEffect>();
-  const s1 = stateOf(applyAssignmentAdded(s0, { id: 'b', unitsPerDay: 1 }), `${rule}/${String(ed)}/${unit}/${days}d/resource`);
+  const s1 = stateOf(applyAssignmentAdded(s0, { id: 'b', unitsPerDay: 1 }), `${rule}/${String(ed)}/${days}d/resource`);
   if (!s1) return out;
   const totalWork = (s: TriangleState) => s.assignments.reduce((sum, a) => sum + remainingWorkOf(a, s.remainingMinutes), 0);
   if (totalWork(s1) > totalWork(s0) + 1e-6) out.add('workUp');
@@ -146,10 +145,9 @@ function resourceEffects(rule: WorkRule, ed: boolean | undefined, unit: Unit, da
 const table: string[] = [];
 for (const rule of WORK_RULES) {
   for (const ed of [undefined, true, false] as const) {
-  for (const unit of ['days', 'hours'] as const) {
     const ex = workRuleExplanation(rule, ed);
     const sentences = [ex.lead, ...ex.rest];
-    const label = `${rule} effortDriven=${String(ed)} ${unit}`;
+    const label = `${rule} effortDriven=${String(ed)}`;
     // (c) volledigheid: elke bewerking precies één bewering, precies één resourcezin.
     const claims = new Map<Q, Q>();
     for (const s of sentences) {
@@ -166,14 +164,14 @@ for (const rule of WORK_RULES) {
     // (b) naast de rekenkern.
     const row: string[] = [];
     for (const [edited, claim] of claims) {
-      const actual = adjusted(rule, ed, unit, edited);
+      const actual = adjusted(rule, ed, edited);
       row.push(`${edited}→${actual ?? '?'}`);
       ok(`${label}: zin zegt "${edited} gewijzigd ⇒ ${claim} past aan", de rekenkern past ${actual ?? 'niet precies één grootheid'} aan`,
         actual === claim);
     }
     // De resourcezin moet kloppen bij 5 dagen én bij 1 dag (uitkomst: een halve dag).
     for (const days of [5, 1]) {
-      const effects = resourceEffects(rule, ed, unit, days);
+      const effects = resourceEffects(rule, ed, days);
       row.push(`resource(${days}d): ${[...effects].join('+')}`);
       for (const s of resourceSentences) {
         for (const e of MEANING[s].resource!) {
@@ -183,25 +181,17 @@ for (const rule of WORK_RULES) {
     }
     table.push(`${label.padEnd(46)} ${row.join('  ')}  ⇒ ${sentences.join(', ')}`);
   }
-  }
 }
 
-// F3a/T14: in beide maten wordt één dag met een tweede resource exact een halve dag.
+// T14: de kern verdeelt één werkdag exact in twee helften.
 {
-  const day = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'days', 1), { id: 'b', unitsPerDay: 1 }), 'dag 1 d');
-  ok(`dagtaak 1 d + resource: duur ${day?.remainingMinutes} min, verwacht ${SLOT / 2}`, day?.remainingMinutes === SLOT / 2);
-  ok('dagtaak: Vast werk gebruikt de korte zin',
+  const state = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 1), { id: 'b', unitsPerDay: 1 }), '1 werkdag');
+  ok(`1 werkdag + resource: duur ${state?.remainingMinutes} min, verwacht ${SLOT / 2}`, state?.remainingMinutes === SLOT / 2);
+  ok('Vast werk gebruikt de korte zin',
     workRuleExplanation('FIXED_WORK', undefined).rest.includes('resourceShorter'));
-  ok('dagtaak: extra resource behoudt het totale werk', day !== null
-    && same(day.assignments.reduce((sum, a) => sum + remainingWorkOf(a, day.remainingMinutes), 0), SLOT));
-  ok('dagtaak: extra resource behoudt de inzet per resource', day !== null && day.assignments.every(a => a.unitsPerDay === 1));
-  const hour = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'hours', 1), { id: 'b', unitsPerDay: 1 }), 'uur 1 d');
-  ok(`urentaak 8 u + resource: duur ${hour?.remainingMinutes} min, verwacht ${SLOT / 2}`, hour?.remainingMinutes === SLOT / 2);
-  ok('urentaak: Vast werk gebruikt de zin zonder afronding',
-    workRuleExplanation('FIXED_WORK', undefined).rest.includes('resourceShorter'));
-  ok('urentaak: extra resource behoudt het totale werk', hour !== null
-    && same(hour.assignments.reduce((sum, a) => sum + remainingWorkOf(a, hour.remainingMinutes), 0), SLOT));
-  ok('urentaak: extra resource behoudt de inzet per resource', hour !== null && hour.assignments.every(a => a.unitsPerDay === 1));
+  ok('extra resource behoudt het totale werk', state !== null
+    && same(state.assignments.reduce((sum, a) => sum + remainingWorkOf(a, state.remainingMinutes), 0), SLOT));
+  ok('extra resource behoudt de inzet per resource', state !== null && state.assignments.every(a => a.unitsPerDay === 1));
 }
 
 if (diffs.length) {
@@ -210,4 +200,4 @@ if (diffs.length) {
   for (const line of table) console.log(`    ${line}`);
   process.exit(1);
 }
-console.log(`OK  check-work-rule-explain: ${checks} controles; elke uitlegzin klopt met de rekenkern (4 regels × 3 effortDriven × dag/uur × 4 bewerkingen)`);
+console.log(`OK  check-work-rule-explain: ${checks} controles; elke uitlegzin klopt met de rekenkern (4 regels × 3 effortDriven × 4 bewerkingen)`);
