@@ -204,7 +204,7 @@ export function carriesProfile(profile: SchedulingProfile | undefined): profile 
  *  - geen object ⇒ `undefined` (de lezer valt terug op de legacy-migratie);
  *  - onbekende/ontbrekende `baseId` ⇒ `ops`;
  *  - `conventions`: per conventie een boolean ⇒ die waarde; ONTBREKENDE sleutel (een bestand van
- *    vóór die conventie) of ongeldig getypeerde waarde ⇒ `legacyValue`, nooit de basiswaarde;
+ *    vóór die conventie) of ongeldig getypeerde waarde ⇒ `legacyValue`, of de basis bij `legacyFromBase` (T12);
  *    onbekende sleutels ⇒ genegeerd. `overrides` = verschil met de basis, dus de
  *    bestandswaarden winnen en de state blijft compact;
  *  - `overrides` (letterlijk weggeschreven): elke letterlijke afwijking die

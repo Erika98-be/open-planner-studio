@@ -241,15 +241,6 @@ en noem het in je rapport of PR-tekst.
     `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
     `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
     het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
-152. **Een MCP-wijziging van alleen een taaknaam verlaat "datums zoals opgeslagen" en rekent de planning door.**
-     `planner_update_tasks` met alleen `fields.name`: de MCP-transactie roept na elke datawijziging `runCPM` aan
-     (`createMcpTransactions.ts:1094-1103`), en `runCPM` verlaat de modus (`scheduleSlice.ts:110-113`). In de UI
-     blijft de modus bij dezelfde wijziging staan (`DATE_NEUTRAL_TASK_FIELDS` en `changesOnlyDateNeutralFields`
-     in `taskSlice.ts`). Nagespeeld in Node met de echte tool, op een document in de modus na een MSPDI-import:
-     taak B ging van 15 jun 07:00 naar 1 jun 07:00, en de modus ging uit (`/tmp/uren-fix4/probe.log`). Gevonden
-     door review ronde 4 van de spec "alleen uren"; de regel en de regressie staan in die spec (§5.2, route 3;
-     §6.1). VERMOED, niet nagespeeld: `recomputeMidBatch` (`batchTool.ts:234-240`) doet hetzelfde in een batch met
-     een leesstap. — B
 
 
 ## Bestanden en herstel

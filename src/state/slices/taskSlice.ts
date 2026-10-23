@@ -1036,6 +1036,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       // De solve schrijft `scheduleFinish` niet terug, dus een nieuwe urentaak krijgt
       // hier haar ingevoerde einde (start + duur op de echte kalender), zie `seedNewHourTaskFinish`.
       seedNewHourTaskFinish(task, partial.time, effectiveNewTaskCalendar);
+      Object.assign(task, normalizeTaskDates(task, s));
       if (partial.workRule !== undefined) s.taskTypesVisible = true; // een gezette regel ontsluit de UI
 
       // Zonder `position` (of een onbekende anker): achteraan.
@@ -1133,7 +1134,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       // In "datums zoals opgeslagen" laat een patch die alleen datumneutrale velden echt verandert
       // (naam, omschrijving, …) de modus staan — zie `DATE_NEUTRAL_TASK_FIELDS`. Gemeten vóór de
       // mutatie, op dezelfde merge als de no-op-guard hierboven.
-      const keepsRecordedMode = s.datesAsRecorded && changesOnlyDateNeutralFields(task, next);
+      let keepsRecordedMode = s.datesAsRecorded && changesOnlyDateNeutralFields(task, next);
       // Een nieuwe duur korter dan het gedane werk van een
       // lopende taak wordt geweigerd — vóór de snapshot, dus niets veranderd, met een melding
       // (paneel, Gantt, extensie-API). Dezelfde regel die hieronder de rest laat meeschuiven, zie
@@ -1208,7 +1209,9 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       }
       settleProgressWork(task, s.assignments, progressWork);
       if ('workRule' in updates && task.workRule !== workRule) {
+        const unitBefore = task.time.durationUnit;
         settleRuleChange(task, s.assignments, s, workRule);
+        if (task.time.durationUnit !== unitBefore) keepsRecordedMode = false;
         if (workRule !== undefined) s.taskTypesVisible = true; // elk schrijfpad ontsluit.
       }
       reconcileP6SuspendResume(task);
@@ -1247,9 +1250,10 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       const task = s.tasks.find(t => t.id === id);
       if (!task || task.workRule === rule) return; // onbekend id of ongewijzigd: geen snapshot.
       runtime.beginUndoable(s);
+      const unitBefore = task.time.durationUnit;
       settleRuleChange(task, s.assignments, s, rule);
       s.taskTypesVisible = true; // wie een regel zet, ziet de regel (documentontsluiting).
-      runtime.finishMutation(s); // geen `stale`: een typewissel raakt geen datum.
+      runtime.finishMutation(s, { stale: task.time.durationUnit !== unitBefore }); // Een maatwijziging is planning (11c).
     });
     get().recomputeResourceLoad(); // een vastgelegd restwerk kan de vierde bron van `assignmentDayUnits` activeren.
     get().recomputeViewRows();
@@ -1328,6 +1332,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       runtime.beginUndoable(s);
       const full: ExternalLink = { ...link, id };
       task.externalLinks = [...(task.externalLinks ?? []), full];
+      Object.assign(task, normalizeTaskDates(task, s));
       runtime.finishMutation(s, { stale: true }); // een bevroren datum-grens is datum-beïnvloedend.
     });
     get().recomputeViewRows();
@@ -1349,6 +1354,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
       task.externalLinks = task.externalLinks.map((candidate, candidateIndex) => (
         candidateIndex === index ? next : candidate
       ));
+      Object.assign(task, normalizeTaskDates(task, s));
       runtime.finishMutation(s, { stale: true });
       changed = true;
     });
@@ -1539,7 +1545,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
         const id = idMap.get(tt.id)!;
         const parent = tt.parentId ? idMap.get(tt.parentId)! : parentId;
         if (tt.parentId === null) newRootId = id;
-        s.tasks.push({
+        s.tasks.push(normalizeTaskDates({
           id,
           name: tt.name,
           description: tt.description,
@@ -1554,7 +1560,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
           // handmatig nieuw-taakgetal dat door de projectstandaard van betekenis mag veranderen.
           time: createDefaultTaskTime(startDate, tt.isMilestone ? 0 : tt.durationDays, 'days'),
           resourceIds: [],
-        });
+        }, s));
       }
       if (parentId && newRootId) {
         const parent = s.tasks.find(t => t.id === parentId);

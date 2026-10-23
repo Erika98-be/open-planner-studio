@@ -1,4 +1,4 @@
-import { migrateToMinuteModel } from './migrations/minuteModel';
+import { assertMinuteModelTaskDates, migrateToMinuteModel } from './migrations/minuteModel';
 import { hasTaskTypeData } from '@/state/taskTypesVisibility';
 import type { Project } from '@/types/project';
 import type { WorkCalendar } from '@/types/calendar';
@@ -416,6 +416,7 @@ export function hydratePayload(s: AppState, p: DocumentPayload): void {
   // één (idempotent — no-op als de entry al bestaat, bv. bij een gewone switchDocument/undo).
   promoteProjectCalendarToLibrary(s);
   syncProjectCalendar(s); // Gedenormaliseerde projectkalender-cache gelijkzetten ná hydrate/switch.
+  if (import.meta.env?.DEV) assertMinuteModelTaskDates(s.tasks);
 }
 
 /** Verse, lege document-payload (nieuw project). */

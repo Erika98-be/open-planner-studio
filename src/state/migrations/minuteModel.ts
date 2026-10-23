@@ -24,8 +24,8 @@ import {
  * leest ze vanaf F2 met D1, D5 en D2. De vastlegging van "datums zoals opgeslagen" zit niet in de payload;
  * F2 normaliseert die bij `captureAllowed` met {@link normalizeTaskDate}.
  *
- * Fase F0: deze module is gebouwd en getest, maar nog niet aangesloten op een laadroute of de store.
- * F2 roept {@link migrateToMinuteModel} aan aan het einde van `payloadFromImport`.
+ * F0 leverde deze zuivere bouwsteen. Sinds F2 roept `payloadFromImport` hem vóór elke laadberekening
+ * aan; de invoerroutes delen {@link normalizeTaskDates}.
  */
 
 /** De markering `OPS_Project.TimeModel` van een bestand dat met het minutenmodel berekend is. */
@@ -335,8 +335,12 @@ function migrateTask(task: Task, ctx: TaskDateContext, n: Normalizer): Task {
 
 /** Dezelfde D1–D7 bij invoer, zonder schemamigratie of wijziging aan duur/werk. */
 export function normalizeTaskDates(task: Task, calendars: Pick<DocumentPayload, 'calendar' | 'calendars'>): Task {
-  const ctx = taskDateContext(task, new DayClockCache(calendars.calendar, calendars.calendars));
-  return mapTaskDates(task, (value, field) => normalizeTaskDate(value, field, ctx) ?? value);
+  let ctx: TaskDateContext | undefined;
+  return mapTaskDates(task, (value, field) => {
+    if (!isDateOnly(value)) return value;
+    ctx ??= taskDateContext(task, new DayClockCache(calendars.calendar, calendars.calendars));
+    return normalizeTaskDate(value, field, ctx) ?? value;
+  });
 }
 
 function migrateBaseline(
@@ -430,4 +434,12 @@ export function migrateToMinuteModel(payload: DocumentPayload, options: MinuteMo
     payload: same ? payload : { ...payload, calendar, calendars, tasks, baselines },
     report,
   };
+}
+
+/** Ontwikkelcontrole op de laadinvariant; projectdatums vallen bewust buiten deze regel. */
+export function assertMinuteModelTaskDates(tasks: readonly Task[]): void {
+  for (const task of tasks) mapTaskDates(task, (value, field) => {
+    if (isDateOnly(value)) throw new Error(`Taak ${task.id}: ${field} mist een tijd na normalisatie`);
+    return value;
+  });
 }

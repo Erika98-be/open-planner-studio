@@ -7,6 +7,7 @@
 // `tests/planning/check-xer-recorded-times.ts`: T1 legt vroege datums vast die van onze
 // herberekening afwijken (⇒ de modus gaat vanzelf aan), T3 legt alleen het vroege paar vast
 // (⇒ laat-start/-einde en speling zijn "niet vastgelegd").
+import { externIfc } from '../fixtures/recordedDatesIfc';
 import type { Locator, Page } from '@playwright/test';
 import { expect, state, test } from './fixtures/ops';
 import { MSPDI_FIXTURE, P6XML_FIXTURE } from '../fixtures/recordedTimesFormats';
@@ -217,6 +218,38 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   await page.getByRole('button', { name: /^(Successors|Opvolgers)$/, exact: true }).click();
   await expect(tableRow(ids.deviates)).not.toHaveAttribute('data-grid-trace-role');
   expect((await state(page)).selectedTaskIds).toEqual([ids.earlyOnly]);
+
+  // B5 met de echte hooks: Ctrl+Z mag niet na de automatische berekentermijn verdwijnen.
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ autoCalcCPM: true }));
+  const ownOldIfc = externIfc('b5-browser').replace('DATA;', "DATA;\n#900=IFCAPPLICATION($,'0.2','Open Planner Studio','OPS');");
+  await openViaFileChooser(page, 'oud-minutenmodel.ifc', 'application/x-step', ownOldIfc);
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().tasks.find(t => t.name === 'B')?.time.earlyStart))
+    .toBe('2026-03-09T07:00');
+  await expect(page.getByText(/grootste verschuiving is 5,0 werkdagen|largest shift is 5\.0 workdays/)).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(strip).toBeVisible();
+  await page.waitForTimeout(300);
+  const oldB = await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const b = s.tasks.find(t => t.name === 'B')!;
+    return { id: b.id, start: b.time.earlyStart, pending: s.minuteModelPending, stale: s.scheduleStale };
+  });
+  expect(oldB).toMatchObject({ start: '2026-03-16T07:00', pending: true, stale: false });
+  await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
+  const nameCell = taskCell(page, oldB.id, 'task.name');
+  await nameCell.dblclick();
+  const nameInput = nameCell.locator('input');
+  await expect(nameInput).toBeVisible();
+  await nameInput.fill('B hernoemd');
+  await nameInput.press('Enter');
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(id => {
+    const s = window.__OPS__!.store.getState();
+    return { start: s.tasks.find(t => t.id === id)!.time.earlyStart, mode: s.datesAsRecorded };
+  }, oldB.id)).toEqual({ start: '2026-03-16T07:00', mode: true });
+  await page.keyboard.press('F5');
+  await expect.poll(() => page.evaluate(id => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!.time.earlyStart, oldB.id))
+    .toBe('2026-03-09T07:00');
 });
 
 // Eigenaarsbesluit 2026-09-09: "het moet altijd gaan zoals het nu bij XER werkt". Dezelfde

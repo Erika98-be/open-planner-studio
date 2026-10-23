@@ -51,10 +51,10 @@ export interface ConventionDescriptor {
    *  motorgedrag; los van `group` (dat is de herkomst in het register, geen onderwerp). */
   theme: ConventionTheme;
   /** De waarde die geldt wanneer een bestand MÉT `OPS_SchedulingProfile` deze sleutel niet kent (een
-   *  bestand van vóór `since`). Per constructie de OPS-waarde (`builtIn.ops`, dus voor elke conventie
-   *  `false`): zo'n bestand rekende zonder de regel, en onder een P6-basis verschijnt de ontbrekende
-   *  sleutel dan eerlijk als afwijking. Nooit de waarde van de GEKOZEN basis. Geldt niet voor de
-   *  legacy-migratie van bestanden zonder die pset — daarvoor zie `legacyOptionsToProfile`. */
+   *  bestand van vóór `since`). Standaard de OPS-waarde (`builtIn.ops`): een oudere profielkeuze
+   *  blijft zo zichtbaar. Met `legacyFromBase` geldt de basiswaarde, omdat het oude bestand
+   *  over die nieuwe conventie niets koos (T12). Bestanden zonder profiel-pset gebruiken
+   *  `legacyOptionsToProfile`. */
   legacyValue: boolean;
   /** Nieuwe regel: een ouder profiel koos hierover niets (T12). */
   legacyFromBase?: true;
@@ -240,7 +240,7 @@ export function displayNameKey(id: BuiltInProfileId): string {
   return `profiles.builtIn.${id}`;
 }
 
-/** Basis + afwijkingen ⇒ alle zevenentwintig conventies. Afwezig profiel ≡ `ops` zonder afwijkingen.
+/** Basis + afwijkingen ⇒ alle achtentwintig conventies. Afwezig profiel ≡ `ops` zonder afwijkingen.
  *  Alleen bekende conventiesleutels met een boolean tellen; de rest van `overrides` wordt genegeerd. */
 export function resolveConventions(profile: SchedulingProfile | undefined): SchedulingConventions {
   const out = builtInConventions(profile?.baseId ?? 'ops');

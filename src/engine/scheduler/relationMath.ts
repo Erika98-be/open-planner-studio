@@ -669,7 +669,10 @@ function forwardHour(
       // `reqFinish` (de geëiste finish zelf) wordt gedeeld met `sfReqFinishHour`
       // (`forwardFinishFloor`) — één bron.
       const reqFinish = sfReqFinishHour(deps, predResult, predTask, seq, successor, pe, se, flags);
-      return deps.startFromFinish(se, reqFinish, successor);
+      // T8: SF bindt aan een exclusieve startgrens. Een hele dagtaak telt de dag die
+      // op dat blokbegin begint niet mee in haar terugtelling; de finishvloer blijft rauw.
+      const durationFinish = isDayTaskOnBands(successor, se) ? se.prevWorkInstant(reqFinish) : reqFinish;
+      return deps.startFromFinish(se, durationFinish, successor);
     }
     case 'FINISH_START':
     default: {

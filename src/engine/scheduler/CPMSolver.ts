@@ -215,24 +215,9 @@ export function snapWorkInstantOnOrAfter(eng: CalendarEngine, from: Date): Date 
   return eng.isHourMode ? eng.nextWorkInstant(from) : eng.nextWorkDay(from);
 }
 
-/**
- * DE kalenderkeuze voor de engine waarin `task` rekent, op de al opgeloste kalender `cal` (de
- * taakkalender via `resolveCalendar`, of bij een resourcekalender-wandeling die van de resource).
- * Top-level EXPORT met dezelfde reden als `snapWorkInstantOnOrAfter` hierboven: de solver
- * (`calendarFor` en de wandelingen, via de instance-tunnel `engineForCal`) én
- * `projectStartAnchorClamp.ts` (de projectstartklem) gebruiken deze ene functie, zodat de klem een anker
- * in exact de engine snapt waarin de solver het daarna leest.
- *
- * Regel: een URENtaak (`taskDurationUnit(task) === 'hours'`) rekent in de EFFECTIEVE uurbanden van
- * `cal` (`calendarForEngine`). Een scalaire kalender zonder `workTime` — zoals de
- * standaardprojectkalender — krijgt die banden alléén in deze afgeleide engine; valt er niets af te
- * leiden, dan blijft het `cal` zelf. Een DAGtaak rekent in `cal` zelf. De persistente kalender en
- * alle dagtaken blijven dus ongewijzigd daggranulair.
- *
- * `cache` is van de aanroeper (vers per berekening). De sleutel draagt het uur-/dagonderscheid
- * (`<id>` tegenover `<id>\0effective-hour`), zodat een uur- en een dagengine op dezelfde kalender
- * elkaar nooit lekken; de effectieve kalender wordt pas bij een cache-miss afgeleid.
- */
+/** Eén engine per effectieve kalender, voor dagtaken én urentaken. De opgeslagen kalender blijft
+ * ongemoeid; scalaire werkuren krijgen uitsluitend in de engine werkblokken. Dezelfde fabriek
+ * voedt de solver en de projectstartklem. De cache leeft één berekening. */
 export function engineForTaskCalendar(
   cache: Map<string, CalendarEngine>,
   cal: WorkCalendar,
@@ -249,7 +234,7 @@ export function engineForTaskCalendar(
 
 /**
  * Effectieve lag in dagen van een relatie: procent-lag wordt uit de ACTUELE voorgangerduur
- * opgelost (MSP-semantiek, afgerond op hele dagen), anders geldt lagDays. Gedeeld met de UI
+ * opgelost (B7: exact, zonder afronding op hele dagen), anders geldt lagDays. Gedeeld met de UI
  * (relatietabel-waarschuwingen) zodat er één definitie bestaat.
  *
  * `hoursPerDay` (optioneel) = de dag↔minuut-factor van de kalender waarin de lag telt —
@@ -264,13 +249,8 @@ export function resolveEffectiveLagDays(seq: Sequence, predTask: Task, hoursPerD
     return (predDur * seq.lagPercent) / 100;
   }
   const days = Number.isFinite(seq.lagDays) ? seq.lagDays : 0;
-  // Minuut-lag ZONDER dag-lag. `p6xmlReader`/`mspdiReader` schrijven `lagDays: 0` +
-  // `lagMinutes` zodra de OPVOLGER in uur-modus staat, terwijl de solver de lag in de VOORGANGER-
-  // kalender oplost. Bij een DAG-voorganger viel de lag daardoor stil weg (exact lag 0, forward én
-  // backward) — stil dataverlies op een reëel importpad. Reken hem om naar hele dagen met de
-  // meegegeven factor; half rondt van nul af, zodat een lead (negatief) symmetrisch behandeld wordt.
-  // `lagDays ≠ 0` blijft leidend: het IFC-pad vult beide velden (`parseDurationDays` rondt `PT4H`
-  // naar boven op 1 dag).
+  // Een losse minutenlag blijft ook voor een dagvoorganger exact (I11). De motor lost hem
+  // rechtstreeks in minuten op; deze helper drukt hem voor dagconsumenten in dezelfde maat uit.
   if (
     days === 0 && typeof hoursPerDay === 'number' && hoursPerDay > 0 &&
     isFiniteNumber(seq.lagMinutes) && seq.lagMinutes !== 0
@@ -3633,7 +3613,9 @@ export class CPMSolver {
       // Start-Start-opvolger een late finish ná het projecteinde opleveren, en krijgt de voorganger
       // ten onrechte speling).
       const predCal = this.calendarFor(task);
-      let lateFinish = projectEnd;
+      let lateFinish = isZeroDurationMilestone(task) && task.milestoneKind === 'START'
+        && taskDurationUnit(task) !== 'hours'
+        ? this.dayFirstBandStart(predCal, projectEnd) ?? projectEnd : projectEnd;
       let lateFinishSource: CpmLateFinishSource = 'projectEnd';
       for (const seq of succs) {
         const succResult = results.get(seq.successorId);

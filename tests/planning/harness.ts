@@ -1113,7 +1113,18 @@ function runCase(c: Case): CaseResult {
   const dayCase = !hourCaseReason(c);
   const reason = c.minuteModel && (REASON_RUNS[c.minuteModel.reason] as readonly number[]).includes(1);
   const expected = dayCase && reason ? mergeExpect(c.expect ?? {}, c.minuteModel!.expect ?? {}) : c.expect ?? {};
-  const diffs = evaluateCase(c, expected, built, minuteComparer(built.ids));
+  const minute = minuteComparer(built.ids);
+  // Oude notatie van een dagveld mag naast uurvelden staan. Expliciete uurverwachtingen en
+  // hun getallen blijven exact, zoals vóór F2.
+  const cmp: Comparer = dayCase ? minute : { ...EXACT,
+    taskField: (name, key, got, want) => typeof want === 'string' && isDateOnly(want)
+      ? minute.taskField(name, key, got, want) : EXACT.taskField(name, key, got, want),
+    projectDate: (got, want, field) => typeof want === 'string' && isDateOnly(want)
+      ? minute.projectDate(got, want, field) : EXACT.projectDate(got, want, field),
+    taskDate: (name, got, want, field) => typeof want === 'string' && isDateOnly(want)
+      ? minute.taskDate(name, got, want, field) : EXACT.taskDate(name, got, want, field),
+  };
+  const diffs = evaluateCase(c, expected, built, cmp);
   return { id: c.id, title: c.title, pass: diffs.length === 0, diffs };
 }
 
@@ -1927,6 +1938,9 @@ for (const file of files) {
   const results = cases.map(runCase);
   if (MM_RUN) {
     reportMinuteBattery(name, results);
+    // F2: run 1 is nu de productiegrens. Een historische lijst met bekende afwijkingen
+    // mag een nog rode dagcase niet groen laten eindigen.
+    if (MM_RUN === 1 && results.some(result => !result.pass)) anyFail = true;
     continue;
   }
   const passed = results.filter((r) => r.pass).length;

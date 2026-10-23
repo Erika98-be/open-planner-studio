@@ -49,11 +49,11 @@ export function currentRecordedTimes(payload: Pick<DocumentPayload, 'tasks'>): R
  * De aanroeper publiceert after en registreert, indien nodig, beide snapshots in één event.
  * Bij een mislukte solve blijft de omzetting open. */
 export function minuteModelTransition(input: DocumentPayload, computed: DocumentPayload,
-  recorded: RecordedDates = currentRecordedTimes(input)) {
+  recorded?: RecordedDates) {
   if (!input.minuteModelPending || computed.cpmResult?.error || computed.datesAsRecorded) {
     return { before: input, after: computed, shifted: [] as string[], maxWorkdays: 0 };
   }
-  const normalized = normalizeRecordedTimes(input, recorded);
+  const normalized = normalizeRecordedTimes(input, recorded ?? currentRecordedTimes(input));
   const shifted = shiftedTaskIds(computed.tasks, normalized.times);
   const after = { ...computed, minuteModelPending: false };
   if (shifted.length === 0) return { before: input, after, shifted, maxWorkdays: 0 };

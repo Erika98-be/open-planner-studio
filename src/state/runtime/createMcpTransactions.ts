@@ -1,6 +1,6 @@
 import { changesOnlyDateNeutralFields } from '../taskDateChanges';
 import { beginRecordedDateEdit, endRecordedDateEdit, keepsRecordedDates, recordedDateRuleChange } from '../recordedDateEditGate';
-import { normalizeTaskDates } from '../migrations/minuteModel';
+import { assertMinuteModelTaskDates, normalizeTaskDates } from '../migrations/minuteModel';
 import type { AppState, AppStoreContext } from '../appStore';
 import { attachToParent, isSelfOrDescendant, removeTaskSubtrees, reparentTask } from '@/state/taskTree';
 import {
@@ -1093,6 +1093,7 @@ export function createMcpTransactions(context: AppStoreContext): McpTransactions
         if (isThenable(value)) {
           throw new Error('MCP transaction callback must be strictly synchronous and may not return a Promise/thenable');
         }
+        if (import.meta.env?.DEV) assertMinuteModelTaskDates(store.getState().tasks);
         // Wijzigde de callback per saldo projectdata? Gemeten VÓÓR de eindherberekening: `runCPM`
         // alléén is nooit een wijziging. Dit is de ene plek waar elke MCP-schrijfactie langskomt — ook
         // de toollaag-producers die geen draft-primitief gebruiken (zoals het voortgangspad van

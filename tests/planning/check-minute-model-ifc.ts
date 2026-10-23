@@ -1,3 +1,6 @@
+import { parseInstant, MS_PER_DAY } from '@/utils/dateUtils';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import './domStub';
 import { freshPayload, payloadFromImport } from '@/state/documentContract';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
@@ -45,6 +48,8 @@ for (const variant of ['W0', 'W1', 'W2']) {
   const input = buildWriteIFCInput(payload);
   const view = minuteModelWriteView(input);
   const text = writeIFC(input);
+  const compatOut = process.env.OPS_MINUTE_MODEL_COMPAT_OUT;
+  if (compatOut) { mkdirSync(compatOut, { recursive: true }); writeFileSync(join(compatOut, `${variant}.ifc`), text); }
   const parsed = readIFC(text);
   const roundtrip = payloadFromImport(parsed, null);
   eq(`${variant} kalenderkeuze`, text.includes("'LiteralTimes'"), variant !== 'W0');
@@ -86,6 +91,11 @@ for (const variant of ['W0', 'W1', 'W2']) {
   }] }];
   const out = migrateToMinuteModel(payload).payload;
   eq('baseline-einde volgt werkelijk einde', out.baselines[0].tasks[0].finish, out.tasks[0].time.actualFinish);
+  const earlier = { ...payload, baselines: payload.baselines.map(b => ({ ...b, tasks: b.tasks.map(bt => ({ ...bt, finish: '2026-05-31' })) })) };
+  const normalized = migrateToMinuteModel(earlier).payload;
+  eq('baseline behoudt twee kalenderdagen afstand',
+    (parseInstant(normalized.tasks[0].time.actualFinish!).getTime() - parseInstant(normalized.baselines[0].tasks[0].finish).getTime()) / MS_PER_DAY, 2);
+
 }
 if (errors.length) { for (const e of errors) console.log(`XX ${e}`); process.exitCode = 1; }
 console.log(`minutenmodel IFC: ${checks - errors.length}/${checks} groen`);

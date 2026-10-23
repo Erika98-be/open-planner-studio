@@ -27,10 +27,11 @@ export type IFCSaveSource = Pick<
   // Verplicht (review 2026-09-28): als optioneel veld liet een aanroeper met een eigen veldlijst
   // (het IFC-paneel) het stil weg, en verloren alle bewaarde GlobalIds bij Toepassen.
   | 'ifcGlobalIds'
+  | 'minuteModelPending'
 >
   & Partial<Pick<DocumentPayload,
     | 'xerImportMetadata' | 'xerSourceArchive' | 'xerSourceProjectId' | 'importPristine'
-    | 'recordedDates' | 'datesAsRecorded' | 'minuteModelPending'>>;
+    | 'recordedDates' | 'datesAsRecorded'>>;
 
 /**
  * "Datums zoals opgeslagen": in de modus draagt `task.time` op de
@@ -71,7 +72,7 @@ export function buildWriteIFCInput(src: IFCSaveSource): WriteIFCInput {
   const withheld = withheldFieldsFor(src);
   return {
     project: src.project,
-    minuteModelPending: src.minuteModelPending ?? false,
+    minuteModelPending: src.minuteModelPending,
     calendar: src.calendar,
     tasks: src.tasks,
     sequences: src.sequences,

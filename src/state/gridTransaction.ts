@@ -1,3 +1,4 @@
+import { normalizeTaskDates } from './migrations/minuteModel';
 import { isElapsedTask } from '@/engine/scheduler/duration';
 import { produce } from 'immer';
 import { computeReliableResourceLoad, type ResourceLoadResult } from '@/engine/scheduler/ResourceLoad';
@@ -973,6 +974,10 @@ export function prepareGridMutation(
       if (!finalGraph.ok) errors.push(...relationCellErrors(finalGraph.errors));
     }
     if (errors.length === 0 && appliedRelationWrites.length > 1) {
+      for (const [taskId, task] of draftTasksById) {
+        Object.assign(task, normalizeTaskDates(task, draft));
+        draftTasksById.set(taskId, task);
+      }
       const finalRelationIndex = buildTaskRelationIndex(draft.tasks, draft.sequences, draft.cpmResult);
       for (const write of appliedRelationWrites) {
         if (!isParsedRelationTokenArray(write.value)) continue;
