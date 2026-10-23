@@ -404,6 +404,7 @@ Het highlight-blok `#whats-new` en zijn woordenboeken komen **niet** vanzelf mee
    Bij een release met uitsluitend fixes benoemt het blok die verbeteringen.
 3. Genereer in een **aparte tijdelijke kopie** van de bijgewerkte websitecheckout:
    ```bash
+   printf '%s\n' '{"type":"commonjs"}' > package.json # Alleen in de root van de tijdelijke websitekopie; nooit meenemen in de website-PR.
    node scripts/generate-release-notes.js
    node scripts/generate-release-highlights.js
    node scripts/build-i18n-pages.js
