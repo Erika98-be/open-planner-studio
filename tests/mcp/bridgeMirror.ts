@@ -36,6 +36,9 @@ export interface BridgeMirrorOptions {
   buildContext: () => McpContext;
   /** Verwerkt de rauwe JSON-RPC-body (echt: `handleMcpMessage`). */
   handleMessage: (body: string, ctx: McpContext) => Promise<string>;
+  /** Vaste poort (testhulp, geen Rust-contract): zo kan een test een app-herstart op dezelfde poort nadoen.
+   *  Ontbreekt hij, dan kiest het systeem een vrije poort. */
+  port?: number;
 }
 
 export interface BridgeMirror {
@@ -155,7 +158,7 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
 
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => resolve());
+    server.listen(opts.port ?? 0, '127.0.0.1', () => resolve());
   });
   const port = (server.address() as AddressInfo).port;
   return {

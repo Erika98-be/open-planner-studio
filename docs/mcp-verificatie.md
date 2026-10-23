@@ -1,6 +1,6 @@
 # MCP-server: wat geleverd is en hoe het getoetst wordt
 
-Stand 2026-10-22, bij issue #429 (ecosystem readiness, deelpunten MCP en Claude Desktop/Code). Dit document
+Stand 2026-10-23, bij issue #429 (ecosystem readiness, deelpunten MCP en Claude Desktop/Code). Dit document
 legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst. De architectuur zelf staat in
 `.claude/rules/mcp.md`; de gebruikersgids is `public/docs/{nl,en}/howto-ai-assistent-koppelen.md`.
 
@@ -120,18 +120,70 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
      hetzelfde fragment (`type: "http"`, `url`, `headers`).
    - `mcp-remote` 0.15.2 als stdio-brug (de route voor Claude Desktop), met `--header
      "Authorization:${AUTH_HEADER}"` en het token in `env`: verbinding, 41 tools, leestool werkt, zowel met
-     `localhost` als `127.0.0.1`, zonder `--allow-http`. Claude Desktop zelf is niet getest (geen Desktop op
-     Linux in deze omgeving).
+     `localhost` als `127.0.0.1`, zonder `--allow-http`.
+   - Claude Desktop met `mcp-remote` en het fragment uit de gids: getest door de eigenaar op 2026-10-23,
+     tegen de desktop-app. De `.mcpb`-bundel zelf is nog niet in Claude Desktop geïnstalleerd (zie punt 4).
+4. **`tests/mcp/cases-mcpb.ts`** (in `npm test`, suite `tests/mcp/`). Bouwt de Claude Desktop-bundel met
+   `scripts/build-mcpb.mjs`, leest de `.mcpb` met de ZIP-lezer van de app (precies zes bestanden, PNG-icoon,
+   server onder 1 MB, licenties van de SDK erbij) en controleert de manifestvelden waar de stekker op leunt
+   (versie = appversie, `mcp_config`, `user_config.token` verplicht en `sensitive`, `user_config.port`
+   standaard gelijk aan `MCP_DEFAULT_PORT`). Daarna start hij de server **uit de ZIP** zoals Claude Desktop dat
+   doet (`node server/index.mjs`, token en poort in `env`) en praat er met de SDK-client
+   (`StdioClientTransport`) tegen de spiegel uit punt 1: `initialize` met serverInfo en instructions van de
+   bridge, `tools/list` met alle `planner_*`-tools, een leestool; een app-herstart op dezelfde poort (nieuwe
+   sessietabel): de leestool wordt herhaald en slaagt, een `planner_add_tasks` wordt niet uitgevoerd en geeft
+   een heldere fout, daarna slaagt hij één keer; fout token, geen token en een bridge die uit staat geven elk
+   een heldere Engelse fout; start de app daarna, dan verbindt de bundel, stuurt
+   `notifications/tools/list_changed` en werkt de leestool.
+5. **`.github/workflows/mcpb.yml`** (apart, niet in `verify`; draait op elke push naar `main` en op een PR die
+   de bundel raakt). Bouwt de bundel, controleert het manifest met de officiële CLI
+   (`npx @anthropic-ai/mcpb@2.1.2 validate`, vaste versie) en bewaart de `.mcpb` 7 dagen als artifact.
+   `release.yml` doet dezelfde controle in de job `build-mcpb` en zet de bundel als asset bij de release.
 
 ## Claude Code en Claude Desktop
 
 - **Claude Code**: koppelt direct over HTTP. Het fragment uit de app is het `.mcp.json`-formaat van Claude Code.
   Bron: https://code.claude.com/docs/en/mcp (`claude mcp add --transport http <name> <url> --header …`,
   `type: "http"`, `headers`).
-- **Claude Desktop**: de lokale `claude_desktop_config.json` beschrijft servers die Claude Desktop zelf start
-  (`command`, `args`, `env`); de documentatie geeft geen `url`-variant. Bron:
-  https://modelcontextprotocol.io/docs/develop/connect-local-servers. Daarom gaat de koppeling via
-  `mcp-remote` (https://github.com/geelen/mcp-remote), met het token in `env` vanwege de spatiebug op Windows.
+- **Claude Desktop**: Claude Desktop start lokale servers zelf (`command`, `args`, `env`) en praat er via stdio
+  mee; de documentatie geeft geen `url`-variant. Bron:
+  https://modelcontextprotocol.io/docs/develop/connect-local-servers. De eerste route is daarom de
+  **Claude Desktop-bundel** (zie hieronder). De reserve is `mcp-remote` (https://github.com/geelen/mcp-remote)
+  in `claude_desktop_config.json`, met het token in `env` vanwege de spatiebug op Windows; die vraagt Node.js
+  op de computer van de gebruiker.
+
+## Claude Desktop-bundel (`.mcpb`)
+
+Besluit eigenaar (Nozzit, 2026-10-23): een stekker naar de draaiende app, geen losse kern zonder app.
+
+- Formaat: MCP Bundle volgens https://github.com/modelcontextprotocol/mcpb (`MANIFEST.md`, `manifest_version`
+  `0.3`). Een `.mcpb` is een ZIP met `manifest.json`, `icon.png` (het app-icoon, 128×128), `server/index.mjs`,
+  `LICENSE`, `LICENSE.GPL` en `THIRD-PARTY-NOTICES.md`. Claude Desktop installeert hem met een dubbelklik en
+  toont een venster voor de `user_config`: *Token* (verplicht, `sensitive`: afgeschermd ingevoerd en veilig bewaard door
+  Claude Desktop) en *Port* (standaard 3877). Claude Desktop levert zelf Node.js mee; de gebruiker installeert niets.
+- Bron: `integrations/claude-desktop/` (`manifest.json`, `src/proxy.ts`, `src/main.ts`). Bouwen:
+  `npm run build:mcpb` → `dist-mcpb/open-planner-studio-<versie>.mcpb` en de uitgepakte inhoud in
+  `dist-mcpb/bundle/`. De server is één ESM-bestand (esbuild, `node18`, geminificeerd), zonder
+  runtime-dependencies; hij bevat alleen `@modelcontextprotocol/sdk` (`StdioServerTransport`) en zod. De
+  bouw faalt als app-code (`src/`) erin komt of als de manifestversie afwijkt van `package.json`.
+- Versie: `manifest.json` staat in het versieregister van `scripts/bump-version.js` (`npm run bump`,
+  `--check`).
+- Werking: elk stdio-bericht gaat als `POST http://127.0.0.1:<poort>/mcp` naar de bridge, met het token en de
+  `Mcp-Session-Id`; het antwoord gaat ongewijzigd terug. Bewust `127.0.0.1` en niet `localhost`. Berichten
+  lopen strikt na elkaar, net als in de bridge.
+- Draait de app niet, staat de bridge uit of klopt het token niet, dan beantwoordt de bundel `initialize` zelf
+  en biedt hij één tool aan: `open_planner_studio_status`. Elke andere aanroep geeft een Engelse fout die zegt
+  wat de gebruiker moet doen ("Open Planner Studio is not running or the AI bridge is off …", "… refused the
+  token (HTTP 401) …"). Bij elk volgend bericht probeert de bundel opnieuw te verbinden; lukt dat, dan stuurt
+  hij `notifications/tools/list_changed`.
+- Sessieverlies (`404`, de app is herstart): de bundel opent een nieuwe sessie met de oorspronkelijke
+  `initialize`-parameters. Een request dat niets wijzigt (alles behalve `tools/call`, en tools met
+  `readOnlyHint: true` uit de laatste `tools/list`) herhaalt hij. Een wijzigende tool herhaalt hij niet: het
+  drift-anker van de oude sessie is weg, dus de wijziging kon op een ander document landen. Die aanroep krijgt
+  de fout "… this change was NOT carried out …". Na Stop/Start van de bridge in de app blijft de sessie
+  geldig; dan is er geen sessieverlies.
+- Niet getoetst: installeren en het installatievenster in Claude Desktop zelf, en Claude Desktop op Windows en
+  macOS met de bundel. De bundel is niet ondertekend (`mcpb sign`); Claude Desktop meldt dat bij installeren.
 - **Custom connectors** (Claude, *Customize › Connectors*) passen niet: "Claude connects to your remote MCP
   server from Anthropic's cloud infrastructure, rather than from your local device" en de server "must be
   reachable over the public internet". Bron:
@@ -139,8 +191,8 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 
 ## Wat niet geleverd is
 
-- Geen installeerbare bundel: geen `.mcpb` (vroeger `.dxt`) Desktop Extension voor Claude Desktop.
+- Geen ondertekende `.mcpb`: de bundel is niet ondertekend, en er is geen downloadknop in het koppelvenster van de app.
 - Geen Claude-connector en geen interactieve MCP App: de bridge is niet publiek bereikbaar en heeft geen OAuth.
-- Geen stdio-server en geen losse (headless) MCP-server: de tools draaien alleen in een open desktop-app, op het
-  plan dat daar open staat.
+- Geen losse (headless) MCP-server: de tools draaien alleen in een open desktop-app, op het plan dat daar open
+  staat. De stdio-server in de `.mcpb` stuurt alleen door naar die app.
 - Geen MCP-resources, -prompts, -sampling of -notificaties van de server naar de client.
