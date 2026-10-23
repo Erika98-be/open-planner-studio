@@ -364,8 +364,8 @@ test('begeleidingspaneel: wijkt uit voor het anker en keert daarna terug', async
   await page.getByRole('button', { name: 'Start guide', exact: true }).click();
   await expect(panel(page)).toHaveAttribute('data-ops-guide-side', 'start');
   expect(await overlapping(panel(page), rail), 'het paneel ligt niet over het anker').toBe(false);
-  await expectSpotlightAround(page, rail);
-  // Gedaan: de markering verdwijnt, het paneel gaat terug naar rechtsonder.
+  await expect(page.locator('[data-ops-tour-spotlight]')).toHaveCount(0);
+  // Gedaan: het anker telt niet meer, het paneel gaat terug naar rechtsonder.
   await action(page, 'showMe').click();
   await expect(panel(page)).toHaveAttribute('data-ops-guide-done', 'true');
   await expect(panel(page)).toHaveAttribute('data-ops-guide-side', 'end');
