@@ -22,7 +22,7 @@
 //  - PF wordt afgeleid door de bestaande `CPMSolver` te herdraaien op een werkkopie waarin de
 //    al-geplaatste taken hun `levelingDelay` hebben en de gekozen taak (nog) niet — dan is de ES
 //    van de gekozen taak per constructie zijn PF, mét volledige relatie-/lag-/constraint-logica.
-//  - Curve-bewust: dezelfde plaatsingsverdeling als het histogram voedt de capaciteitscheck.
+//  - Curve-bewust: dezelfde `distributeUnits` als het histogram voedt de capaciteitscheck.
 //    Nooit `MATERIAL` nivelleren.
 //
 // VERSE INTERNE CPM-SOLVE: `levelResources` leest de sorteersleutels
@@ -45,12 +45,11 @@ import { CalendarEngine } from './CalendarEngine';
 import { LevelingQueue } from './levelingQueue';
 import { resolveCalendar } from './resolveCalendar';
 import { CPMSolver, type CPMResult, type CPMOptions } from './CPMSolver';
-import { assignmentDayUnits, assignmentPlacementLoad, contourLookup, maxUnitsOn, enumerateWorkDays } from './ResourceLoad';
-import { workPlacement, type PlacementMeasures, type PlacementResult, type WorkPlacement } from './workPlacement';
+import { assignmentDayUnits, contourLookup, maxUnitsOn, enumerateWorkDays } from './ResourceLoad';
 import { enumerateTaskWorkDays, splitGapsFromWorkDayBlocks } from './splitWalk';
 import { createTaskEngineCache } from './taskEngineCache';
 import { isPinnedComplete, isPinnedInProgress } from './duration';
-import { parseDate, parseInstant, formatDate, formatInstant, addCalendarDays, diffCalendarDays } from '@/utils/dateUtils';
+import { parseDate, formatDate, addCalendarDays, diffCalendarDays } from '@/utils/dateUtils';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { maxOf } from '@/utils/collections';
@@ -83,8 +82,6 @@ export interface LevelingPoolLedger {
 }
 
 export interface LevelingOptions {
-  /** F3c levert het opgeloste maatbeleid; dezelfde data gaat naar de lastlezers. */
-  placementMeasures?: PlacementMeasures;
   /** true = smoothing: alleen binnen de totale float schuiven, einddatum heilig, onoplosbare
    *  conflicten blijven gemarkeerd staan. false = leveling: mag de einddatum verschuiven. */
   constrainToFloat: boolean;
@@ -194,60 +191,9 @@ const HARD_SCAN_CAP = 200_000;
  */
 export const LEVELER_TEST_HOOKS = { incremental: true };
 
-export interface LevelingPlacementDemand {
-  days: string[];
-  byResource: Map<string, number[]>;
-  placement?: PlacementResult;
-}
-
-/** Vraag en dagen vormen één kandidaatuitkomst. De volledige startinstant is deel van de sleutel.
- * Ook het einde (actuals/kalendertijd) en de splits horen bij de plaatsing. */
-export function createLevelingPlacementCache(
-  assignments: readonly ResourceAssignment[],
-  engineForTask: (task: Task) => CalendarEngine,
-  measures?: PlacementMeasures,
-) {
-  const cache = new Map<string, LevelingPlacementDemand>();
-  const contours = contourLookup(assignments);
-  const byTask = new Map<string, ResourceAssignment[]>();
-  for (const a of assignments) {
-    const list = byTask.get(a.taskId) ?? [];
-    list.push(a);
-    byTask.set(a.taskId, list);
-  }
-  return {
-    at(task: Task, start: Date, finish?: Date): LevelingPlacementDemand {
-      const key = `${task.id}|${start.getTime()}|${finish?.getTime() ?? ''}|${JSON.stringify(task.splitGaps ?? [])}`;
-      const cached = cache.get(key);
-      if (cached) return cached;
-      const engine = engineForTask(task);
-      const measure = measures?.[task.id] ?? 'minutes';
-      const placement: WorkPlacement = finish ? { start, finish, measure, gaps: task.splitGaps } : {
-        start, measure, gaps: task.splitGaps,
-        duration: measure === 'workdays' ? task.time.scheduleDuration
-          : task.time.durationMinutes ?? task.time.scheduleDuration * engine.hoursPerDay * 60,
-      };
-      const placed = workPlacement(engine, placement);
-      const result: LevelingPlacementDemand = { days: placed.days.map(d => d.iso), byResource: new Map(), placement: placed };
-      for (const a of byTask.get(task.id) ?? []) {
-        const load = assignmentPlacementLoad(task, a, engine, placement, contours(task, a), placed);
-        const previous = result.byResource.get(a.resourceId);
-        result.byResource.set(a.resourceId, load.units.map((u, i) => u + (previous?.[i] ?? 0)));
-      }
-      cache.set(key, result);
-      return result;
-    },
-  };
-}
-
 /** De volledige argumentenlijst van `levelResources`, als plain data — dezelfde invoer voor de
  *  synchrone route en de Web Worker van de nivelleer-dialoog (`services/leveling/`). */
 export type LevelingInput = Parameters<typeof levelResources>;
-
-/** Tot F3c blijft een taak met datums zonder tijd op de bestaande dagslotas. */
-function placementDate(task: Task, iso: string): Date {
-  return task.time.earlyStart.includes('T') ? parseInstant(iso) : parseDate(iso);
-}
 
 export function levelResources(
   tasks: Task[],
@@ -298,11 +244,9 @@ export function levelResources(
   // daar is ELKE kalenderdag een geldige kandidaat, spiegelt `CPMSolver.shiftByLevelingDelay`s
   // `addElapsedMinutes`-tak.
   const nextCandidateFor = (task: Task, d: Date): Date =>
-    task.time.durationType === 'ELAPSEDTIME' ? d : task.time.earlyStart.includes('T')
-      ? engineForTask(task).nextWorkInstant(d) : engineForTask(task).nextWorkDay(d);
+    task.time.durationType === 'ELAPSEDTIME' ? d : engineForTask(task).nextWorkDay(d);
   const nextCandidateAfterFor = (task: Task, d: Date): Date =>
-    task.time.durationType === 'ELAPSEDTIME' ? addCalendarDays(d, 1) : task.time.earlyStart.includes('T')
-      ? engineForTask(task).nextWorkInstant(addCalendarDays(d, 1)) : engineForTask(task).nextWorkDayAfter(d);
+    task.time.durationType === 'ELAPSEDTIME' ? addCalendarDays(d, 1) : engineForTask(task).nextWorkDayAfter(d);
 
   const capacityOf = (resId: string, iso: string): number => {
     const r = resById.get(resId);
@@ -398,10 +342,10 @@ export function levelResources(
   // out-of-scope-delays — referentiepunt: de huidige projecteinddatum, mét bestaande nivellering). `0` ⇒
   // identiek aan `constrainToFloat: true`. Staan beide aan, dan wint het STRENGSTE venster.
   const windowLimit = (id: string): Date | null => {
-    const t = taskById.get(id)!;
-    const ls = placementDate(t, baseLs(id));
+    const ls = parseDate(baseLs(id));
     const ceilingDays = options.overrunCeilingDays;
     if (ceilingDays === undefined) return options.constrainToFloat ? ls : null;
+    const t = taskById.get(id)!;
     const ceiling = t.time.durationType === 'ELAPSEDTIME'
       ? addCalendarDays(ls, ceilingDays)
       : engineForTask(t).addWorkingDaysSigned(ls, ceilingDays);
@@ -415,10 +359,10 @@ export function levelResources(
   // PF liggen), maar het EINDE schuift wél mee met elk ingevoegd gat — en het plafond gaat over de
   // EINDdatum, dus dát is wat hier gebonden moet worden, niet de start.
   const finishWindowLimit = (id: string): Date | null => {
-    const t = taskById.get(id)!;
-    const lf = placementDate(t, baseLf(id));
+    const lf = parseDate(baseLf(id));
     const ceilingDays = options.overrunCeilingDays;
     if (ceilingDays === undefined) return options.constrainToFloat ? lf : null;
+    const t = taskById.get(id)!;
     const ceiling = t.time.durationType === 'ELAPSEDTIME'
       ? addCalendarDays(lf, ceilingDays)
       : engineForTask(t).addWorkingDaysSigned(lf, ceilingDays);
@@ -459,10 +403,10 @@ export function levelResources(
   // `CPMSolver.forwardPass` negeren `levelingDelay`, dus beide horen NOOIT een delay te krijgen en
   // WEL als vaste last te boeken.
   const isImmovableTask = (task: Task): boolean => isCompletedTask(task) || isInProgressTask(task);
-  // Overgang voor datums zonder tijd: `occurrenceFor` wordt per kandidaatdag
+  // `occurrenceFor` wordt in de kandidaat-scan van `findSlot` per kandidaatdag
   // opnieuw berekend, en daarna nóg eens door `bookDemandAt` voor de gekozen dag — telkens een
   // volledige `splitDayPattern` + kalenderwandeling. Het antwoord hangt uitsluitend af van
-  // (taak, startmoment) en beide zijn binnen één `levelResources`-aanroep onveranderlijk, dus
+  // (taak, startdag) en beide zijn binnen één `levelResources`-aanroep onveranderlijk, dus
   // memoiseren is zuiver. UITZONDERING: de onderbreek-modus (`allowSplits`) kent een taak
   // NIEUWE `splitGaps` toe tijdens de run — die MOET daarna `occCache.delete(...)` voor die taak
   // doen; zie de aanroepplek daar.
@@ -491,7 +435,7 @@ export function levelResources(
   };
   const occurrenceFor = (task: Task, startDate: Date): string[] => {
     if (isNaN(startDate.getTime())) return []; // niet cachen: geen sleutel te maken
-    const key = `${task.id}|${startDate.getTime()}`;
+    const key = `${task.id}|${formatDate(startDate)}`;
     const hit = occCache.get(key);
     if (hit) return hit;
     const result = computeOccurrence(task, startDate);
@@ -499,8 +443,6 @@ export function levelResources(
     return result;
   };
 
-  // Dagslotvraag voor het oude datumcontract en de vraagselectie. Expliciete momenten krijgen
-  // hieronder via `demandAt` hun eigen plaatsingsvraag per kandidaat.
   // Dagvraag per taak per geselecteerde resource: som van distributeUnits over alle assignments
   // van die taak op die resource (multi-assignment naar dezelfde resource telt op).
   // Dezelfde `assignmentDayUnits` als het histogram — opgeslagen contour of exacte curve als data,
@@ -523,23 +465,6 @@ export function levelResources(
       byRes.set(a.resourceId, [...arr]);
     }
   }
-
-  const placementCache = createLevelingPlacementCache(
-    assignments.filter(a => selectedIds.has(a.resourceId)), engineForTask, options.placementMeasures,
-  );
-  const demandAt = (task: Task, start: Date): LevelingPlacementDemand => {
-    if (!task.time.earlyStart.includes('T')) return {
-      days: occurrenceFor(task, start), byResource: demandByTask.get(task.id) ?? new Map(),
-    };
-    let finish: Date | undefined;
-    if (task.time.durationType === 'ELAPSEDTIME' || isCompletedTask(task)) {
-      const base = baseline.tasks.get(task.id);
-      const baseStart = parseInstant(base?.earlyStart ?? task.time.earlyStart);
-      const baseFinish = parseInstant(base?.earlyFinish ?? task.time.earlyFinish);
-      finish = new Date(baseFinish.getTime() + start.getTime() - baseStart.getTime());
-    }
-    return placementCache.at(task, start, finish);
-  };
 
   // Indeling: movable (mag schuiven) vs. gefixeerd (vastgepind) vs. ONVERPLAATSBAAR (voltooid ÓF in
   // uitvoering — `isImmovableTask`) vs. BUITEN SCOPE vs.
@@ -606,9 +531,8 @@ export function levelResources(
   // een VORIGE nivellering hier als brondata gelezen worden.
   const bookDemandAt = (taskId: string, startDate: Date, toPoolLedger: boolean, occOverride?: string[]): string[] => {
     const task = workById.get(taskId)!;
-    const demand = demandAt(task, startDate);
-    const occ = occOverride ?? demand.days;
-    const byRes = demand.byResource;
+    const occ = occOverride ?? occurrenceFor(task, startDate);
+    const byRes = demandByTask.get(taskId)!;
     for (const [resId, arr] of byRes) {
       const poolItem = ledger && toPoolLedger ? ledger.poolItemOf(resId) : null;
       for (let i = 0; i < arr.length && i < occ.length; i++) {
@@ -683,7 +607,7 @@ export function levelResources(
     const startIso = baseEs(id);
     // `toPoolLedger: true` — een onverplaatsbare of out-of-scope taak bezet de
     // pool ECHT (ze is per definitie al geplaatst, dus geen "niet-plaatsbaar = geen cascade"-geval).
-    bookDemandAt(id, placementDate(workById.get(id)!, startIso), true);
+    bookDemandAt(id, parseDate(startIso), true);
     placedStartIso.set(id, startIso);
   }
 
@@ -749,7 +673,7 @@ export function levelResources(
       if (forward) globallyStale = false;
     }
     if (forward) {
-      return placementDate(workById.get(id)!, forward.earlyStart(id) ?? workById.get(id)!.time.earlyStart);
+      return parseDate(forward.earlyStart(id) ?? workById.get(id)!.time.earlyStart);
     }
     if (globallyStale) {
       const solver = new CPMSolver(workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions);
@@ -757,7 +681,7 @@ export function levelResources(
       globallyStale = false;
     }
     const es = pfEarlyStart.get(id);
-    return placementDate(workById.get(id)!, es ?? workById.get(id)!.time.earlyStart);
+    return es ? parseDate(es) : parseDate(workById.get(id)!.time.earlyStart);
   };
 
   let remaining = sortedActive.length;
@@ -823,11 +747,6 @@ export function levelResources(
         // entries, anders valt een latere aanroep op de oude (voor-scatter) dagenset.
         for (const key of [...occCache.keys()]) if (key.startsWith(`${pick}|`)) occCache.delete(key);
       }
-      if (slot.scatterGaps) {
-        workById.get(pick)!.splitGaps = slot.scatterGaps;
-        gapsOut[pick] = slot.scatterGaps;
-        markChanged(pick);
-      }
     }
 
     // "Niet-plaatsbaar = tekort per document, geen cascade" — alleen een taak die daadwerkelijk een passend venster kreeg (`slotUnresolved`
@@ -837,7 +756,7 @@ export function levelResources(
     // feitelijk overboeking is, is geen motorprobleem: dat is een tekort op poolniveau, voor de
     // verdeler.
     bookDemandAt(pick, startDate, slotUnresolved.length === 0, scatterDays);
-    placedStartIso.set(pick, formatInstant(startDate, pickedTask.time.earlyStart.includes('T') ? 'hour' : 'day'));
+    placedStartIso.set(pick, formatDate(startDate));
     // Gemeten in DEZELFDE eenheid als `CPMSolver.forwardPass`'s `shiftByLevelingDelay`
     // (CPMSolver.ts) straks bij de TOEPASSING van deze `levelingDelay` gebruikt — twee aparte takken,
     // niet één kalender-keuze:
@@ -854,13 +773,13 @@ export function levelResources(
     // `shiftByLevelingDelay` bij toepassing verschuift (`check-leveler-splits.ts`, ELAPSEDTIME-delay).
     const delay = pickedTask.time.durationType === 'ELAPSEDTIME'
       ? diffCalendarDays(pf, startDate)
-      : engineForTask(pickedTask).workDaysBetween(parseDate(formatDate(pf)), parseDate(formatDate(startDate))) - 1;
+      : engineForTask(pickedTask).workDaysBetween(pf, startDate) - 1;
     if (delay > 0) delays[pick] = delay;
     if (slotUnresolved.length > 0) {
       unresolved[pick] = slotUnresolved;
       if (slotReason) unresolvedReasons[pick] = slotReason;
       if (slotReason === 'INTRINSIC_OVERRUN') {
-        const detail = intrinsicOverrunFor(demandAt(workById.get(pick)!, startDate).byResource);
+        const detail = intrinsicOverrunFor(demandByTask.get(pick)!);
         if (detail) intrinsicOverruns[pick] = detail;
       }
     }
@@ -925,7 +844,7 @@ export function levelResources(
     taskId: string,
     pf: Date,
     limit: Date | null,
-  ): { start: Date; unresolved: string[]; reason?: LevelingReason; scatterDays?: string[]; scatterGaps?: TaskSplitGap[] } {
+  ): { start: Date; unresolved: string[]; reason?: LevelingReason; scatterDays?: string[] } {
     // `task` komt uit `workById`, niet `taskById` — `findSlot` wordt uitsluitend
     // aangeroepen voor movable/vastgepinde (dus per definitie IN-SCOPE) taken, dus dit is precies de
     // GESTRIPTE baseline. Zonder deze wissel zou `occurrenceFor` hieronder (via `computeOccurrence`)
@@ -934,7 +853,7 @@ export function levelResources(
     // vanuit gaat, en de idempotentie zou stuklopen. Zie `bookDemandAt`
     // hierboven voor dezelfde wissel en dezelfde motivering.
     const task = workById.get(taskId)!;
-    let byRes = demandAt(task, nextCandidateFor(task, pf)).byResource;
+    const byRes = demandByTask.get(taskId)!;
 
     // Reset de reden-sturing bij elke aanroep — zie de declaratie hierboven bij `booked`/`bookedOn`.
     // Zonder grootboek (`ledger === undefined`) blijft dit `false`, dus de RESIDUAL_FULL-tak in
@@ -966,9 +885,7 @@ export function levelResources(
     // de lus — zetten hem op `true`.
     let horizonExhausted = false;
     while (guard++ < HARD_SCAN_CAP) {
-      const demand = demandAt(task, cand);
-      const occ = demand.days;
-      byRes = demand.byResource;
+      const occ = occurrenceFor(task, cand);
       if (!calendarFeasibleSeen && calendarOk(byRes, occ)) calendarFeasibleSeen = true;
       // Een LEEG kandidaatvenster (`occ.length === 0`) telt NIET als passend.
       // `fits` is triviaal waar op een lege dagenset (de binnenlus over `occ` loopt gewoon nul keer),
@@ -1000,12 +917,7 @@ export function levelResources(
     // vroegst mogelijke onderbroken plaatsing. Gebonden door `finishWindowLimit` (de FINISH-versie
     // van het plafond, niet de start-`limit` hierboven) — zie het docblok daar.
     if (splitEligible(task)) {
-      const momentScatter = task.time.earlyStart.includes('T')
-        ? scatterMomentSlot(task, pf, finishWindowLimit(taskId)) : null;
-      if (momentScatter?.gaps) return {
-        start: momentScatter.start!, unresolved: [], scatterGaps: momentScatter.gaps,
-      };
-      const scatter = momentScatter ?? scatterSlot(taskId, pf, finishWindowLimit(taskId));
+      const scatter = scatterSlot(taskId, pf, finishWindowLimit(taskId));
       // Een LEGE dagenset is geen plaatsing. `scatterSlot` geeft
       // `[]` terug zodra `need === 0` (`chosen.length === need` is dan meteen waar), en `[]` is
       // truthy — `parseDate(scatterDays[0])` zou er een Invalid Date van maken, die als `start` de
@@ -1024,9 +936,7 @@ export function levelResources(
     // Geen slot: blijf op de gesnapte PF, verzamel de conflictdagen (waar de vraag de restcapaciteit
     // overschrijdt) — dezelfde dagenset (`occurrenceFor`) als de boeking straks zou gebruiken.
     const snappedPf = nextCandidateFor(task, pf);
-    const fallback = demandAt(task, snappedPf);
-    const occ = fallback.days;
-    byRes = fallback.byResource;
+    const occ = occurrenceFor(task, snappedPf);
     const conflicts: string[] = [];
     for (const [resId, arr] of byRes) {
       // Naast de projecttoets ook de pool-tak: anders blijft een taak die UITSLUITEND op het
@@ -1163,45 +1073,6 @@ export function levelResources(
     return true;
   }
 
-  /** Momenten: voeg bij de eerste conflictdag één echte werkdag pauze in en herbereken de HELE
-   * kandidaat. Een korte dag mag nooit de dagvraag van een eerdere plaatsing meekrijgen.
-   * Bestaande gaten verschuiven mee op hun cumulatieve minutenas. */
-  function scatterMomentSlot(task: Task, pf: Date, finishLimit: Date | null): {
-    days: null; gaps?: TaskSplitGap[]; start?: Date; horizonExhausted: boolean;
-  } {
-    let start = nextCandidateFor(task, pf);
-    const engine = engineForTask(task);
-    let gaps = [...(task.splitGaps ?? [])];
-    const horizon = ledger?.horizonIso ? parseDate(ledger.horizonIso) : null;
-    for (let scan = 0; scan < HARD_SCAN_CAP; scan++) {
-      const candidate = demandAt({ ...task, splitGaps: gaps }, start);
-      const placed = candidate.placement!;
-      if (finishLimit && placed.finish > finishLimit) return { days: null, horizonExhausted: false };
-      if (candidate.days.length > 0 && fits(candidate.byResource, candidate.days)) {
-        return { days: null, gaps, start, horizonExhausted: false };
-      }
-      const index = candidate.days.findIndex((iso, i) => !dayFits(candidate.byResource, i, iso));
-      if (index < 0) return { days: null, horizonExhausted: false };
-      const day = placed.days[index];
-      const axis = day.ranges[0].afterMinutes;
-      // Een onderbreking is een hele effectieve werkdag; aanvang midden op de dag behoudt
-      // zijn klokmoment, zoals een dagverschuiving in de nivelleerder.
-      if (axis === 0) {
-        // Vóór het eerste werk is dit uitstel, geen split met een ongeldig openingsgat.
-        start = nextCandidateAfterFor(task, start);
-      } else {
-        const pause = engine.effectiveBandsOn(parseDate(day.iso)).reduce((sum, b) => sum + b.end - b.start, 0);
-        gaps = gaps.map(g => g.afterMinutes >= axis ? { ...g, afterMinutes: g.afterMinutes + pause } : g);
-        gaps.push({ afterMinutes: axis, gapMinutes: pause, source: 'leveling' });
-        gaps.sort((a, b) => a.afterMinutes - b.afterMinutes);
-      }
-      if (scan + 1 >= scanLimit && !(horizon && parseDate(day.iso) <= horizon)) {
-        return { days: null, horizonExhausted: true };
-      }
-    }
-    return { days: null, horizonExhausted: true };
-  }
-
   /** Dag-voor-dag-plaatsing. Geeft de gekozen werkdagen (ISO, oplopend) in
    *  `days`, of `days: null` wanneer er binnen het venster geen volledige set te vinden is.
    *  `finishLimit` begrenst de LAATSTE dag (niet de start): met onderbrekingen groeit de FINISH van
@@ -1308,6 +1179,5 @@ function computePF(
   const solver = new CPMSolver(workTasks, sequences, projectCalendar, registry, cpmOptions);
   const res = solver.solve();
   const r = res.tasks.get(taskId);
-  const task = workTasks.find(t => t.id === taskId)!;
-  return placementDate(task, r?.earlyStart ?? task.time.earlyStart);
+  return r ? parseDate(r.earlyStart) : parseDate(workTasks.find(t => t.id === taskId)!.time.earlyStart);
 }

@@ -1,7 +1,7 @@
 // Belasting-/overallocatie-engine. Twee bouwstenen:
-// `assignmentPlacementLoad` deelt werk over concrete werkblokken en deeldagen; het histogram
-// en de nivelleerder gebruiken dezelfde uitkomst. Het oude dagslotpad (`assignmentDayUnits`
-// met `distributeUnits`) blijft beschikbaar voor datums zonder tijd, tot de F3c-/F4b-aansluiting.
+// `distributeUnits` (curve-verdeling van eenheden over de duur van een toewijzing — de ENE
+// functie die zowel het histogram als de nivelleerder voedt) en `computeResourceLoad`
+// (dag-granulaire belasting/capaciteit/overallocatie over alle resources+toewijzingen).
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
 import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { groupBy } from '@/utils/collections';
@@ -14,13 +14,13 @@ import { CalendarEngine } from './CalendarEngine';
 import { resolveCalendar } from './resolveCalendar';
 import { enumerateTaskWorkDays } from './splitWalk';
 import { createTaskEngineCache } from './taskEngineCache';
-import { workPlacement, type PlacementDay, type PlacementMeasure, type PlacementMeasures, type PlacementResult, type WorkPlacement } from './workPlacement';
+import { workPlacement, type PlacementDay, type PlacementResult, type WorkPlacement } from './workPlacement';
 import { isPinnedComplete } from './duration';
 import {
   CONTOUR_SHAPE_VALUES, CURVE_TO_SHAPE, matchContoursToAssignments, periodsToWorkDaySlots,
   slotWeightsFromValues,
 } from '@/engine/contour/contourEngine';
-import { parseDate, parseInstant, formatDate, addCalendarDays, addCalendarMonths, getMonthStart, getWeekStart } from '@/utils/dateUtils';
+import { parseDate, formatDate, addCalendarDays, addCalendarMonths, getMonthStart, getWeekStart } from '@/utils/dateUtils';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 
 /** Controlepunten per curve: (t ∈ [0,1] = positie in de duur, gewicht). Lineair geïnterpoleerd
@@ -246,8 +246,10 @@ export interface AssignmentPlacementLoad {
 }
 
 /**
- * Gegevenscontract voor histogram, nivelleerder en (F4b) contourdialoog. De plaatsing en effectieve
- * maat komen van de aanroeper. Bestaande curve-/werkverdeling blijft de bron: haar slots worden
+ * Voorbereidend gegevenscontract voor histogram, nivelleerder en (F4b) contourdialoog.
+ * Productie sluit pas aan in F3c, samen met het maatbeleid en de minuutvertraging.
+ * De plaatsing en effectieve maat komen van de aanroeper. Bestaande curve-/werkverdeling blijft
+ * de bron: haar slots worden
  * naar rato van overlap op de bezette dagdelen gelegd, zonder nieuwe curvevorm of afronding.
  * Contourperiodes liggen op de fysieke split-as en worden rechtstreeks met werkblokken gesneden.
  */
@@ -315,23 +317,6 @@ export function assignmentPlacementLoad(
     return load * scale;
   });
   return { days, units };
-}
-
-/** Overgang tot F3c: datums zonder tijd houden het bestaande dagslotcontract. Momenten krijgen
- * standaard de minutenmaat; F3c levert het opgeloste maatbeleid expliciet aan, ook voor dagtaken. */
-export function taskAssignmentLoad(
-  task: Task, assignment: ResourceAssignment, engine: CalendarEngine,
-  contour: TaskTimephasedContour | null, measure: PlacementMeasure = 'minutes',
-): { isos: string[]; units: number[] } {
-  if (task.time.earlyStart.includes('T') && task.time.earlyFinish.includes('T')) {
-    const result = assignmentPlacementLoad(task, assignment, engine, {
-      start: parseInstant(task.time.earlyStart), finish: parseInstant(task.time.earlyFinish),
-      measure, gaps: task.splitGaps,
-    }, contour);
-    return { isos: result.days.map(d => d.iso), units: result.units };
-  }
-  const units = assignmentDayUnits(task, assignment, engine.hoursPerDay * 60, contour);
-  return { isos: taskWorkDayIsos(task, engine, Math.max(task.time.scheduleDuration, units.length)), units };
 }
 
 /** ISO-datum → belaste/beschikbare eenheden. Alleen dagen met >0 belasting of capaciteit
@@ -417,7 +402,6 @@ export function computeResourceLoad(
   tasks: Task[],
   projectCalendar: WorkCalendar,
   resourceCalendars: WorkCalendar[],
-  placementMeasures?: PlacementMeasures,
 ): ResourceLoadResult {
   const load: Record<string, DailyLoad> = {};
   const capacity: Record<string, DailyLoad> = {};
@@ -449,8 +433,10 @@ export function computeResourceLoad(
   for (const a of validAssignments) {
     const task = taskById.get(a.taskId)!;
     const taskEngine = engineForTask(task);
-    const { units: days, isos: workDayIsos } = taskAssignmentLoad(task, a, taskEngine, contourOf(task, a), placementMeasures?.[task.id]);
+    const days = assignmentDayUnits(task, a, taskEngine.hoursPerDay * 60, contourOf(task, a));
     if (days.length === 0) continue;
+    const durationDays = Math.max(task.time.scheduleDuration, days.length);
+    const workDayIsos = taskWorkDayIsos(task, taskEngine, durationDays);
 
     if (!load[a.resourceId]) load[a.resourceId] = {};
     const bucket = load[a.resourceId];
@@ -528,11 +514,10 @@ export function computeReliableResourceLoad(
   tasks: Task[],
   projectCalendar: WorkCalendar,
   resourceCalendars: WorkCalendar[],
-  placementMeasures?: PlacementMeasures,
 ): ResourceLoadResult | null {
   return cpmResult?.error
     ? null
-    : computeResourceLoad(resources, assignments, tasks, projectCalendar, resourceCalendars, placementMeasures);
+    : computeResourceLoad(resources, assignments, tasks, projectCalendar, resourceCalendars);
 }
 
 /** Vlakke `maxUnits`, tenzij `availabilitySteps` een latere stap ≤ `iso` heeft — dan geldt de
@@ -598,7 +583,6 @@ export interface HistogramReport {
 }
 
 export interface HistogramInput {
-  placementMeasures?: PlacementMeasures;
   tasks: Task[];
   sequences: Sequence[];
   assignments: ResourceAssignment[];
@@ -641,8 +625,10 @@ export function computeHistogramReport(input: HistogramInput): HistogramReport {
     const task = taskById.get(a.taskId);
     if (!task || task.isMilestone || isSummaryTask(task)) continue;
     const taskEngine = engineForTask(task);
-    const { units: dist, isos: workDayIsos } = taskAssignmentLoad(task, a, taskEngine, contourOf(task, a), input.placementMeasures?.[task.id]);
+    const dist = assignmentDayUnits(task, a, taskEngine.hoursPerDay * 60, contourOf(task, a));
     if (dist.length === 0) continue;
+    const durationDays = Math.max(task.time.scheduleDuration, dist.length);
+    const workDayIsos = taskWorkDayIsos(task, taskEngine, durationDays);
     const daily = new Map<string, number>();
     for (let i = 0; i < dist.length && i < workDayIsos.length; i++) {
       const iso = workDayIsos[i];
