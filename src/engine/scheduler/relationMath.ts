@@ -690,10 +690,9 @@ function forwardHour(
         }
         if (succIsFinishMs && pe.isHourMode && se.isHourMode) {
           const back = deps.snapOnOrBefore(se, target);
-          // N1 geldt alleen voor dezelfde blokgrens; ma 18:00 mag niet naar ma 16:00.
-          if (back.getTime() === target.getTime()
-            || (se.nextWorkInstant(back).getTime() === target.getTime()
-              && lagEng.workMinutesBetween(back, target) === 0)) return back;
+          // Kalendertijd bewaart de kloktijdgrens: nul werkminuten maakt ma 16:00 en di 08:00
+          // niet gelijk. Een geldig eindmoment blijft staan, een later blokbegin gaat niet terug.
+          if (back.getTime() === target.getTime()) return back;
         }
         return se.availableStart(target);
       }
