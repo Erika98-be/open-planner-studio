@@ -1,5 +1,5 @@
 // Doorstuurlogica van de Claude Desktop-bundel (`.mcpb`): stdio-berichten van Claude Desktop gaan
-// één voor één als HTTP-POST naar de AI-bridge van de draaiende desktop-app, en de antwoorden gaan
+// één voor één als HTTP-POST naar de MCP-bridge van de draaiende desktop-app, en de antwoorden gaan
 // terug. De bundel bevat geen planner: zonder draaiende app is er niets om mee te praten.
 //
 // Het HTTP-contract van de bridge staat in `src-tauri/src/mcp_bridge.rs` (kopie voor tests:
@@ -66,31 +66,31 @@ export function failureMessage(failure: ProxyFailure, port: number): string {
   const settings = 'the settings of the Open Planner Studio extension in Claude Desktop (Settings › Extensions)';
   switch (failure.kind) {
     case 'no-token':
-      return 'No token is set for Open Planner Studio. Ask the user to open Open Planner Studio, go to the AI tab, '
+      return 'No token is set for Open Planner Studio. Ask the user to open Open Planner Studio, go to the MCP tab, '
         + `click "Connect" under "Connection", copy the token and paste it into "Token" in ${settings}.`;
     case 'token':
-      return 'Open Planner Studio refused the token (HTTP 401). Ask the user to copy the token again from the AI tab '
+      return 'Open Planner Studio refused the token (HTTP 401). Ask the user to copy the token again from the MCP tab '
         + `in Open Planner Studio ("Connection" › "Connect") and paste it into "Token" in ${settings}. `
         + 'A new token in the app breaks every existing connection.';
     case 'unreachable':
-      return `Open Planner Studio is not running or the AI bridge is off: nothing answers on http://127.0.0.1:${port}/mcp. `
-        + 'Ask the user to open the Open Planner Studio desktop app, go to the AI tab and click "Start bridge". '
+      return `Open Planner Studio is not running or the MCP bridge is off: nothing answers on http://127.0.0.1:${port}/mcp. `
+        + 'Ask the user to open the Open Planner Studio desktop app, go to the MCP tab and click "Start bridge". '
         + `If the app uses another port than ${port}, change "Port" in ${settings}.`;
     case 'timeout':
       return `Open Planner Studio did not answer within ${Math.round(DEFAULT_REQUEST_TIMEOUT_MS / 1000)} seconds. `
         + 'It is not known whether the request was carried out. Ask the user to check the app '
-        + '(an open dialog blocks the AI) and read the plan again before you retry a change.';
+        + '(an open dialog blocks the MCP client) and read the plan again before you retry a change.';
     case 'refused':
       return `Open Planner Studio refused the connection: ${failure.message}`;
     case 'http':
-      return `Something answers on port ${port}, but it is not the Open Planner Studio AI bridge (HTTP ${failure.status}). `
-        + `Ask the user to check the port on the AI tab in the app and in ${settings}.`;
+      return `Something answers on port ${port}, but it is not the Open Planner Studio MCP bridge (HTTP ${failure.status}). `
+        + `Ask the user to check the port on the MCP tab in the app and in ${settings}.`;
   }
 }
 
 /** Fout voor een wijzigende tool na sessieverlies: hij is bewust niet herhaald. */
 export const SESSION_RESET_MESSAGE =
-  'The connection to Open Planner Studio was reset (the app or its AI bridge restarted), so this change was NOT carried out. '
+  'The connection to Open Planner Studio was reset (the app or its MCP bridge restarted), so this change was NOT carried out. '
   + 'The connection is restored now. Check the active plan first (for example with planner_get_project_info), then send the change again.';
 
 export interface BridgeProxyOptions {
@@ -129,7 +129,7 @@ const STATUS_TOOL = {
   name: STATUS_TOOL_NAME,
   title: 'Open Planner Studio connection status',
   description: 'Checks the connection to the Open Planner Studio desktop app. The planner_ tools appear only while the app '
-    + 'runs with its AI bridge started. Call this tool when they are missing: it connects if it can, and otherwise '
+    + 'runs with its MCP bridge started. Call this tool when they are missing: it connects if it can, and otherwise '
     + 'explains what the user must do.',
   inputSchema: { type: 'object', properties: {} },
   annotations: { readOnlyHint: true, openWorldHint: false },

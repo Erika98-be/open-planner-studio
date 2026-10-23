@@ -286,7 +286,7 @@ test('bridge uit: een heldere fout; daarna start de app en verschijnen de tools'
     assertEq(await toolNames(s), [STATUS_TOOL_NAME], 'toollijst zonder app');
     const res = await call(s, 'planner_get_project_info');
     assert(res.isError, 'leestool hoort te falen');
-    assert(res.text.startsWith('Open Planner Studio is not running or the AI bridge is off'), `bridge uit: ${res.text}`);
+    assert(res.text.startsWith('Open Planner Studio is not running or the MCP bridge is off'), `bridge uit: ${res.text}`);
     assert(res.text.includes(`127.0.0.1:${port}`), 'de fout noemt de poort');
 
     const late = await startMirror(port);

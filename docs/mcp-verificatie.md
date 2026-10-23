@@ -173,7 +173,7 @@ Besluit eigenaar (Nozzit, 2026-10-23): een stekker naar de draaiende app, geen l
   lopen strikt na elkaar, net als in de bridge.
 - Draait de app niet, staat de bridge uit of klopt het token niet, dan beantwoordt de bundel `initialize` zelf
   en biedt hij één tool aan: `open_planner_studio_status`. Elke andere aanroep geeft een Engelse fout die zegt
-  wat de gebruiker moet doen ("Open Planner Studio is not running or the AI bridge is off …", "… refused the
+  wat de gebruiker moet doen ("Open Planner Studio is not running or the MCP bridge is off …", "… refused the
   token (HTTP 401) …"). Bij elk volgend bericht probeert de bundel opnieuw te verbinden; lukt dat, dan stuurt
   hij `notifications/tools/list_changed`.
 - Sessieverlies (`404`, de app is herstart): de bundel opent een nieuwe sessie met de oorspronkelijke
