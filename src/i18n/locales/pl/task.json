@@ -181,7 +181,6 @@
       "calendar": "Wybierz kalendarz z listy.",
       "calendarNotFound": "Wybrany kalendarz nie istnieje.",
       "calendarHours": "Kalendarz tego zadania nie ma godzin pracy na dzień.",
-      "hourPlanningDisabled": "Planowanie godzinowe jest wyłączone w oknie Ustawienia.",
       "durationConversionNotExact": "Tego czasu trwania nie da się dokładnie przeliczyć na drugą jednostkę.",
       "milestoneRequired": "To pole dotyczy tylko kamieni milowych.",
       "milestoneUnavailable": "Zadanie sumaryczne z podzadaniami nie może stać się kamieniem milowym.",
@@ -337,9 +336,6 @@
     "days": "Dni",
     "hours": "Godziny",
     "invalid": "Wprowadź całkowitą liczbę dni lub godzin, na przykład 2d albo 12h.",
-    "enableHourPlanningFirst": "Włącz planowanie godzinowe, aby edytować to zadanie godzinowe.",
-    "enableHourPlanning": "Włącz planowanie godzinowe",
-    "requiresWorkBlocks": "Ten kalendarz nie ma prawidłowych godzin pracy. Sprawdź dni i godziny pracy.",
     "conversionNotExact": "{{value}} nie daje pełnych dni w tym kalendarzu. Jednostka się nie zmieniła.",
     "unitInfo": "Wybrana jednostka należy do tego zadania. Dni liczą dni robocze, a godziny liczą godziny pracy w kalendarzu. Inny kalendarz nie zmienia jednostki ani wpisanego czasu, ale może zmienić datę zakończenia."
   },

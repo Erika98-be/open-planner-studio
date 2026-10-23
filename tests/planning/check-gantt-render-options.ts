@@ -515,7 +515,7 @@ const baseInput: GanttRenderOptionsInput = {
   enableQuarterHourZoom: true,
   effectiveCalById: new Map(),
   barSplitMode: 'always',
-  enableHourPlanning: false,
+
   durationDisplay: 'auto',
   durationSuffixes: { day: 'd', hour: 'u', minute: 'm' },
   externalStaleLabel: 'verouderd (NL-test)',
@@ -600,7 +600,6 @@ const passthrough: [string, unknown, unknown][] = [
   ['enableQuarterHourZoom', optsOk.enableQuarterHourZoom, baseInput.enableQuarterHourZoom],
   ['effectiveCalById', optsOk.effectiveCalById, baseInput.effectiveCalById],
   ['barSplitMode', optsOk.barSplitMode, baseInput.barSplitMode],
-  ['enableHourPlanning', optsOk.enableHourPlanning, baseInput.enableHourPlanning],
   ['durationDisplay', optsOk.durationDisplay, baseInput.durationDisplay],
   ['durationSuffixes', optsOk.durationSuffixes, baseInput.durationSuffixes],
   ['externalStaleLabel', optsOk.externalStaleLabel, baseInput.externalStaleLabel],
@@ -625,7 +624,7 @@ if (optsOk.axis !== axis) diffs.push('30 axis: renderer krijgt niet dezelfde as-
 const optsSecondary = buildGanttRenderOptions({
   ...baseInput,
   view: { ...baseInput.view, zoom: 12, scrollX: 400 },
-  enableHourPlanning: undefined,
+
   durationDisplay: undefined,
   durationSuffixes: undefined,
   externalStaleLabel: undefined,

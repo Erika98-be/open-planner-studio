@@ -184,7 +184,7 @@ const lagsByLink = (r: ImportResult) => {
   const openCsv = (lag: string) => {
     S().applyLoadedProject(readCSV(csvOf(['WBS', 'Name', 'Duration (days)', 'Start', 'Predecessors'], [
       ['1', 'A', '5', '2026-03-02', ''], ['2', 'B', '5', '2026-03-02', `1FS${lag}`],
-    ])), { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
+    ])), { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true });
     return S().tasks.find(t => t.wbsCode === '2')?.time.earlyStart;
   };
   eq('3e Openen: zonder lag start B na A (ma 9 mrt)', openCsv(''), '2026-03-09');

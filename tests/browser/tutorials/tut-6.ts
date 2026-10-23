@@ -2,7 +2,6 @@
 // rekenen en de afwijking lezen.
 import { l, same, type Action, type Check, type L, type Snap, type TutorialScript } from './dsl';
 import { PHASES, T, taskIs } from './project';
-import { enableHourPlanningFromNotice } from './tut-5';
 
 const statusBar = { anchor: 'status-bar' } as const;
 const dialog = { dialog: true } as const;
@@ -46,7 +45,7 @@ export const TUTORIAL_6: TutorialScript = {
   steps: [
     {
       id: 'startpunt',
-      do: [enableHourPlanningFromNotice],
+      do: [],
       expect: [notStale, status('Einde: 30-08-2027', 'End: 30-08-2027'), status('Kritiek pad: 17 taken, 46 werkdagen', 'Critical path: 17 tasks, 46 work days')],
     },
     {

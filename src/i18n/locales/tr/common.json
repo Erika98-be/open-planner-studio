@@ -321,9 +321,6 @@
     "themeHighContrast": "Yüksek Kontrast",
     "themeFollowSystem": "Sistem temasını izle",
     "themeSystemHint": "Sisteminizin renk şemasını izler (şu anda: {{theme}}).",
-    "hourPlanningSection": "Saat planlaması",
-    "enableHourPlanning": "Saat planlamasını etkinleştir",
-    "enableHourPlanningHint": "Saat/dakika zamanlamasını açar: saatlik zaman ölçeği, çalışma saati bantlarına sahip vardiyalar ve saat hassasiyetinde görev çubukları. Kapalı ⇒ uygulama önceki gibi tamamen gün bazlı kalır.",
     "showTaskTypes": "Görev türlerini kullanın",
     "showTaskTypesHint": "Her görev için, süre, birim veya iş değiştiğinde neyin değişeceğini seçin. Bu, MS Project'teki Task Type ve P6'daki Duration Type gibidir. Kapalı: süre ve birimler sabit kalır. Görev türü veya kayıtlı iş içeren bir dosya bunları, bu ayar kapalı olsa bile gösterir.",
     "allowMixedDayHour": "Karma gün/saat planlamasına izin ver",
@@ -1094,10 +1091,6 @@
     "day": "gün",
     "month": "ay",
     "year": "yıl"
-  },
-  "hourData": {
-    "notice": "Bu dosya saat bazlı planlama içeriyor.",
-    "enable": "Saat planlamasını aç"
   },
   "recordedDates": {
     "activeCount_one": "Planı Primavera'nın kaydettiği şekilde görüntülüyorsunuz; yeniden hesaplama {{count}} görevi kaydırır.",

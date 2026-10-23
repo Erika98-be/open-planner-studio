@@ -181,7 +181,6 @@
       "calendar": "请从列表中选择日历。",
       "calendarNotFound": "所选日历不存在。",
       "calendarHours": "此任务的日历没有每日工作小时数。",
-      "hourPlanningDisabled": "设置中已关闭小时计划。",
       "durationConversionNotExact": "此工期无法精确换算为另一单位。",
       "milestoneRequired": "此字段仅适用于里程碑。",
       "milestoneUnavailable": "带子任务的摘要任务无法变为里程碑。",
@@ -325,9 +324,6 @@
     "days": "天",
     "hours": "小时",
     "invalid": "请输入整数天数或小时数，例如 2d 或 12h。",
-    "enableHourPlanningFirst": "请启用小时计划后再编辑此小时任务。",
-    "enableHourPlanning": "启用小时计划",
-    "requiresWorkBlocks": "此日历没有有效的工作时间。请检查工作日和工作时间。",
     "conversionNotExact": "{{value}} 在此日历上无法换算为整天。单位未更改。",
     "unitInfo": "所选单位属于此任务。天数计算工作日；小时数计算日历内的工作小时。更换日历不会改变单位或输入的工期，但可能改变完成日期。"
   },

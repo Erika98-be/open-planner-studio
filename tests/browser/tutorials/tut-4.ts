@@ -1,9 +1,8 @@
-// Tutorial 4 — Plannen in uren (`tut-4-uren`): urenplanning aanzetten, de stort en twee kraaninzetten in uren.
+// Tutorial 4 — Plannen in uren (`tut-4-uren`): de stort en twee kraaninzetten in uren.
 import { l, type Action, type Check, type L, type Snap, type TutorialScript } from './dsl';
 import { T, taskIs } from './project';
 
 const statusBar = { anchor: 'status-bar' } as const;
-const dialog = { dialog: true } as const;
 const notStale: Check = { state: (s: Snap) => (s.stale ? ['planning nog verouderd'] : []) };
 const status = (nl: string, en: string): Check => ({ see: statusBar, text: l(nl, en) });
 const END_AND_PATH: Check[] = [status('Einde: 01-09-2027', 'End: 01-09-2027'), status('Kritiek pad: 8 taken, 48 werkdagen', 'Critical path: 8 tasks, 48 work days')];
@@ -25,20 +24,6 @@ export const TUTORIAL_4: TutorialScript = {
       id: 'startpunt',
       do: [],
       expect: [notStale, ...END_AND_PATH, { see: { cell: { task: T.pour, column: l('Duur', 'Duration') } }, text: '1d' }],
-    },
-    {
-      id: 'urenplanning',
-      do: [
-        { ribbon: 'instellingen:projectSettings', label: l('App-instellingen', 'App settings') },
-        { waitFor: dialog },
-        { click: { button: l('Planning', 'Planning'), within: dialog } },
-        { click: { text: l('Urenplanning inschakelen', 'Enable hour planning'), within: dialog } },
-        { check: { visible: { text: l('Gemengde dag/uur-planning toestaan', 'Allow mixed day/hour planning'), within: dialog } } },
-        { check: { state: s => (s.ui.enableHourPlanning ? [] : ['urenplanning staat uit']) } },
-        { shot: { name: 'tut-4-urenplanning', of: dialog, pad: 0 } },
-        { click: { button: l('Sluiten', 'Close'), within: dialog } },
-      ],
-      expect: [{ gone: dialog }, { state: s => (s.ui.enableHourPlanning ? [] : ['urenplanning staat uit']) }],
     },
     {
       id: 'stort',

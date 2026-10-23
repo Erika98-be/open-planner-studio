@@ -181,7 +181,6 @@
       "calendar": "Valitse kalenteri listasta.",
       "calendarNotFound": "Valittua kalenteria ei ole olemassa.",
       "calendarHours": "Tämän tehtävän kalenterissa ei ole työtunteja päivässä.",
-      "hourPlanningDisabled": "Tuntisuunnittelu on pois käytöstä kohdassa Asetukset.",
       "durationConversionNotExact": "Tätä kestoa ei voi muuntaa toiseen yksikköön tarkasti.",
       "milestoneRequired": "Tämä kenttä koskee vain välitavoitteita.",
       "milestoneUnavailable": "Yhteenvetotehtävä, jolla on alitehtäviä, ei voi olla välitavoite.",
@@ -329,9 +328,6 @@
     "days": "Päivät",
     "hours": "Tunnit",
     "invalid": "Syötä kokonaisluku päiviä tai tunteja, esimerkiksi 2d tai 12h.",
-    "enableHourPlanningFirst": "Ota tuntisuunnittelu käyttöön, jotta tätä tuntitehtävää voi muokata.",
-    "enableHourPlanning": "Ota tuntisuunnittelu käyttöön",
-    "requiresWorkBlocks": "Tällä kalenterilla ei ole kelvollisia työaikoja. Tarkista työpäivät ja työajat.",
     "conversionNotExact": "{{value}} ei vastaa kokonaisia päiviä tässä kalenterissa. Mittayksikköä ei muutettu.",
     "unitInfo": "Valittu yksikkö kuuluu tähän tehtävään. Päivät lasketaan työpäivinä; tunnit lasketaan työtunteina kalenterin sisällä. Toinen kalenteri ei muuta yksikköä eikä syötettyä kestoa, mutta se voi muuttaa loppupäivää."
   },
