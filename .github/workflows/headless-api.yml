@@ -10,6 +10,7 @@ on:
     paths:
       - 'src/**'
       - 'scripts/build-core.mjs'
+      - 'scripts/lib/headless-bundle.mjs'
       - 'headless/**'
       - 'deploy/aws/**'
       - 'examples/01-grachtenpand-amsterdam.ifc'
