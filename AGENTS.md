@@ -30,6 +30,7 @@ npm run tauri:dev    # desktop app, same port assignment
 npm run build        # tsc && vite build → dist/
 npm run build:platform -- --base /pad/   # platform build for the OpenAEC app on Frappe → dist-platform/
 npm run build:core   # headless core package @openaec/open-planner-core → dist-core/ (not published)
+npm run build:mcp-server   # headless MCP server (planner_* tools without the app) → dist-mcp-server/server.mjs (not published)
 npm run verify       # THE gate — the same steps as CI (split in parallel), release and deploy gate
 npm run typecheck    # tsc over src/ AND scripts/+tests/ — use this, not just build (incremental)
 npm run lint         # deliberately minimal ESLint (promises, control-regex, React hooks)
@@ -191,6 +192,15 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   The HTTP API on top of it (`headless/server/`, contract `openapi.yaml`, container `Dockerfile`, AWS ECS
   Fargate template `deploy/aws/ecs-fargate.yaml`) is tested by `.github/workflows/headless-api.yml`
   (local server + container + smoke test, `cfn-lint`), not by `verify`. Detail: `docs/headless-api.md`.
+- **Headless MCP server.** `headless/mcp-server/` runs the same `planner_*` tools as the app bridge on Node
+  (stdio default, streamable HTTP on loopback with the bridge's HTTP contract), on its own store context, with file
+  tools confined to `--root` (lexical + `realpath` check) and MCP backups in its own data folder. It reuses the
+  dispatcher, registry, `runtime.ts`, the tools and `requestHandler.ts` unchanged; host functions go through seams
+  (`fileToolDeps`, `McpFileFs.confine`, `guideToolDeps`, `createAppBackupService` overrides). Code it bundles imports
+  no value from `appStore.ts` (`verify:store-boundaries`); `npm run build:mcp-server` fails on React, Tauri, the
+  singleton, `src/components/`, `src/hooks/` or the i18n UI config in the bundle. `tests/mcp/bridgeMirror.ts` uses its
+  `http.ts`, so a change to `mcp_bridge.rs`'s HTTP layer means changing `headless/mcp-server/src/http.ts`.
+  Detail: `docs/headless-mcp.md`.
 - **Scheduling is manual, not reactive.** `runCPM` → `solveProject()`; call it after mutating tasks,
   relations or the calendar (store actions do not do it themselves; only the opt-in setting Automatisch berekenen,
   `ui.autoCalcCPM`, runs it via `useAutoCalcCPM`). Always set `scheduleStale` via `markScheduleStale`
@@ -369,6 +379,7 @@ Design docs: start at `docs/superpowers/README.md` — read them as *why*, not a
 |---|---|
 | Store composition root | `src/state/appStore.ts` (factory: `src/state/appStoreFactory.ts`) |
 | Headless core (package API) | `src/core/`, build `scripts/build-core.mjs`, consumer `headless/consumer-example/` |
+| Headless MCP server | `headless/mcp-server/src/`, build `scripts/build-mcp-server.mjs`, test `tests/mcp/cases-headless-server.ts` |
 | Headless HTTP API, container, AWS | `headless/server/`, `deploy/aws/ecs-fargate.yaml`, `.github/workflows/headless-api.yml` |
 | Slices | `src/state/slices/` |
 | CPM solver / calendar engine | `src/engine/scheduler/`, `src/engine/calendar/` |
