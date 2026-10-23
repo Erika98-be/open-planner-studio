@@ -115,7 +115,6 @@ export function triangleStateOf(task: Task, assignments: readonly ResourceAssign
     effortDriven: effectiveEffortDriven(task),
     remainingMinutes: remainingMinutesOf(task, ctx),
     slotMinutes: slotMinutesOf(ctx),
-    wholeDays: task.time.durationUnit !== 'hours',
     assignments: assignments
       .filter((a) => a.taskId === task.id)
       .map((a): TriangleAssignment => ({
@@ -130,7 +129,7 @@ export function triangleStateOf(task: Task, assignments: readonly ResourceAssign
 export interface TriangleWriteBack {
   /** De taakduur is gewijzigd (⇒ de aanroeper zet de planning verouderd en herschaalt contouren). */
   durationChanged: boolean;
-  /** Toewijzingen waarvan inzet of restwerk is herschreven. */
+  /** Toewijzingen waarvan inzet, restwerk of afgeleid verricht werk is geschreven. */
   changedAssignmentIds: string[];
 }
 
@@ -149,7 +148,7 @@ export function applyTriangleResult(
   before: TriangleState,
   after: TriangleState,
   ctx: WorkRuleContext,
-  opts?: { skipDuration?: boolean },
+  opts?: { skipDuration?: boolean; actualWork?: ReadonlyMap<string, number> },
 ): TriangleWriteBack {
   const changed: string[] = [];
   for (const next of after.assignments) {
@@ -159,7 +158,12 @@ export function applyTriangleResult(
     const workChanged = (a.remainingWorkMinutes === undefined) !== (next.remainingWorkMinutes === undefined)
       || (next.remainingWorkMinutes !== undefined && a.remainingWorkMinutes !== undefined
         && Math.abs(a.remainingWorkMinutes - next.remainingWorkMinutes) > 1e-6);
-    if (!unitsChanged && !workChanged) continue;
+    // De momentopname komt van vóór de mutatie: afgeleid verricht werk mag niet met de nieuwe
+    // inzet of duur worden herberekend. Expliciete actuals blijven de bron.
+    const actual = opts?.actualWork?.get(a.id);
+    const actualChanged = a.actualWorkMinutes === undefined && actual !== undefined;
+    if (!unitsChanged && !workChanged && !actualChanged) continue;
+    if (actualChanged) a.actualWorkMinutes = actual;
     // Ook afgeleide inzet blijft exact: anders zijn W en R × I na terugschrijven ongelijk.
     if (unitsChanged) a.unitsPerDay = next.unitsPerDay;
     if (next.remainingWorkMinutes === undefined) delete a.remainingWorkMinutes;
@@ -301,6 +305,8 @@ export interface CapturedTriangle {
    *  geplakte rij). Geldig zolang de aanroeper tussen momentopname en settle geen toewijzing
    *  toevoegt, verwijdert of vervangt; alle aanroepers muteren daar alleen de taak. */
   assignments: ResourceAssignment[];
+  /** Afgeleid verricht resourcewerk in de OUDE toestand, los van de pure resterende driehoek. */
+  actualWork: ReadonlyMap<string, number>;
 }
 
 /** Stap 1 als momentopname VÓÓR een mutatie; `null` wanneer de regel niet op deze taak werkt. */
@@ -309,8 +315,23 @@ export function captureTriangle(task: Task, assignments: readonly ResourceAssign
   const ctx = workRuleContextOf(task, deps);
   // Eén keer filteren; `triangleStateOf` filtert daarna alleen deze korte lijst.
   const own = assignments.filter((a) => a.taskId === task.id);
+  const state = triangleStateOf(task, own, ctx);
+  const totalMinutes = totalMinutesOf(task, ctx);
+  const doneMinutes = Math.max(0, totalMinutes - state.remainingMinutes);
+  const actualWork = new Map<string, number>();
+  for (const a of own) {
+    if (a.actualWorkMinutes !== undefined || !drivesDuration(a, ctx)) continue;
+    const idx = contourIndexForAssignment(task.timephasedContours, own, a.id);
+    const periods = idx < 0 ? [] : task.timephasedContours![idx].periods;
+    const actuals = periods.filter(p => p.kind === 'actual');
+    // Bestaande actual-periodes zijn feiten; zonder zulke periodes geldt de oude duur × inzet.
+    const done = actuals.length > 0
+      ? actuals.reduce((sum, p) => sum + p.workMinutes, 0)
+      : doneMinutes * a.unitsPerDay;
+    if (done > 0 || actuals.length > 0) actualWork.set(a.id, done);
+  }
   return {
-    state: triangleStateOf(task, own, ctx), ctx, totalMinutes: totalMinutesOf(task, ctx),
+    state, ctx, totalMinutes, actualWork,
     finishBasis: hourInputFinishBasis(task), time: { ...task.time }, assignments: own,
   };
 }
@@ -377,7 +398,7 @@ export function settleDurationEdit(task: Task, captured: CapturedTriangle | null
   // afwijkcriterium zoeken dan in een handvol objecten, niet in alle toewijzingen van het project.
   const own = captured.assignments;
   const deviating = deviatingStoredWork(task, own, captured.state);
-  const written = applyTriangleResult(task, own, captured.state, result.state, captured.ctx, { skipDuration: true });
+  const written = applyTriangleResult(task, own, captured.state, result.state, captured.ctx, { skipDuration: true, actualWork: captured.actualWork });
   const recomputedWork: RecomputedRemainingWork[] = [];
   for (const before of deviating) {
     const after = own.find((a) => a.id === before.id);
@@ -449,7 +470,7 @@ export function settleUnitsEdit(
   if (!captured) return NO_CHANGE;
   const result = applyUnitsEdit(captured.state, assignmentId, newUnitsPerDay);
   if (!result.ok) return NO_CHANGE;
-  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx);
+  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { actualWork: captured.actualWork });
 }
 
 /** Een doorgerekende maar nog niet geschreven uitkomst: plannen kan vóór de undo-snapshot, zodat
@@ -476,7 +497,7 @@ export function planWorkEdit(
 }
 
 export function commitTrianglePlan(task: Task, assignments: ResourceAssignment[], plan: TrianglePlan): TriangleWriteBack {
-  return applyTriangleResult(task, assignments, plan.captured.state, plan.after, plan.captured.ctx);
+  return applyTriangleResult(task, assignments, plan.captured.state, plan.after, plan.captured.ctx, { actualWork: plan.captured.actualWork });
 }
 
 /** `planWorkEdit` + `commitTrianglePlan` in één stap (raster/MCP, waar de snapshot al staat). */
@@ -505,7 +526,7 @@ export function settleAssignmentAdded(
     id: added.id, unitsPerDay: added.unitsPerDay, drivesDuration: resource ? resource.type !== 'MATERIAL' : true,
   });
   if (!result.ok) return NO_CHANGE;
-  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx);
+  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { actualWork: captured.actualWork });
 }
 
 /** Resource eraf — momentopname MÉT de te verwijderen toewijzing, aanroepen NÁDAT
@@ -519,7 +540,7 @@ export function settleAssignmentRemoved(
   if (!captured) return NO_CHANGE;
   const result = applyAssignmentRemoved(captured.state, removedId);
   if (!result.ok) return NO_CHANGE;
-  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx);
+  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { actualWork: captured.actualWork });
 }
 
 export interface RuleChangeWriteBack extends TriangleWriteBack {
@@ -555,7 +576,7 @@ export function settleRuleChange(
   }
   const result = applyRuleChange(captured.state, effectiveRule);
   const written = result.ok
-    ? applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx)
+    ? applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx, { actualWork: captured.actualWork })
     : NO_CHANGE;
   return { ...written, durationUnitChanged };
 }
@@ -692,7 +713,7 @@ export function settleCalendarChange(
   let timephasedLost = false;
   if (result.ok) {
     const beforeInNewSlot: TriangleState = { ...triangle.state, slotMinutes: newSlot, remainingMinutes: newRemaining };
-    const written = applyTriangleResult(task, assignments, beforeInNewSlot, result.state, ctx);
+    const written = applyTriangleResult(task, assignments, beforeInNewSlot, result.state, ctx, { actualWork: triangle.actualWork });
     if (written.durationChanged) {
       durationChanged = true;
       timephasedLost = settleDurationAftermath(task, deps, slotWorkMinutes, captured.finishBasis);
@@ -988,5 +1009,5 @@ export function settleAssignmentPlan(
     if (!result.ok) return NO_CHANGE;
     state = result.state;
   }
-  return applyTriangleResult(task, assignments, captured.state, state, captured.ctx);
+  return applyTriangleResult(task, assignments, captured.state, state, captured.ctx, { actualWork: captured.actualWork });
 }

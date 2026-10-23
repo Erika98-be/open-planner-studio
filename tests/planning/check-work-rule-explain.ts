@@ -96,14 +96,13 @@ for (const lang of ['nl', 'en'] as const) {
   }
 }
 
-// (b) De rekenkern. Uitgangssituatie: 8 u/dag, 5 werkdagen, één werkresource op 1,0 (40 u); een dagtaak
-// rondt een afgeleide duur af op hele werkdagen, een urentaak op hele minuten (`roundUpRemaining`).
-// Voor de resourcezin ook een taak van 1 dag: daar laat de afronding de duur gelijk (0,5 → 1 dag).
+// (b) De rekenkern: 8 u/dag, 5 werkdagen, één werkresource op 1,0 (40 u).
+// Beide maten rekenen exact; ook één dag wordt met een tweede resource een halve dag.
 const SLOT = 8 * 60;
 type Unit = 'days' | 'hours';
-function base(rule: WorkRule, effortDriven: boolean | undefined, unit: Unit, days = 5): TriangleState {
+function base(rule: WorkRule, effortDriven: boolean | undefined, _unit: Unit, days = 5): TriangleState {
   return {
-    rule, effortDriven, remainingMinutes: days * SLOT, slotMinutes: SLOT, wholeDays: unit === 'days',
+    rule, effortDriven, remainingMinutes: days * SLOT, slotMinutes: SLOT,
     assignments: [{ id: 'a', unitsPerDay: 1, drivesDuration: true }],
   };
 }
@@ -193,14 +192,12 @@ for (const rule of WORK_RULES) {
   }
 }
 
-// Expliciet (besluit eigenaar 2026-10-15): een dagtaak van 1 dag onder Vast werk met een tweede
-// resource blijft 1 dag (0,5 → 1), en de dagzin noemt dat ("afgerond op hele dagen"); bij een urentaak
-// wordt dezelfde taak echt korter (4 u) en staat de zin zonder afronding.
+// F3a/T14: in beide maten wordt één dag met een tweede resource exact een halve dag.
 {
   const day = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'days', 1), { id: 'b', unitsPerDay: 1 }), 'dag 1 d');
-  ok(`dagtaak 1 d + resource: duur ${day?.remainingMinutes} min, verwacht ${SLOT} (afgerond op 1 dag)`, day?.remainingMinutes === SLOT);
-  ok('dagtaak: Vast werk gebruikt de zin met afronding',
-    workRuleExplanation('FIXED_WORK', undefined, 'days').rest.includes('resourceShorterWholeDays'));
+  ok(`dagtaak 1 d + resource: duur ${day?.remainingMinutes} min, verwacht ${SLOT / 2}`, day?.remainingMinutes === SLOT / 2);
+  ok('dagtaak: Vast werk gebruikt de korte zin',
+    workRuleExplanation('FIXED_WORK', undefined, 'days').rest.includes('resourceShorter'));
   const hour = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'hours', 1), { id: 'b', unitsPerDay: 1 }), 'uur 1 d');
   ok(`urentaak 8 u + resource: duur ${hour?.remainingMinutes} min, verwacht ${SLOT / 2}`, hour?.remainingMinutes === SLOT / 2);
   ok('urentaak: Vast werk gebruikt de zin zonder afronding',

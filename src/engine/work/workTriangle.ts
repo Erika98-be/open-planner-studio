@@ -50,8 +50,6 @@ export interface TriangleState {
   remainingMinutes: number;
   /** Werkminuten per werkdag (`hoursPerDay × 60`). */
   slotMinutes: number;
-  /** Bestaand aanroepcontract voor de maat; beide waarden rekenen voortaan exact (T14). */
-  wholeDays: boolean;
   assignments: readonly TriangleAssignment[];
 }
 
@@ -93,13 +91,6 @@ export function remainingWorkOf(a: TriangleAssignment, remainingMinutes: number)
   return a.remainingWorkMinutes ?? remainingMinutes * a.unitsPerDay;
 }
 
-/** Bestaande functienaam voor de restduurgrens. T14: een positieve breuk blijft exact, in beide
- *  maten. De kalenderloper bepaalt pas het uiteindelijke moment op hele minuten. */
-export function roundUpRemaining(minutes: number, _state: Pick<TriangleState, 'slotMinutes' | 'wholeDays'>): number {
-  if (!Number.isFinite(minutes) || minutes <= 0) return 0;
-  return minutes;
-}
-
 /**
  * Uitgangsvalidatie: een regel mag nooit een restduur ≤ 0 of een inzet ≤ 0 / niet-eindig
  * opleveren — dan wordt de bewerking geweigerd en blijft de oude toestand staan. Dit vangt in één
@@ -129,7 +120,7 @@ function derivedRemaining(state: TriangleState, assignments: readonly TriangleAs
     max = Math.max(max, remainingWorkOf(a, state.remainingMinutes) / a.unitsPerDay);
   }
   if (!any) return state.remainingMinutes;
-  return roundUpRemaining(max, state);
+  return max;
 }
 
 /** Nadat R is herleid: de ANDERE toewijzingen volgen de beschermde hoek van de regel — werk vast ⇒
@@ -184,7 +175,7 @@ const drivingCount = (assignments: readonly TriangleAssignment[]): number =>
  */
 export function applyDurationEdit(state: TriangleState, newRemainingMinutes: number): TriangleResult {
   if (!isPositive(newRemainingMinutes)) return { ok: false, reason: 'invalid-duration' };
-  const R = roundUpRemaining(newRemainingMinutes, state);
+  const R = newRemainingMinutes;
   const keepWork = durationEditKeepsWork(state.rule, state.effortDriven);
   const assignments = state.assignments.map((a) => {
     if (!a.drivesDuration) return a;

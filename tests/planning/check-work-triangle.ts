@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
   applyAssignmentAdded, applyAssignmentRemoved, applyDurationEdit, applyRuleChange, applySlotChange, applyTaskWorkEdit,
-  applyUnitsEdit, applyWorkEdit, remainingWorkOf, roundUpRemaining,
+  applyUnitsEdit, applyWorkEdit, remainingWorkOf,
   type TriangleAssignment, type TriangleResult, type TriangleState,
 } from '@/engine/work/workTriangle';
 import { WORK_RULES, type WorkRule } from '@/types/workRule';
@@ -42,7 +42,7 @@ function near(label: string, actual: number | undefined, expected: number | unde
 interface CaseAssignment { id: string; units: number; hours?: number; material?: boolean }
 interface CaseState {
   rule: WorkRule; effortDriven?: boolean; days?: number; minutes?: number; hoursPerDay?: number;
-  wholeDays?: boolean; assignments: CaseAssignment[];
+  assignments: CaseAssignment[];
 }
 interface ExpectAssignment { units?: number; hours?: number | null; derivedHours?: number }
 interface Expect { days?: number; minutes?: number; assignments?: Record<string, ExpectAssignment>; rejected?: string }
@@ -68,7 +68,7 @@ const file = JSON.parse(readFileSync(join(here, 'work-triangle-cases.json'), 'ut
 // (`"dayz"`, `"evidance"`) mag niet stil een case zonder asserties opleveren.
 const KEYS = {
   case: ['id', 'nr', 'evidence', 'source', 'scope', 'state', 'edits', 'expect'],
-  state: ['rule', 'effortDriven', 'days', 'minutes', 'hoursPerDay', 'wholeDays', 'assignments'],
+  state: ['rule', 'effortDriven', 'days', 'minutes', 'hoursPerDay', 'assignments'],
   assignment: ['id', 'units', 'hours', 'material'],
   edit: ['kind', 'id', 'days', 'minutes', 'units', 'hours', 'material', 'rule', 'assignments', 'hoursPerDay'],
   expect: ['days', 'minutes', 'assignments', 'rejected'],
@@ -107,7 +107,6 @@ function toState(c: CaseState): TriangleState {
     effortDriven: c.effortDriven,
     remainingMinutes,
     slotMinutes,
-    wholeDays: c.wholeDays ?? c.minutes === undefined,
     assignments: c.assignments.map((a): TriangleAssignment => ({
       id: a.id,
       unitsPerDay: a.units,
@@ -178,7 +177,7 @@ ok('meetlat: geen enkele case is al gemeten (measured) — anders hoort de spec 
 // ── (b) eigenschappen ───────────────────────────────────────────────────────────────────────────
 
 const base: TriangleState = {
-  rule: 'FIXED_DURATION_RATE', remainingMinutes: 2400, slotMinutes: 480, wholeDays: true,
+  rule: 'FIXED_DURATION_RATE', remainingMinutes: 2400, slotMinutes: 480,
   assignments: [{ id: 'a', unitsPerDay: 1, drivesDuration: true }, { id: 'b', unitsPerDay: 0.5, drivesDuration: true }],
 };
 
@@ -303,11 +302,10 @@ const sansFlag = (r: TriangleResult): string => JSON.stringify(r.ok ? { ...r.sta
     && r2.state.assignments[1].remainingWorkMinutes === undefined);
 }
 // T14 vervangt de oude afrondingsregel: geen dag- of minuutafronding in de werkdriehoek.
-near('T14: 2,5 d blijft 2,5 d', roundUpRemaining(1200, base), 1200, 0);
-near('T14: precies 3 d blijft 3 d', roundUpRemaining(1440, base), 1440, 0);
-near('T14: ook kleine breuken blijven', roundUpRemaining(1440 + 1e-10, base), 1440 + 1e-10, 0);
-near('T14: één minuut blijft één minuut', roundUpRemaining(1, base), 1, 0);
-near('T14: uurmodus 100,2 min blijft 100,2', roundUpRemaining(100.2, { slotMinutes: 480, wholeDays: false }), 100.2, 0);
+for (const minutes of [1200, 1440, 1440 + 1e-10, 1, 100.2]) {
+  const result = applyDurationEdit(base, minutes);
+  near(`T14: ${minutes} minuten blijven exact`, result.ok ? result.state.remainingMinutes : undefined, minutes, 0);
+}
 // Werk vast + inzet vast tegelijk kan niet: FIXED_RATE met twee toewijzingen — de andere houdt haar inzet en
 // haar (afgeleide) werk groeit met de langere duur (§6.2, beslispunt 10).
 {

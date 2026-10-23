@@ -134,7 +134,7 @@
     { "id": "wt-22", "nr": 22, "evidence": "reasoned", "scope": "store", "source": "contour: bestaande rescaleContourForDuration (check-contour-engine.ts sectie d)" },
     { "id": "wt-23", "nr": 23, "evidence": "decided", "scope": "store", "source": "besluit 3: vorm blijft, hoogte zakt, nieuwe resource vlak — bouwstap 6" },
     { "id": "wt-24", "nr": 24, "evidence": "documented", "source": "[M1] Fixed work, uurtaak 16 u: units → duration",
-      "state": { "rule": "FIXED_WORK", "minutes": 960, "wholeDays": false, "assignments": [{ "id": "a", "units": 1 }] },
+      "state": { "rule": "FIXED_WORK", "minutes": 960, "assignments": [{ "id": "a", "units": 1 }] },
       "edits": [{ "kind": "units", "id": "a", "units": 2 }],
       "expect": { "minutes": 480, "assignments": { "a": { "units": 2, "hours": 16 } } } },
     { "id": "wt-25", "nr": 25, "evidence": "reasoned", "source": "spec §4.3: materiaal buiten de driehoek",

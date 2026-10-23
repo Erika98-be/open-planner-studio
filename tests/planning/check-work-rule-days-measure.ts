@@ -47,18 +47,18 @@ function fixture(days = 5): { task: Task; assignments: ResourceAssignment[]; dep
   };
 }
 
-// T14: breuken, óók onder één minuut, blijven in beide maten behouden in alle kernbewerkingen.
-for (const wholeDays of [true, false]) {
+// T14: de pure kern rekent zonder maat, ook onder één minuut. De brug toetst beide maten hieronder.
+{
   const state: TriangleState = {
-    rule: 'FIXED_RATE', remainingMinutes: 1200, slotMinutes: 480, wholeDays,
+    rule: 'FIXED_RATE', remainingMinutes: 1200, slotMinutes: 480,
     assignments: [{ id: 'a', unitsPerDay: 1, drivesDuration: true }],
   };
   const units = applyUnitsEdit(state, 'a', 7);
-  near(`kern ${wholeDays}: 20 u / 7`, units.ok ? units.state.remainingMinutes : undefined, 1200 / 7);
+  near('kern: 20 u / 7', units.ok ? units.state.remainingMinutes : undefined, 1200 / 7);
   const duration = applyDurationEdit(state, 0.25);
-  near(`kern ${wholeDays}: kwart minuut`, duration.ok ? duration.state.remainingMinutes : undefined, 0.25);
+  near('kern: kwart minuut', duration.ok ? duration.state.remainingMinutes : undefined, 0.25);
   const added = applyAssignmentAdded(state, { id: 'b', unitsPerDay: 2 });
-  near(`kern ${wholeDays}: werk verdeeld over inzet 3`, added.ok ? added.state.remainingMinutes : undefined, 400);
+  near('kern: werk verdeeld over inzet 3', added.ok ? added.state.remainingMinutes : undefined, 400);
 }
 near('slot houdt de effectieve factor exact', slotMinutesOf({ hoursPerDay: 7.123 }), 427.38);
 
@@ -143,9 +143,14 @@ for (const excluded of ['milestone', 'summary', 'hammock', 'elapsed'] as const) 
   const captured = captureTriangle(task, assignments, deps);
   assignments[0].unitsPerDay = 7;
   settleUnitsEdit(task, assignments, captured, 'a', 7);
-  near('B3: verrichte 768 min blijven', (task.time.durationMinutes ?? 0) - (task.time.remainingMinutes ?? 0), 768);
+  near('B3: verrichte duur van 768 min blijft', (task.time.durationMinutes ?? 0) - (task.time.remainingMinutes ?? 0), 768);
   near('B3: exacte rest na inzetwijziging', task.time.remainingMinutes, 1632 / 7);
   near('B3: dagenrest volgt minuten', task.time.remainingTime, 3.4 / 7);
+  near('B3: verricht resourcewerk blijft 768 min', assignments[0].actualWorkMinutes, 768);
+  const progress = captureProgressWork(task, deps);
+  task.time.completion = 1; task.time.remainingMinutes = 0; task.time.remainingTime = 0;
+  settleProgressWork(task, assignments, progress);
+  near('B3: latere voltooiing boekt het oorspronkelijke werk', assignments[0].actualWorkMinutes, 2400);
 }
 {
   const { task, assignments, deps } = fixture(2.5);
