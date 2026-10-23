@@ -157,7 +157,7 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 Besluit eigenaar (Nozzit, 2026-10-23): een stekker naar de draaiende app, geen losse kern zonder app.
 
 - Formaat: MCP Bundle volgens https://github.com/modelcontextprotocol/mcpb (`MANIFEST.md`, `manifest_version`
-  `0.3`). Een `.mcpb` is een ZIP met `manifest.json`, `icon.png` (het app-icoon, 128×128), `server/index.mjs`,
+  `0.3`). Een `.mcpb` is een ZIP met `manifest.json`, `icon.png` (het app-icoon, 512×512, de maat die `mcpb validate` aanraadt), `server/index.mjs`,
   `LICENSE`, `LICENSE.GPL` en `THIRD-PARTY-NOTICES.md`. Claude Desktop installeert hem met een dubbelklik en
   toont een venster voor de `user_config`: *Token* (verplicht, `sensitive`: afgeschermd ingevoerd en veilig bewaard door
   Claude Desktop) en *Port* (standaard 3877). Claude Desktop levert zelf Node.js mee; de gebruiker installeert niets.

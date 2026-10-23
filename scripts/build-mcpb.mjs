@@ -65,7 +65,7 @@ if (leaks.length > 0) fail(`de bundel bevat app-code:\n  ${leaks.join('\n  ')}`)
 
 // 2. Manifest, icoon (het app-icoon) en licenties.
 writeFileSync(join(bundleDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-copyFileSync(join(root, 'src-tauri/icons/128x128.png'), join(bundleDir, manifest.icon));
+copyFileSync(join(root, 'src-tauri/icons/512x512.png'), join(bundleDir, manifest.icon));
 copyFileSync(join(root, 'LICENSE'), join(bundleDir, 'LICENSE'));
 copyFileSync(join(root, 'LICENSE.GPL'), join(bundleDir, 'LICENSE.GPL'));
 let notices;
