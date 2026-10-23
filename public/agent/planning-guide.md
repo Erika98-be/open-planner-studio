@@ -4,6 +4,8 @@ This guide is for an AI agent that builds or maintains a schedule in Open Planne
 
 Where this guide and a tool description disagree, the tool description wins: read it in `tools/list`, it comes straight from the code. Never guess a tool name or a parameter. The copy of this guide that `planner_get_planning_guide` returns belongs to the app version you are connected to; if it differs from the public URL, the copy from the tool wins.
 
+When exporting with `planner_export_ifc`, an unsupported source schema such as IFC2X3 must never be silently replaced in the opened file, including through a case alias or link. A different path spelling is not proof of a different file. If file identity cannot be established (including missing file IDs on Windows), the tool refuses an existing target. Choose a new file name, or ask the user to save in the app and choose the schema. Export does not change the document's save target or resolve its open schema question.
+
 Two skills go with this guide. `planner_get_planning_guide` returns this guide and both skills, with the paths where a skill belongs:
 
 - `goed-plannen`: building or restructuring a schedule (https://open-planner-studio.open-aec.com/skills/goed-plannen/SKILL.md)
@@ -53,7 +55,7 @@ First put down the moments that are fixed: start on site, permit final, weathert
 - Create milestones with `planner_add_tasks`, item `isMilestone: true`. A milestone has duration 0; a `duration` above 0 on it is an error. `milestoneKind` (`START`, `FINISH`, `null` = automatic) sets its anchor.
 - A handover that is fixed by contract gets `mandatory: true`. That is a marker for the Gantt and reports; it guards no date.
 - To watch the handover date without steering the calculation, give the handover milestone a `deadline`. Nothing moves, but the chain before it gets negative total float as soon as the date no longer fits.
-- `planner_update_project` `endDate` is metadata. It enforces nothing in the schedule, so it does not watch the handover. It does steer the span of generated holidays (`planner_update_calendar` `generate`).
+- `planner_update_project` `endDate` is metadata. It enforces nothing in the schedule, so it does not watch the handover. When regenerating holidays on an existing calendar (`planner_update_calendar` `generate`), it extends the span if it is later than the calculated project end.
 - Set `planner_update_project` `startDate` before you create tasks: it is the anchor for new tasks and does not shift the existing schedule (only a later start date pulls root tasks without predecessor or constraint forward to it, reported as `anchorsClamped`). To shift a whole existing schedule, use `planner_move_project`.
 
 ### The breakdown: phases, work packages, tasks
@@ -107,7 +109,7 @@ All durations count in working days or working hours of a calendar, so set up th
 - Generate holidays with `planner_update_calendar` `generate` (`country`, optional `region`, and for NL `bouwvak`: `geen`, `noord`, `midden` or `zuid`). The generator fills the days over the project span and replaces the existing holiday list.
 - `rawHolidays` adds literal days (frost period, company shutdown) to the existing ones. It turns the calendar literal: it can no longer be regenerated (`becameLiteral: true`). `holidaysMode: "replace"` makes the list exactly what you send.
 - Give a resource its own calendar only if it really differs, such as a facade builder who comes four days a week (`planner_manage_resources` `calendarId`). A resource calendar moves no task date; it only shows as overallocation in the histogram on a task working day the resource does not work.
-- Generated holidays cover a fixed span of years (`generation.generatedFromYear` to `generatedToYear` in `planner_get_calendars`). Generated before there are tasks, that span runs from the year before the project start to three years after it. If the project end lies beyond `generatedToYear` once the tasks are in, run the same `generate` again: it then covers the span up to `project.endDate` if that is set, otherwise up to the calculated project end. If `endDate` is earlier than the calculated end, the years after it get no holidays: clear `endDate` first (`endDate: ""`).
+- Generated holidays cover a fixed span of years (`generation.generatedFromYear` to `generatedToYear` in `planner_get_calendars`). Creating a calendar with `generate` always covers the year before the project start through three years after it. Updating an existing calendar covers the year before the start through the year after the later of `project.endDate` and the calculated project end; if only one end is known, it uses that one. With neither end known, it covers through three years after the start year. If the calculated project end later goes beyond `generatedToYear`, run the same `generate` again on that calendar. An earlier `endDate` does not limit this regeneration.
 
 ### Resources: who does it, and is that possible
 
@@ -124,7 +126,7 @@ A schedule without resources answers only half the question. Once crews and equi
 The critical path is the chain without float: every day lost there is a day later handover. Total float says how far a task may run late without affecting the project end; free float, how far without moving its successor. Three signals matter. A task with a few days of float is near-critical, not safe. A task with an extreme amount of float (in schedule reviews more than 44 working days, about two months) is almost always missing a successor. And negative float is the schedule saying a deadline or fixed date does not fit.
 
 - You never need to trigger a calculation (see "How calculation works through the tools"); just read after your last change.
-- `planner_get_critical_path` returns the critical tasks with their `totalFloat` and the driving relationships between them.
+- `planner_get_critical_path` returns the critical tasks with their `totalFloat` and the driving relationships between them. `drivingRelations` is `null` when driving information is unavailable, including in **Dates as recorded**; it does not mean no relationships are driving. A valid calculation with no driving relationships between critical tasks returns `[]`. Read tools preserve recorded dates; only recalculate explicitly if the user wants to replace them.
 - `planner_get_task` returns `schedule.totalFloat` and `schedule.freeFloat` (working days) and the early and late dates of one task. With negative total float the late dates lie before the early ones; that is the size of the overrun.
 - `planner_list_tasks` with `kritiek: true` (critical) lists the critical tasks; summary tasks with a rolled-up flag come along, marked `summary: true`.
 - There is no near-critical flag and no warnings list through the tools: compare `totalFloat` yourself, and check deadlines and constraints through negative `totalFloat`.

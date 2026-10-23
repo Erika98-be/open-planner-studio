@@ -14,6 +14,8 @@ De app stuurt een rapport niet zelf naar een printer. Het eindpunt is altijd een
 
 Kies *Rapport* in het lint, of druk op Ctrl+P. Ctrl+P brengt je naar dit tabblad. Typ je in een veld, staat er een dialoog open of staat de presentatiemodus aan, dan werkt Ctrl+P niet. In de browser opent dan het printvenster van de browser, en dat drukt het scherm af, niet het rapport.
 
+Vanuit het bestandsmenu kies je *Bestand › Afdruk › Open afdrukvoorbeeld*. Het bestandsmenu sluit en het tabblad Rapport opent. Daarna kies je het rapport en de instellingen.
+
 Links staat de kolom *Rapportage* met de keuzelijst *Rapporttype*, een overzicht en de instellingen. Rechts staat het voorbeeld.
 
 ### 2. Kies het rapporttype
@@ -57,7 +59,7 @@ De overige rapporten staan als tabel op het scherm. Wat je ziet is wat in de PDF
 
 ### 6. Exporteer naar PDF
 
-Klik onder aan de kolom links op **Exporteer PDF**. De voorgestelde bestandsnaam is de projectnaam gevolgd door de soort rapport, bij de Gantt-afdruk bijvoorbeeld *Aanbouw woning-planning.pdf*.
+Klik in het lint op **Afdruk**, of onder aan de kolom links op **Exporteer PDF**. Beide knoppen exporteren het gekozen rapport met je huidige instellingen naar PDF. De voorgestelde bestandsnaam is de projectnaam gevolgd door de soort rapport, bij de Gantt-afdruk bijvoorbeeld *Aanbouw woning-planning.pdf*. Het rapportdeel volgt de interfacetaal: een voortgangsrapport krijgt in het Nederlands `-voortgang.pdf` en in het Engels `-progress.pdf`. De projectnaam blijft gelijk; eerder opgeslagen bestanden worden niet hernoemd.
 
 - In de desktopapp, en in een browser die een opslagdialoog voor bestanden kent, kies je waar de PDF komt. Sluit je die dialoog zonder te bewaren, dan gebeurt er niets.
 - In een browser zonder zo'n dialoog zet de browser de PDF in je downloadmap.
@@ -68,7 +70,7 @@ Open de PDF in je PDF-lezer en druk hem daar af. Print je een A3-PDF op een A4-p
 
 ## Valkuilen en wat de app dan doet
 
-**De knop Afdruk en Ctrl+P printen niet.** De knop *Afdruk* in de groep *Rapportage* staat op het tabblad Rapport zelf en doet niets extra's. Ctrl+P brengt je naar dit tabblad. Er is geen aparte printopdracht in de app: de weg naar papier loopt via de PDF. Werkt Ctrl+P niet (zie stap 1), dan opent in de browser het printvenster van de browser, en dat drukt het scherm af, niet het rapport.
+**Afdruk exporteert; Ctrl+P opent Rapport.** De knop *Afdruk* in de groep *Rapportage* exporteert het ingestelde rapport naar PDF, net als *Exporteer PDF*. Ctrl+P brengt je naar het tabblad Rapport; het start geen export. Er is geen aparte printopdracht in de app: de weg naar papier loopt via de PDF. Werkt Ctrl+P niet (zie stap 1), dan opent in de browser het printvenster van de browser, en dat drukt het scherm af, niet het rapport.
 
 **Bedrijf: overtypen wordt niet bewaard.** Het veld *Bedrijf:* bij de Gantt-afdruk begint met het bedrijf uit de projectinstellingen. Wat je hier overtypt, wordt niet bewaard. *Auteur:* kun je hier niet typen. Beide pas je aan met *Instellingen › Project › Projectinstellingen*, in de velden *Opdrachtgever/organisatie* en *Auteur*, en bevestig je met *Toepassen*.
 

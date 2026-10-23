@@ -1,7 +1,8 @@
 import { claimTaskTypesNotice, notifyTaskTypesUnlocked, notifyTaskTypesUnlockedClaimed, TASK_TYPES_DETAIL_LINE } from '../taskTypesNotice';
 import { taskTypesNeedNotice } from '../taskTypesVisibility';
-import { writeIFC } from '@/services/ifc/ifcWriter';
+import { writeIFC, ifcObjectSeed } from '@/services/ifc/ifcWriter';
 import { writeCSV, writeProgressSheetCSV } from '@/services/csv/csvWriter';
+import { CsvDateImportError } from '@/services/csv/csvReader';
 import { flattenOrder, inferWbsAutoNumberOnOpen } from '@/utils/wbs';
 import { writeMSPDI } from '@/services/msproject/mspdiWriter';
 import { writeP6XMLWithReport } from '@/services/p6/p6xmlWriter';
@@ -237,9 +238,17 @@ export function xerImportNotice(
 /**
  * De melding bij een MISLUKTE import (elk open-pad). Een P6 XML-bestand zonder leesbare activiteit
  * (`P6XmlImportError`) krijgt `notifications.p6xmlImportEmpty` met de reden als detailregel; elke
- * andere fout de bestaande sleutel (`importErrorMessageKey`) met de technische tekst als detail.
+ * onherkende CSV-datum zijn rij/kolom/celwaarde; andere fouten de bestaande sleutel
+ * (`importErrorMessageKey`) met de technische tekst als detail.
  */
 export function importFailureNotice(err: unknown, detail: string): NotifyInput {
+  if (err instanceof CsvDateImportError) {
+    return {
+      severity: 'error',
+      messageKey: 'notifications.csvInvalidDate',
+      params: { row: err.row, column: err.column, value: err.value },
+    };
+  }
   if (err instanceof P6XmlImportError) {
     const reasonKey = err.reason === 'no-object-ids' ? 'notifications.p6xmlImportEmptyNoObjectIds' as const
       : err.reason === 'xer-columns' ? 'notifications.p6xmlImportEmptyXerColumns' as const
@@ -348,6 +357,9 @@ export type ExportResult =
  *  geparsed project"-implementatie. Elke variant (de drie open-paden + `loadState`) kiest zijn
  *  gedrag met deze vlaggen; defaults staan bewust op "niets doen". */
 export interface ApplyLoadedProjectOpts {
+  /** IFC-editor: bewerk het huidige document als één undo-stap, met behoud van binding en
+   *  opslagdoel. Weglaten = laad een vervangend project met een nieuwe, lege geschiedenis. */
+  intent?: 'edit';
   /** Nieuw bestandspad (string), `null` voor naamloos (voorbeeld/import), of weglaten
    *  (`undefined`) om `filePath` ongemoeid te laten — dat laatste is de loadState-semantiek
    *  (in-place vervangen zonder het pad te raken). De recente-bestandenlijst wordt door de
@@ -371,8 +383,9 @@ export interface ApplyLoadedProjectOpts {
   hourDataNotice?: boolean;
   /** True = een echt open-pad (`openAsDocument`: openFile/openRecentFile/MCP-import): behoud
    *  bedrijfsbinding + stempels en draai de grens-1-check. False (default) = een volledig-
-   *  vervangende load (loadState: IFCPanel/Backstage/extensie-import): laad LOS — strip
+   *  vervangende load (loadState: Backstage/extensie-import): laad LOS — strip
    *  companyId/companyName + alle libraryOrigin-stempels.
+   *  Bij `intent: 'edit'` blijft de bestaande binding behouden, zonder open-grens.
    *  (Crash-herstel loopt NIET door applyLoadedProject maar via `restoreDocuments`, dat de opgeslagen —
    *  dus gekoppelde — staat exact herstelt en de grens-1-check apart draait.) */
   linkedOpen?: boolean;
@@ -444,8 +457,10 @@ export interface FileSlice {
   /** Eén gedeelde load-implementatie: vul de ACTIEVE document-state met een geparsed
    *  project en voer de opt-afhankelijke nastappen uit (runCPM/fit/uur-melding/extensie-event).
    *  Neemt géén besluit over een nieuw tabblad — dat blijft bij de aanroeper vóór de load.
-   *  `loadState` en de drie open-paden lopen hier allemaal doorheen. */
+   *  `loadState`, `applyProjectEdit` en de drie open-paden lopen hier allemaal doorheen. */
   applyLoadedProject: (parsed: ImportResult, opts: ApplyLoadedProjectOpts) => void;
+  /** Pas IFC-editorinhoud toe als bewerking van het actieve document, met één undo-stap. */
+  applyProjectEdit: (parsed: ImportResult, opts?: { viewStartDate?: string }) => void;
   /**
    * Centrale open-naad voor één of meer geparste projectpayloads. Alleen XER gebruikt vandaag de
    * meervoudige vorm; de individuele documenten lopen daarna letterlijk door hetzelfde
@@ -459,8 +474,8 @@ export interface FileSlice {
    *  via `applyOpenedImport` (pristine tabblad hergebruiken of nieuwe documenten, ook de
    *  meervoudige XER-vorm) GEKOPPELD (`linkedOpen: true`: bibliotheekbinding + herkomststempels
    *  blijven, de open-grens draait), met doorrekenen, fitten en de uur-melding. Bewust NIET
-   *  hierdoor: de losse loads (`loadState`: IFCPanel, extensie-import, devBridge) en
-   *  voorbeeldprojecten — die laden los. */
+   *  hierdoor: IFC-editorbewerkingen (`applyProjectEdit`), losse loads (`loadState`: extensie-import,
+   *  devBridge, plus voorbeeldprojecten: die laden los). */
   openAsDocument: (parsed: OpenedImport, source: OpenedFileSource) => AppliedOpenedImport;
 }
 
@@ -552,15 +567,16 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
    * opgeslagen maar nog wel in de app staat. Elke andere fout: de gewone opslaanfout met de tekst van
    * de site. Het document blijft in beide gevallen gewijzigd (er is niets gecommit).
    */
-  const notifySiteSaveError = (err: unknown, name: string) => {
+  const notifySiteSaveError = (err: unknown, name: string, dedupeKey?: string) => {
     console.error('Opslaan op de site mislukt:', err);
     if (isSiteConflict(err)) {
       get().notify({
         severity: 'error', messageKey: 'notifications.siteSaveConflict', params: { name }, detail: siteErrorMessage(err),
+        dedupeKey, replaceOnDedupe: true,
       });
       return;
     }
-    get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: siteErrorMessage(err) });
+    get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: siteErrorMessage(err), dedupeKey, replaceOnDedupe: true });
   };
 
   /** Sla het document op als NIEUW bestand op de site; daarna is de site het opslagdoel. Gooit bij
@@ -660,6 +676,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     return true;
   };
 
+  let saveAttemptSequence = 0;
   const writeActiveDocument = (expectedDocumentId?: string): Promise<boolean> => runProjectFileWrite(async () => {
     if (expectedDocumentId && expectedDocumentId !== get().activeDocumentId) return false;
     if (!(await settleIfcSchemaQuestion())) return false;
@@ -670,6 +687,17 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
     // Gezet zolang er naar de SITE geschreven wordt: dan meldt de catch een sitefout (met conflict-
     // melding) in plaats van de gewone opslaanfout. Zonder site blijft hij `null`.
     let siteName: string | null = null;
+    let handleWriteFailed = false;
+    // Eén melding per opslagpoging: faalt ook de terugval, ververs dan de reden zonder een tweede
+    // toast of ×2. Een volgende Ctrl+S is een nieuwe poging met een eigen melding.
+    const failureNoticeKey = `project-save:${++saveAttemptSequence}`;
+    const notifyWriteError = (err: unknown) => {
+      console.error('Save failed:', err);
+      get().notify({
+        severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err),
+        dedupeKey: failureNoticeKey, replaceOnDedupe: true,
+      });
+    };
 
     try {
       const ref = saveTargetRef(state);
@@ -684,8 +712,16 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         });
       }
       // Een site-ref geeft hier altijd `false` (zie `saveToRef`): dan loopt de route hieronder.
-      if (ref && await saveToRef(ref, content)) {
-        return commitSavedDocument(documentId, state);
+      if (ref) {
+        try {
+          if (await saveToRef(ref, content)) return commitSavedDocument(documentId, state);
+        } catch (err) {
+          // Alleen de browser biedt na een echte handle-schrijffout de bestaande uitweg Opslaan als.
+          // Meld de fout eerst; `false` (geen toestemming/annulering) blijft zonder foutmelding.
+          if (isTauri() || ref.kind !== 'handle') throw err;
+          handleWriteFailed = true;
+          notifyWriteError(err);
+        }
       }
 
       // Geen (bruikbaar) doel en wel site-opslag: eerst "Opslaan op de site" met de keuze voor deze
@@ -710,18 +746,19 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
       if (!outcome) return false;
       const saved = commitSavedDocument(documentId, state, localDestination(outcome));
       await pushRecent(outcome.ref, outcome.name);
-      if (!isTauri()) {
+      // Een geslaagde kopie na een schrijffout bewijst geen browserbeperking. De echte fout is al
+      // gemeld; alleen een download vraagt dan nog om uitleg over de nieuwe locatie.
+      if (!isTauri() && (!handleWriteFailed || outcome.viaDownload)) {
         const notice = browserSaveNotice({ hadFile, existingName: state.filePath ? basename(state.filePath) : null, outcome });
         if (notice) get().notify(notice);
       }
       return saved;
     } catch (err) {
       if (siteName !== null) {
-        notifySiteSaveError(err, siteName);
+        notifySiteSaveError(err, siteName, failureNoticeKey);
         return false;
       }
-      console.error('Save failed:', err);
-      get().notify({ severity: 'error', messageKey: 'notifications.saveFailed', detail: saveErrorDetail(err) });
+      notifyWriteError(err);
       return false;
     }
   });
@@ -774,21 +811,53 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
   );
 
   return {
+    applyProjectEdit: (parsed, opts) => get().applyLoadedProject(parsed, {
+      intent: 'edit',
+      recompute: true,
+      viewStartDate: opts?.viewStartDate,
+    }),
+
     applyLoadedProject: (parsed, opts) => {
       // Open veldinvoer hoort bij het document dat nu vervangen wordt (zie pendingTextEdits.ts).
       runtime.finishPendingTextEdits();
       const current = get();
+      const editing = opts.intent === 'edit';
       const filePath = opts.filePath !== undefined ? opts.filePath : current.filePath;
       // Dubbele id's uit een kapot of vreemd bestand eerst uniek maken; de store sleutelt op id.
       const { result: uniqueParsed, renamed: duplicateIds } = ensureUniqueImportIds(parsed);
       const payload = payloadFromImport(uniqueParsed, filePath);
+      if (editing) {
+        // InternalProjectId kan in de tekst gewijzigd zijn. De reader sleutelt deze drie
+        // ankers op dat ingelezen id, terwijl de editor de sessie-identiteit hieronder behoudt.
+        // Verplaats de sleutels mee, anders vindt de writer de bewaarde GlobalIds niet terug.
+        if (payload.ifcGlobalIds && payload.project.id !== current.project.id) {
+          const globalIds = { ...payload.ifcGlobalIds };
+          for (const kind of ['proj', 'wp', 'ws'] as const) {
+            const sourceKey = ifcObjectSeed(kind, payload.project.id);
+            const guid = globalIds[sourceKey];
+            if (guid === undefined) continue;
+            globalIds[ifcObjectSeed(kind, current.project.id)] = guid;
+            delete globalIds[sourceKey];
+          }
+          payload.ifcGlobalIds = globalIds;
+        }
+        // De tekst vervangt de inhoud, niet het document, zijn bibliotheek of de sessiekeuze
+        // voor AutoSave. Pad, handle en site-versie blijven via de bestaande opties hieronder.
+        payload.project = {
+          ...payload.project,
+          id: current.project.id,
+          companyId: current.project.companyId,
+          companyName: current.project.companyName,
+        };
+        payload.autoSaveToFile = current.autoSaveToFile;
+      }
       // WBS auto bij het openen (eigenaarsbesluit 2026-10-17): één generieke stap voor élk
       // formaat, op de geïsoleerde payload vóór publicatie. Daardoor geen undo-stap en blijft
       // `isDirty` false — het hoort bij het openen. Alleen op de echte open-paden (`linkedOpen`:
-      // `openAsDocument`), niet bij `loadState` (IFC-paneel *Toepassen*, extensie-
-      // `loadProject`: die mogen het project niet stil veranderen). Bewust niet in
+      // `openAsDocument`), niet bij de IFC-editor of `loadState` (extensie-`loadProject`:
+      // die mogen het project niet stil veranderen). Bewust niet in
       // `payloadFromImport`: die bouwt ook het crashherstel (`payloadFromInput`).
-      if (opts.linkedOpen) payload.project = inferWbsAutoNumberOnOpen(payload.project, payload.tasks);
+      if (opts.linkedOpen && !editing) payload.project = inferWbsAutoNumberOnOpen(payload.project, payload.tasks);
       payload.view = opts.viewStartDate === undefined
         ? { ...current.view }
         : { ...current.view, viewStartDate: opts.viewStartDate };
@@ -800,13 +869,15 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         : opts.siteFileVersion !== undefined
           ? opts.siteFileVersion
           : (opts.siteFileId !== undefined ? null : current.siteFileVersion);
-      if (!opts.linkedOpen) {
+      if (!opts.linkedOpen && !editing) {
         payload.project = { ...payload.project, companyId: undefined, companyName: undefined };
         stripLibraryOrigins(payload);
         refreshProjectCalendarCache(payload);
       }
       const prepared = prepareLoadedPayload(payload, { recompute: !!opts.recompute });
-      if (opts.recompute) {
+      if (opts.recompute && !editing) {
+        // Een editorbewerking toont de nieuwe berekening. Alleen een laadpad kan de opgeslagen
+        // datums activeren; de undo-snapshot bewaart de eventuele modus van vóór de bewerking.
         // Of de modus aangaat, beslist `applyRecordedDatesOnLoad` (verse import vs. heropening met
         // `importPristine`); anders vergeet het document de opgeslagen datums (geen aanbod-stand). `payload.tasks`
         // is hier bewust de PRE-solve
@@ -818,13 +889,14 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         payload: prepared,
         companies: current.companies,
         pools: current.pools,
-        mode: opts.linkedOpen ? 'open-boundary' : 'silent-switch',
+        mode: opts.linkedOpen && !editing ? 'open-boundary' : 'silent-switch',
       });
       set((s) => {
-        // Een ander project in dit tabblad: de weigeringen over het vorige gaan weg, net als bij een
-        // documentwissel (eigenaarsbesluit 2026-10-19 5b). Vóór de meldingen hieronder.
+        // Een nieuwe projectinhoud: de vorige weigeringen gaan weg, net als bij een documentwissel
+        // of een bewerking (eigenaarsbesluit 2026-10-19 5b). Vóór de meldingen hieronder.
         clearRefusals(s.ui);
-        removeSessionHistoryForDocumentFromState(s, s.activeDocumentId);
+        if (editing) runtime.beginUndoable(s, { label: 'IFC toepassen' });
+        else removeSessionHistoryForDocumentFromState(s, s.activeDocumentId);
         if (activation.invalidateRedoScope) {
           invalidateDocumentRedo(s, s.activeDocumentId);
         }
@@ -841,6 +913,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           if (showNotice) s.ui.hourDataNotice = s.activeDocumentId;
           else if (s.ui.hourDataNotice === s.activeDocumentId) s.ui.hourDataNotice = null;
         }
+        if (editing) runtime.finishMutation(s);
       });
       // De open-grens ververste een achterlopende bibliotheekkalender en de werkregel paste taken
       // aan — dezelfde melding als de kalenderdialoog.

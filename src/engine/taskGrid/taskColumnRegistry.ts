@@ -1045,7 +1045,10 @@ function fixedRelationColumns(): TaskColumnDescriptor[] {
       id: 'relation.driving', labelKey: 'relations.driving', category: 'relations', valueKind: 'text',
       defaultWidth: 180, scheduleDerived: true,
       read: analysisItems,
-      format: (value, _task, ctx) => relationDrivingText(value as readonly RelationCellItem[], ctx.textDirection),
+      format: (value, _task, ctx) => relationDrivingText(value as readonly RelationCellItem[], ctx),
+      copy: (task, ctx) => relationDrivingText(analysisItems(task, ctx), ctx),
+      tooltip: (_value, _task, ctx) => ctx.relationIndex.drivingKnown
+        ? null : ctx.labelForText?.('properties.drivingUnknown') ?? null,
     }),
     readonlyColumn({
       id: 'relation.freeFloat', labelKey: 'relations.freeFloat', category: 'relations', valueKind: 'text',

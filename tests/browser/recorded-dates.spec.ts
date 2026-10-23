@@ -30,6 +30,9 @@ const XER_FIXTURE = [
   `%F\t${FIXTURE_HEADER}`,
   '%R\tT1\tP1\tC1\tA1\tDeviates\tTT_Task\tDT_FixedDUR\tTK_NotStart\t40\t40\t2026-01-02\t2026-01-09\t2026-01-05\t2026-01-12\t2026-01-10\t2026-01-17\t40\t8',
   '%R\tT3\tP1\tC1\tA3\tEarlyOnly\tTT_Task\tDT_FixedDUR\tTK_NotStart\t16\t16\t2026-03-01\t2026-03-03\t2026-03-01\t2026-03-03\t\t\t\t',
+  '%T\tTASKPRED',
+  '%F\ttask_pred_id\ttask_id\tpred_task_id\tproj_id\tpred_proj_id\tpred_type\tlag_hr_cnt',
+  '%R\tR1\tT3\tT1\tP1\tP1\tPR_FS\t0',
   '%E',
 ].join('\n');
 
@@ -72,6 +75,7 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   });
   expect(ids.datesAsRecorded).toBe(true);
   expect(ids.scheduleStale).toBe(false);
+  expect((await state(page)).sequences).toHaveLength(1);
 
   // Tabel: de late-start-kolom erbij (een productinstelling, via dezelfde actie als de kolomkiezer)
   // en dan de CELTEKST lezen — met de product-datumnotatie, want dat is de naad waar een verzonnen
@@ -96,19 +100,82 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   await expect(taskCell(page, ids.deviates, 'task.time.lateStart')).toHaveText(/10.01.2026|2026.01.10|01.10.2026/);
   await expect(taskCell(page, ids.deviates, 'task.time.lateStart')).not.toHaveText(/^(Niet vastgelegd|Not recorded)$/);
 
+  // Knownbug 183: dezelfde onbekende status in Bepalend én de relatiechips, in beide richtingen.
+  // De brug zet alleen de kolomvoorkeur; aanwijzen en springen blijven echte browserhandelingen.
+  await page.evaluate(() => {
+    const columns = window.__OPS__!.store.getState().taskGridSurfaces['full-task-grid'].columns;
+    window.__OPS__!.store.getState().setTaskGridColumns('full-task-grid', [
+      { id: 'task.name', width: 170, pinned: true },
+      { id: 'relation.predecessors', width: 150, pinned: false },
+      { id: 'relation.successors', width: 150, pinned: false },
+      { id: 'relation.driving', width: 130, pinned: false },
+      { id: 'task.time.totalFloat', width: 110, pinned: false },
+    ].map(column => ({ ...column, id: column.id as typeof columns[number]['id'] })));
+  });
+  const unknownText = /^(Onbekend|Unknown)$/;
+  const unknownExplanation = /^(Bepalende relaties onbekend zonder berekening\.|Driving relationships unknown without a calculation\.)$/;
+  const predecessorCell = taskCell(page, ids.earlyOnly, 'relation.predecessors');
+  const successorCell = taskCell(page, ids.deviates, 'relation.successors');
+  for (const id of [ids.deviates, ids.earlyOnly]) {
+    await expect(taskCell(page, id, 'relation.driving')).toHaveText(unknownText);
+  }
+  for (const cell of [predecessorCell, successorCell]) {
+    await expect(cell.getByRole('img', { name: unknownExplanation })).toBeVisible();
+    await expect(cell.locator('.task-grid-relation-chip--driving')).toHaveCount(0);
+  }
+  await predecessorCell.locator('.task-grid-relation-jump').hover();
+  await expect(page.locator('.gantt-tooltip')).toContainText(/Bepalende relaties onbekend zonder berekening\.|Driving relationships unknown without a calculation\./);
+  const beforeJump = await state(page);
+  await predecessorCell.locator('.task-grid-relation-jump').click();
+  await expect.poll(() => state(page).then(snapshot => snapshot.selectedTaskIds)).toEqual([ids.deviates]);
+  expect((await state(page)).sequences).toEqual(beforeJump.sequences);
+  expect((await state(page)).undoDepth).toBe(beforeJump.undoDepth);
+
   // Eigenschappenpaneel: de badge zegt per taak hetzelfde als de tabel, en noemt Primavera alleen
   // omdat dit een XER-herkomst is.
-  await page.evaluate((taskId) => {
-    const s = window.__OPS__!.store.getState();
-    s.selectTask(taskId);
-    s.setUI({ showPropertiesPanel: true, rightPanelCollapsed: false });
-  }, ids.earlyOnly);
+  await page.evaluate(() => {
+    window.__OPS__!.store.getState().setUI({ showPropertiesPanel: true, rightPanelCollapsed: false });
+  });
+  await taskCell(page, ids.earlyOnly, 'task.name').click();
   // Besluit 4 (eigenaar 2026-10-19, optie 3): één oranje blok, de ontbrekende velden als derde regel.
   await expect(page.locator('[data-ops-task-recorded-dates="active"][data-ops-task-recorded-dates-missing]')).toBeVisible();
-  await page.evaluate((taskId) => { window.__OPS__!.store.getState().selectTask(taskId); }, ids.deviates);
+  await taskCell(page, ids.deviates, 'task.name').click();
   const activeBadge = page.locator('[data-ops-task-recorded-dates="active"]:not([data-ops-task-recorded-dates-missing])');
   await expect(activeBadge).toBeVisible();
   await expect(activeBadge).toContainText(/Primavera/);
+
+  // Knownbug 105: het paneel onderscheidt onbekende driving van een berekende lege lijst.
+  const dependencies = page.locator('[data-ops-rail-panel="properties"] .dependency-list');
+  const unknownDriving = dependencies.getByRole('img', {
+    name: /^(Bepalende relaties onbekend zonder berekening\.|Driving relationships unknown without a calculation\.)$/,
+  });
+  await unknownDriving.scrollIntoViewIfNeeded();
+  await expect(unknownDriving).toBeVisible();
+  await expect(dependencies.locator('.lucide-zap')).toHaveCount(0);
+
+  // Echte bediening: richtingen aanzetten, selectie wisselen, dezelfde trace naar de Gantt meenemen.
+  const beforeTrace = await state(page);
+  await taskCell(page, ids.earlyOnly, 'task.name').click();
+  await page.getByRole('button', { name: /^(Predecessors|Voorgangers)$/, exact: true }).click();
+  const tableRow = (id: string) => taskCell(page, id, 'task.name').locator('..');
+  await expect(tableRow(ids.deviates)).toHaveAttribute('data-grid-trace-role', 'predecessor-driving');
+  await page.getByRole('button', { name: /^(Successors|Opvolgers)$/, exact: true }).click();
+  await taskCell(page, ids.deviates, 'task.name').click();
+  await expect(tableRow(ids.earlyOnly)).toHaveAttribute('data-grid-trace-role', 'successor-driving');
+  await page.getByRole('button', { name: /^(Planning)$/ }).click();
+  const ganttName = (id: string) => page.locator(
+    `[data-task-grid-surface-id="gantt-task-grid"] [data-grid-row-key="${id}"] [data-grid-column-id="task.name"]`,
+  );
+  await expect(ganttName(ids.earlyOnly).locator('..')).toHaveAttribute('data-grid-trace-role', 'successor-driving');
+  // De bestaande springknop in het taakpaneel verzet de focus; de trace volgt mee.
+  await dependencies.locator('.dependency-wbs-link').click();
+  await expect(ganttName(ids.deviates).locator('..')).toHaveAttribute('data-grid-trace-role', 'predecessor-driving');
+  expect((await state(page)).selectedTaskIds).toEqual([ids.earlyOnly]);
+  expect((await state(page)).undoDepth).toBe(beforeTrace.undoDepth);
+  expect(await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return { mode: s.ui.traceMode, recorded: s.datesAsRecorded, unknown: s.cpmResult?.drivingUnknown };
+  })).toEqual({ mode: 'both', recorded: true, unknown: true });
 
   // Eindreview bevinding 6: de rapporten kennen de "niet vastgelegd"-cel niet; in de modus staat
   // daarom boven elk rapport (hier het standaardtype, de Gantt-afdruk) één melding die zegt dat je
@@ -125,6 +192,31 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
   await expect.poll(() => state(page).then(() => page.evaluate(() => window.__OPS__!.store.getState().datesAsRecorded))).toBe(false);
   await expect(taskCell(page, ids.earlyOnly, 'task.time.totalFloat')).not.toHaveText(/^(Niet vastgelegd|Not recorded)$/);
+  // De geplande start in maart blijft onder het P6-profiel een ondergrens. De voorganger in
+  // januari is daardoor bekend niet-driving: geen onbekend-badge of bliksem, wel de gewone trace.
+  await expect(unknownDriving).toHaveCount(0);
+  await expect(dependencies.locator('.dependency-wbs-link')).toHaveCount(1);
+  await expect(dependencies.locator('.lucide-zap')).toHaveCount(0);
+  expect(await page.evaluate(() => {
+    const cpm = window.__OPS__!.store.getState().cpmResult;
+    return { unknown: cpm?.drivingUnknown === true, driving: cpm?.drivingSequenceIds };
+  })).toEqual({ unknown: false, driving: [] });
+  await expect(tableRow(ids.deviates)).toHaveAttribute('data-grid-trace-role', 'predecessor');
+  for (const id of [ids.deviates, ids.earlyOnly]) {
+    await expect(taskCell(page, id, 'relation.driving')).toHaveText('—');
+  }
+  for (const cell of [predecessorCell, successorCell]) {
+    await expect(cell.getByRole('img', { name: unknownExplanation })).toHaveCount(0);
+    await expect(cell.locator('.task-grid-relation-chip--driving')).toHaveCount(0);
+    await expect(cell.locator('.task-grid-relation-jump')).toHaveCount(1);
+  }
+  await predecessorCell.locator('.task-grid-relation-jump').hover();
+  await expect(page.locator('.gantt-tooltip')).toContainText(/Niet bepalend|Not driving/);
+  expect((await state(page)).sequences).toEqual(beforeJump.sequences);
+  await page.getByRole('button', { name: /^(Predecessors|Voorgangers)$/, exact: true }).click();
+  await page.getByRole('button', { name: /^(Successors|Opvolgers)$/, exact: true }).click();
+  await expect(tableRow(ids.deviates)).not.toHaveAttribute('data-grid-trace-role');
+  expect((await state(page)).selectedTaskIds).toEqual([ids.earlyOnly]);
 });
 
 // Eigenaarsbesluit 2026-09-09: "het moet altijd gaan zoals het nu bij XER werkt". Dezelfde

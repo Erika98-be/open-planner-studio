@@ -48,7 +48,7 @@ Alt+↑ and Alt+↓ do work in such a view, without a message. With only a filte
 
 **WBS auto is off.** This happens with a file that has its own codes, or with a file that saves the setting as *off*. A new task gets the code that fits its place in the tree, even if another task already has that code. That way duplicate numbers can appear. After indenting, too, the codes no longer match the tree. *Renumber WBS* fixes both.
 
-**A milestone gets subtasks.** A milestone is a moment and has no subtasks. The app removes the milestone flag and tells you.
+**A milestone gets subtasks.** A milestone is a moment and has no subtasks. The app removes the milestone flag and tells you. For one task the notification gives its name; for several tasks it shows how many lose their milestone flag.
 
 **A task with resource assignments gets subtasks.** A summary task carries no assignments itself. So the app first asks what to do with them, in the window *Task becomes a summary task*. This happens when you indent, use *Add subtask* or *Add milestone* on a task, insert a template, and in *Edit task* when you choose a new *Parent task*: for an existing task and for a new task. In *Edit task* the question comes before saving. If you choose *Cancel* there, *Edit task* stays open with your changes. You choose:
 

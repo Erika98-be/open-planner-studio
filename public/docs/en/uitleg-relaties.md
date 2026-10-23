@@ -64,6 +64,8 @@ A relation between a task and the phase it sits under is not allowed.
 
 If a successor has several predecessors, usually one relation determines its start date: the relation that keeps the successor from starting a single day earlier than it does now. Such a relation is called **driving**. With a tie there are several driving relations. You recognise a driving relation by the lightning-bolt symbol in the *Predecessors* and *Successors* columns of the table, by the *Driving* column (the **+** on the right of the table header, under *Relations*) and by the stronger tint when you trace a path. How to open that path is in [Tracing a path](docs://howto-pad-traceren).
 
+Without an available calculation, including in **Dates as recorded**, which relationships are driving is unknown. The table's *Driving* column then shows *Unknown* and internal relationships in *Predecessors* and *Successors* get a question mark with an explanation, just as in the task panel. After a successful calculation, `—` in *Driving* means the task has no driving relationships; a relationship without a lightning bolt is then not driving. External relationships do not get a driving indicator. **Calculate** (F5) determines this again and leaves *Dates as recorded*; the dates may change as a result.
+
 Driving says something about dates, not about duration. A short predecessor can be driving too, for example because of a long lag; you see that in the example below.
 
 ## Worked example

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/state/appStore';
 import type { HistorySessionMark } from '@/state/slices/historySlice';
 import { moveTaskVerdict, phaseAssignmentQuestionForTaskDialog } from '@/state/slices/taskSlice';
@@ -50,6 +50,9 @@ export function TaskDialog() {
   const { t: tCommon } = useTranslation('common');
 
   const showTaskDialog = useAppStore(s => s.ui.showTaskDialog);
+  // Help vanuit de gestapelde startvraag laat deze bewerksessie (concept + historie) intact.
+  const actualStartHelpOpen = useAppStore(s => s.ui.pendingActualStartQuestion !== null
+    && s.ui.activeRibbonTab === 'file' && s.ui.backstageSection === 'help');
   const editingTaskId = useAppStore(s => s.ui.editingTaskId);
   const tasks = useAppStore(s => s.tasks);
   const setUI = useAppStore(s => s.setUI);
@@ -82,7 +85,9 @@ export function TaskDialog() {
   // De dialoog bevat zowel een lokale draft als relationele secties die direct de store muteren
   // (zoals resourcetoewijzingen). Een storemutatie mag de nog niet opgeslagen draft nooit opnieuw
   // initialiseren; alleen openen of naar een andere taak wisselen begint een nieuwe sessie.
+  const sessionKey = editingTaskId ? `task:${editingTaskId}` : 'new-task';
   const initializedSessionRef = useRef<string | null>(null);
+  const [readySession, setReadySession] = useState<string | null>(null);
   // Begin van deze bewerksessie in de sessiehistorie.
   const historyMarkRef = useRef<HistorySessionMark | null>(null);
   const historyMark = useAppStore(s => s.historyMark);
@@ -96,15 +101,16 @@ export function TaskDialog() {
   useEffect(() => {
     if (!showTaskDialog) {
       initializedSessionRef.current = null;
+      setReadySession(null);
       // Dicht op een andere manier dan Opslaan/Annuleren: de sessie sluiten, de historie laten staan.
       if (historyMarkRef.current !== null) endHistorySession(historyMarkRef.current);
       historyMarkRef.current = null;
       return;
     }
 
-    const sessionKey = editingTaskId ? `task:${editingTaskId}` : 'new-task';
     if (initializedSessionRef.current === sessionKey) return;
     initializedSessionRef.current = sessionKey;
+    setReadySession(sessionKey);
     if (historyMarkRef.current !== null) endHistorySession(historyMarkRef.current);
     historyMarkRef.current = editingTaskId ? historyMark() : null;
 
@@ -121,18 +127,16 @@ export function TaskDialog() {
       setStartDate(project.startDate);
     }
 
-  }, [showTaskDialog, editingTaskId, editingTask, project.startDate, constructionMode, newTaskUnit, historyMark, endHistorySession]);
+  }, [showTaskDialog, editingTaskId, editingTask, sessionKey, project.startDate, constructionMode, newTaskUnit, historyMark, endHistorySession]);
 
-  useEffect(() => {
-    if (!showTaskDialog) return;
-    const id = setTimeout(() => {
-      const el = nameInputRef.current;
-      if (!el) return;
-      el.focus();
-      el.setSelectionRange(0, el.value.length);
-    }, 30);
-    return () => clearTimeout(id);
-  }, [showTaskDialog, editingTaskId]);
+  // Dialog/useFocusTrap is de enige focuseigenaar. De draft staat al in de DOM voordat dit
+  // wordt aangeroepen; selecteer die naam ook bij hervatten na Help. Geen late timer die een
+  // expliciete focuskeuze van de gebruiker of een bovenliggende dialoog kan overschrijven.
+  const initialFocus = useCallback(() => {
+    const el = nameInputRef.current;
+    el?.setSelectionRange(0, el.value.length);
+    return el;
+  }, []);
 
   // Voortgang invullen is een UI-route (`engine/progressEntry.ts`): dezelfde beslissing als het
   // paneel (`planProgressEntry`), maar op de concepttaak en pas vastgelegd bij Opslaan. Zonder
@@ -241,7 +245,9 @@ export function TaskDialog() {
     setUI({ showTaskDialog: false, editingTaskId: null });
   };
 
-  if (!showTaskDialog) return null;
+  // Mount het dialooggedrag pas met de juiste draft. Bij taakwissel begint zo ook de focus-trap
+  // opnieuw, zonder eerst de vorige naam (of de lege begindraft) te selecteren.
+  if (!showTaskDialog || readySession !== sessionKey) return null;
 
   // Een gestarte taak (ook als de werkelijke start in deze dialoog net is ingevuld) begint op haar
   // werkelijke start: dan toont Startdatum die datum, alleen-lezen (eigenaarsbesluit 2026-10-12).
@@ -258,6 +264,9 @@ export function TaskDialog() {
     // ná de `showTaskDialog`-gate hierboven, dus de toetsen zijn alleen actief bij een open dialoog.
     // Let op: overlaytint is hier bg-black/50 (historisch iets lichter dan de andere dialogs).
     <Dialog
+      key={sessionKey}
+      initialFocus={initialFocus}
+      suspended={actualStartHelpOpen}
       onCancel={handleClose}
       onConfirm={handleSave}
       overlayClassName="bg-black/50 z-50"

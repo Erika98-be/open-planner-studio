@@ -178,10 +178,13 @@ export type NotificationSeverity = 'error' | 'info';
  * een unie over twee namespaces typecheckt niet, zelf nagemeten). Daarom staat de
  * tak-als-sjabloon-melding hier als `notifications.templateSaved` en niet als
  * `task:structure.templateSaved` — dezelfde vertaalde tekst, in de namespace die het kanaal kan
- * typeren. Een nieuwe melding zet zijn sleutel hier én in alle veertien `common.json`-bestanden.
+ * typeren. Een nieuwe melding zet zijn sleutel in deze unie én in de `common.json`-bronnen voor `nl` en `en`.
+ * `i18n:add` beheert de bronhashes in `i18n/ui-sources/`; de vertaalstraat vult de overige talen aan.
+ * Een release vereist volledige, actuele UI-vertalingen in alle 28 talen (`verify:translations`).
  */
 export type NotificationMessageKey =
   | 'notifications.openFailed'
+  | 'notifications.csvInvalidDate'
   | 'notifications.extGuideCallbackFailed'
   | 'notifications.extHelpProjectOpenFailed'
   // Een extensie-importer (Backstage → Importeren) gooide een fout. Parameter `name` (de naam van de
@@ -206,6 +209,8 @@ export type NotificationMessageKey =
   | 'notifications.browserCannotOverwrite'
   | 'notifications.browserSavesAsDownload'
   | 'notifications.autoSaveFailed'
+  | 'notifications.recoveryManifestBlocked'
+  | 'notifications.recoveryStorageBlocked'
   | 'notifications.recoveryReadFailed'
   | 'notifications.recoveryRestoreFailed'
   // Recovery-robuustheid (corrupt herstelbestand): `restoreDocuments` slaat een
@@ -236,10 +241,13 @@ export type NotificationMessageKey =
   // wordt mijlpaal ⇒ weigeren; wordt fase ⇒ toewijzingen naar de eerste nieuwe subtaak, of weigeren
   // als dat niet schoon kan; een mijlpaal die kinderen krijgt verliest zijn mijlpaalvlag.
   | 'notifications.milestoneRefusedAssignments'
+  | 'notifications.milestoneRefusedAssignmentsMany'
   | 'notifications.milestoneRefusedSummary'
+  | 'notifications.milestoneRefusedSummaryMany'
   | 'notifications.assignmentsMovedToSubtask'
   | 'notifications.assignmentsMovedToSubtasks'
   | 'notifications.milestoneClearedOnPhase'
+  | 'notifications.milestoneClearedOnPhaseMany'
   | 'notifications.phaseRefusedNoAssignableChild'
   | 'notifications.phaseRefusedDuplicateResource'
   | 'notifications.phaseQuestionOutdated'
@@ -822,8 +830,9 @@ export interface UIState {
    *  `pendingHelpArticleId`. */
   pendingExtensionsTab: 'browse' | null;
   /** session — eenmalig verzoek om in Backstage → Help een sectie van de inhoudsopgave in beeld te
-   *  brengen (de tutorialvraag valt terug op Help › Tutorials). Geconsumeerd (en direct weer op
-   *  `null` gezet) door `HelpPanel` — zelfde eenmalig-verzoek-patroon als `pendingHelpArticleId`. */
+   *  brengen (de tutorialvraag valt terug op Help › Tutorials). Blijft staan tijdens laden;
+   *  `HelpPanel` consumeert na de eerste artikellayout (ook bij een laadfout). Een andere
+   *  artikelkeuze of wegnavigeren uit Help annuleert het verzoek. */
   pendingHelpSection: 'tutorials' | null;
 }
 

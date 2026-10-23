@@ -295,7 +295,7 @@ test('update_tasks: een duur-wijziging WIST een achtergebleven durationMinutes (
   assertEq(t.time.durationMinutes, undefined, 'de minuten-bron is gewist (anders zou die de dag-duur stil overrulen)');
 });
 
-test('add/update/get_task: uren zijn een expliciete native eenheid en round-trippen via MCP', async () => {
+test('add/update/get_task/overview: dagen en uren blijven hun native eenheid via MCP', async () => {
   reset();
   store.setState((s) => {
     s.calendar.workTime = {
@@ -307,13 +307,23 @@ test('add/update/get_task: uren zijn een expliciete native eenheid en round-trip
     };
   });
   const created = okData(await call('planner_add_tasks', {
-    tasks: [{ tempId: 'tmp-hour', name: 'Uurtaak', duration: 12, durationUnit: 'hours' }],
+    tasks: [
+      { tempId: 'tmp-hour', name: 'Uurtaak', duration: 12, durationUnit: 'hours' },
+      { tempId: 'tmp-day', name: 'Dagtaak', duration: 2 },
+    ],
   }));
   const id = created.created['tmp-hour'];
   let task = taskById(id)!;
   assertEq(task.time.durationUnit, 'hours', 'aanmaak bewaart hours als native eenheid');
   assertEq(task.time.durationMinutes, 720, 'aanmaak bewaart exact 720 minuten');
   assertEq(task.time.scheduleDuration, 1.5, 'afgeleid dagequivalent volgt de 8-uurskalender');
+
+  // Eén overzicht mengt dagen en uren: de urenduur blijft 12, niet het dagequivalent 1,5.
+  const overview = okData(await call('planner_get_project_overview', {}));
+  const dayRow = overview.tasks.find((row: any) => row.id === created.created['tmp-day']);
+  const hourRow = overview.tasks.find((row: any) => row.id === id);
+  assertEq([dayRow.dur, dayRow.durUnit], [2, 'days'], 'overzicht: dagduur met eenheid');
+  assertEq([hourRow.dur, hourRow.durUnit], [12, 'hours'], 'overzicht: native uren, geen dagequivalent');
 
   okData(await call('planner_update_tasks', {
     updates: [{ id, fields: { duration: 10, durationUnit: 'hours' } }],
@@ -323,6 +333,9 @@ test('add/update/get_task: uren zijn een expliciete native eenheid en round-trip
   const read = okData(await call('planner_get_task', { taskId: id }));
   assertEq(read.duration, 10, 'get_task geeft de native uurwaarde terug');
   assertEq(read.durationUnit, 'hours', 'get_task benoemt de native eenheid');
+  const updated = okData(await call('planner_get_project_overview', {}));
+  const updatedHourRow = updated.tasks.find((row: any) => row.id === id);
+  assertEq([updatedHourRow.dur, updatedHourRow.durUnit], [10, 'hours'], 'overzicht houdt na update de native uurwaarde');
 });
 
 test('durationUnit zonder duration en uren zonder werkblokken worden geweigerd zonder herinterpretatie', async () => {

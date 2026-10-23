@@ -7,17 +7,18 @@
 // `mcp://request`-event doet. Alles ná de HTTP-laag (dispatcher, tools, store, undo) is dus productie-
 // code; alleen de HTTP-schil hieronder is een kopie.
 //
-// NAGEBOUWD NAAR `src-tauri/src/mcp_bridge.rs` (stand 2026-10-21). Dit is een kopie, geen bewijs voor
+// NAGEBOUWD NAAR `src-tauri/src/mcp_bridge.rs` (stand 2026-10-22). Dit is een kopie, geen bewijs voor
 // het Rust-gedrag: dat toetst `.github/workflows/mcp-real-app.yml` met dezelfde controles tegen de echte
 // bridge. Wijzigt de Rust-HTTP-laag, pas deze host dan met de hand mee aan.
 //   - alleen 127.0.0.1; volgorde: Origin (403) → methode (405 + `Allow: POST`) → pad `/mcp` (404) →
 //     Bearer-token (401, scheme hoofdletterongevoelig) → doorgeven
 //   - body > 50 MiB ⇒ 413; onleesbare body ⇒ 400; geen antwoord binnen 120 s ⇒ 504
-//   - strikt één request tegelijk; antwoord `200 application/json`, ook een lege body (notificatie)
+//   - strikt één request tegelijk; niet-lege antwoordbody ⇒ `200 application/json`, lege ⇒ `202`
+//     zonder body of Content-Type (notificatie)
 //   - elk antwoord met `Connection: close` (tiny_http sluit oude keep-alive-verbindingen niet bij een stop)
 //   - `Mcp-Session-Id` van het request gaat mee als `sessionId`; een `sessionId` in het antwoord wordt de
 //     header `Mcp-Session-Id`; `status: 400` ⇒ 400 met de JSON-body (header ontbreekt); `status: 404` ⇒
-//     404 zonder body (onbekende sessie); elke andere status ⇒ 200
+//     404 zonder body (onbekende sessie); elke andere status ⇒ 200 of 202 op basis van de antwoordbody
 import http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
@@ -121,6 +122,8 @@ export async function startBridgeMirror(opts: BridgeMirrorOptions): Promise<Brid
           respondEmpty(res, 404);
         } else if (reply.status === 400) {
           respondJson(res, 400, reply.body);
+        } else if (reply.body === '') {
+          respondEmpty(res, 202);
         } else {
           const headers: Record<string, string> = { 'Content-Type': 'application/json', Connection: 'close' };
           if (reply.sessionId && /^[\x21-\x7e]{1,128}$/.test(reply.sessionId)) headers['Mcp-Session-Id'] = reply.sessionId;

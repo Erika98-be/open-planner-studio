@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v2026.43.0)'
+        description: 'Releasetag met v-prefix, gelijk aan de huidige projectversie'
         required: true
-        default: 'v0.1.0'
 
 # Minimale default; elke job hieronder zet zelf op wat hij écht nodig heeft
 # (`contents: write` voor de jobs die de release schrijven). Zonder deze regel
@@ -65,7 +64,7 @@ jobs:
 
       # Besluit B5 (2026-10-10): een PR vraagt alleen nl + en, dus main mag met vertalingen
       # achterlopen; een release niet. Elke UI-sleutel moet in elke taal vertaald en actueel zijn
-      # (skill update-ui-lang, release-skill stap 6a); docs in andere talen mogen achterlopen (2026-10-12).
+      # (skill update-ui-lang, release-skill stap 2); docs in andere talen mogen achterlopen (2026-10-12).
       # Direct na npm ci, vóór Playwright en de verify: dit faalt in seconden.
       # Bewust niet in `npm run verify`, anders wordt elke PR rood.
       - name: Verify translations (UI in alle talen compleet en actueel)
@@ -84,7 +83,18 @@ jobs:
       # highlight-cijfers worden hier daarom tegen die tagrange gevalideerd;
       # gewone ontwikkelverificatie blijft tag-onafhankelijk.
       - name: Verify visual release highlights
-        run: node scripts/release-highlights.mjs "${GITHUB_REF_NAME#v}"
+        env:
+          # Bij dispatch is de ref bijvoorbeeld main; de versie komt uit de invoer.
+          # Vrije invoer blijft data via env, nooit shellcode via interpolatie.
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG_VERSION="${INPUT_VERSION:-}"
+          else
+            TAG_VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          node scripts/release-highlights.mjs "${TAG_VERSION#v}"
 
       - name: Upload Playwright failure artifacts
         if: failure()
@@ -132,7 +142,8 @@ jobs:
             TAG_VERSION="${GITHUB_REF#refs/tags/}"
           fi
           # stderr (waar de ::warning:: op staat) naar de log, stdout weg.
-          node scripts/release-notes.mjs "$TAG_VERSION" --format=body 2>&1 >/dev/null
+          # De groep leidt stderr om vóór de stdout-omleiding van Node.
+          { node scripts/release-notes.mjs "$TAG_VERSION" --format=body >/dev/null; } 2>&1
 
   create-release:
     needs: gate
@@ -622,6 +633,8 @@ jobs:
           set -euo pipefail
           node scripts/release-notes.mjs "$VERSION" --format=notes > release-notes.txt
           gh release download "$VERSION" --pattern "latest.json" --output latest.json --clobber --repo "$REPO"
+          # ${...} en backticks zijn JavaScript; de shell mag ze niet uitbreiden.
+          # shellcheck disable=SC2016
           node -e '
             const fs = require("node:fs");
             const latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));

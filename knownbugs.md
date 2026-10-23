@@ -18,8 +18,6 @@ en noem het in je rapport of PR-tekst.
 
 ## Rekenen en planning
 
-1. **Uur-lag op een externe relatie wordt bij een dagtaak genegeerd** (een interne relatie rondt hem wél
-   af). `CPMSolver` `externalForwardBound`/`externalBackwardBound` gebruiken in dagmodus alleen `lagDays`. — B
 2. **Dagtaak na urentaak op een kalender met werktijdblokken** eindigt te vroeg (1,6 in plaats van 2
    werkdagen), en de urentaak krijgt −0,5 speling zonder constraint. — B
 3. **Constraint en deadline op een fase** zijn invulbaar (paneel, Taak bewerken), maar de motor negeert ze. — B
@@ -55,11 +53,6 @@ en noem het in je rapport of PR-tekst.
     gebouwd):** de afgeleide werkelijke start moet het oorspronkelijk geplande begin van vóór de
     statusdatumverschuiving zijn. — B (MCP), S (UI)
 
-105. **In "Datums zoals opgeslagen" tonen het taakpaneel, path tracing en de MCP-tool "geen driving"**, omdat
-    ze de driving-lijst nog rechtstreeks lezen. De Gantt en het rapport gebruiken sinds deze PR de helper
-    `drivingInfo.ts`, die "geen driving-informatie" onderscheidt van "berekend, niets driving"; de andere
-    lezers nog niet. Gevonden bij de prestatiefixes voor grote planningen (rehab-2). Voorstel: dezelfde helper
-    in die drie lezers. — S
 114. **De motor plant een lopende taak op 100 % niet met zijn vastgelegde restduur.** Zo'n taak (status
     STARTED, `completion` 1, geen werkelijk einde) komt uit P6 als `TK_Active` op 100 %. In P6 eindigt
     "Duration 100 %" (rest 0) op de statusdatum; "Physical 100 %" (rest > 0) plant de rest in. OPS zet beide
@@ -72,47 +65,48 @@ en noem het in je rapport of PR-tekst.
     vastgelegde rest in (optie 3) na de release, in het rekenprofielen-spoor. — B voor de OPS-kant (gemeten),
     S voor de P6-kant
 
-121. **Nivelleervenster: de piekmelding blijft leeg bij een eigen urenverdeling of capaciteitsstappen.** De
-    nivelleerder kiest `INTRINSIC_OVERRUN` op de echte dagwaarden (`assignmentDayUnits`) en op
-    `maxCapacityOf` met stappen (`ResourceLeveler.ts`); het venster vult de details in met `distributeUnits` en
-    de vlakke `res.maxUnits` (`LevelingDialog.tsx:141-165`, `:293-304`). Dan ontbreken resource, piek en
-    capaciteit in de melding. Niet nagespeeld. Zie ook 9. — S
+186. **B3-voltooidvenster met een dagkalender kan een TypeError geven.** Gemeld bij de onafhankelijke
+    review van PR #480 op `620c9e775`: ook op basiscommit `522589202` zou de volledige CPM-route
+    met `p6CompletedDataDateWindow` en een dagkalender falen. Exacte invoer en stack nog niet
+    zelfstandig bevestigd; staat los van de PF-optimalisatie en is daar niet aangepast. — S
+
+187. **Drie einddatumafwijkingen van de MPP-fidelitypin, ook met main.** Bij de integratie van
+    PR #480 op main `3a2f597f3` geeft `check-mpp-fidelity.ts` voor het publieke
+    `mpxj/junit/data/timephased-cost-rollup.mpp` `finishExact: 6` (pin 9) en `finishDiff: 3`
+    (pin 0); ook de verzameling afwijkende bestanden wijkt daardoor af. Dezelfde uitslag met
+    `CPMSolver.ts` en `ResourceLeveler.ts` uit die main-commit, zonder de PF-optimalisatie.
+    De gecombineerde `measure:profiles` eindigt op exit 1; de P6-cellen zijn ongewijzigd.
+    Geen baseline of motorcode hiervoor aangepast; oorzaak niet verder onderzocht. — B
 
 ## Tabel, invoer en bediening
 
 13. **Tabelkolom *Kleur*** wordt in IFC bewaard, maar geen balk of rapport gebruikt hem. — B
 16. **Taken kopiëren** heeft geen zichtbare bediening; alleen Ctrl+C/V met de Gantt in focus. — B
 17. **Verwijderen zonder bevestiging**: `confirm.deleteTask` staat in de locales maar wordt nergens gebruikt. — S
-21. ***Rapport › Afdruk*** doet op het tabblad Rapport niets. — B
 60. **Duur-kolom afgeknipt** in de standaard Gantt-weergave (WBS 60 + Taaknaam 240 + Duur 60 + de
     "+"-kolom): je leest "2c" in plaats van "2d", op 1600 én 1366 px breed. — B
-135. **Vinkjes lijken op keuzerondjes.** De app-brede stijl `input[type="checkbox"]`
-    (`src/styles/globals.css:2477`) geeft een vak van 15 px met `border-radius: var(--radius-sm)` (6 px) en
-    zonder vinkteken. Het vak oogt daardoor rond, en aangevinkt is het een gevuld oranje rondje. Gezien bij
-    *Screenshot bijvoegen* in het feedbackvenster. Voorstel: een kleinere radius (2–3 px) en een vinkteken. — S
-136. **`.btn--secondary` valt meer op dan de primaire knop ernaast.** De stijl (`src/styles/globals.css:2207`)
-    heeft een rand van 2 px in tekstkleur. Naast de oranje primaire knop trekt de secundaire knop zo de
-    aandacht, bijvoorbeeld *Annuleren* naast *Versturen* in het feedbackvenster. Voorstel: een rand van 1 px in
-    `--theme-control-border`. — S
 
 ## Kalenders
 
 22. **Goede Vrijdag en Bevrijdingsdag** hebben `optional: true`, maar dat wordt nergens gelezen: ze worden
     altijd gegenereerd. — B
 
+198. **Een onparseerbare projecteinddatum kan een ongeldige kalendergeneratie-spanne geven.**
+    `computeGenerateSpan` in `src/engine/calendar/generateCalendarHolidays.ts` haalt uit een
+    geselecteerde einddatum direct het UTC-jaar. Bij bijvoorbeeld `endDate = 'ongeldig'` kan
+    daardoor `to: NaN` ontstaan. Dit bestaande pad is niet afgedekt door de einddatummatrix;
+    PR #535 verhelpt alleen de keuze van het UI-projectbereik en wijzigt dit foutpad niet.
+    Statisch afgeleid bij de review op `71112e97`, niet lokaal uitgevoerd of in de app nagespeeld. — S
 
 ## Bibliotheek, bezetting, extensies, AI
 
 28. **Bezettingsoverzicht bij een verouderd actief project** mengt oude startdatums met een nieuwe duur of
     inzet, onder de tekst "laatst berekende cijfers". — B
-29. **Hardgecodeerd Nederlands**: *Vereist Open Planner Studio ≥…* (`extensionLoader.ts:341`), foutmelding
-    bij een ontbrekende permissie, "Het bestaande projectbestand is niet schrijfbaar." (`actualAutoSave.ts`),
-    het CFB-citaat (`cfb.ts`) en bestandsnaamdelen `-voortgang`/`-bibliotheek`. Zie ook 61. — B (eerste),
-    S (rest)
+29. **Hardgecodeerd Nederlands**: "Het bestaande projectbestand is niet schrijfbaar."
+    (`actualAutoSave.ts`), het CFB-citaat (`cfb.ts`) en bestandsnaamdelen
+    `-voortgang`/`-bibliotheek`. Zie ook 61 voor PDF-bestandsnamen. — S
 32. ***Herkennen*: "Geen voorstel — kies handmatig"** zonder knop om handmatig te kiezen. — B
 33. **Bibliotheekkalender verwijderen** gaat zonder bevestiging; daarna staat hij nog als *al gekoppeld*. — S
-61. **PDF-bestandsnamen altijd Nederlands** (`-voortgang`, `-afwijkingen`), ook in het Engels
-    (`ReportPanel.tsx:1143`, `useTableReportSpec.tsx`). — B
 64. **Een uitgeschakelde `tutorials`-extensie wordt weer aangezet, ongeacht waar hij vandaan kwam**
     (review #261, punt O2). — S
 74. **Nederlandse parameternamen en enumwaarden in het MCP-contract.** Na de vertaling naar Engels zijn deze
@@ -140,9 +134,6 @@ en noem het in je rapport of PR-tekst.
     er komt geen undo-stap, maar `shifts` meldt taak 1.2 `oldStart 2026-03-16 → newStart 2026-03-09` (het
     verschil tussen opgeslagen en herberekend). Een agent leest dat als effect van de nivellering. Dat `dryRun`
     hetzelfde meldt, is afgeleid (zelfde preview), niet nagespeeld. — B
-84. **`planner_get_project_overview` beschrijft `dur` als werkdagen**, maar de rij geeft de duur in de eigen
-    eenheid van de taak met `durUnit` ernaast (`readTools.ts:~315`, `nativeDuration`); bij een urentaak zijn
-    het dus uren. Alleen in de code gezien. — S
 85. **Dezelfde voortgang geeft in één `planner_batch` een ander resultaat dan in losse calls.** Binnen een
     batch rekent `recomputeMidBatch` alleen vóór een lees- of levelstap (`batchTool.ts:~320`), dus tussen
     `planner_update_project` (statusdatum) en `planner_update_tasks` niet: de voortgang ziet de geplande
@@ -163,42 +154,6 @@ en noem het in je rapport of PR-tekst.
     website volgt de laatste deploy, terwijl een desktopversie zijn eigen kopie meelevert; een oudere app kan
     dus naar een gids wijzen die tools beschrijft die hij niet heeft. De gids zegt nu dat de kopie van de tool
     voorgaat. Voorstel: een versiepad (bv. `/agent/<versie>/planning-guide.md`) of de versie in de gids. — S
-113. **`planner_export_ifc` herkent het eigen bestand niet bij een ander hoofdlettergebruik op macOS.** De
-    weigering voor een stille schemawijziging (`fileTools.ts`, `refuseSilentSchemaChange`) vergelijkt paden
-    alleen hoofdletterongevoelig bij een Windows-station. Op macOS is het bestandssysteem meestal
-    hoofdletterongevoelig, dus `Model.ifc` tegenover `model.ifc` is hetzelfde bestand maar komt door de
-    vergelijking. Symbolische links worden ook niet opgelost. Afgeleid uit de code door de review van #336,
-    niet op een Mac nagespeeld. — S
-
-124. **`planner_update_calendar` `generate` dekt het projecteinde niet als `endDate` gezet is.**
-    `calendarSpan` (`calendarResourceTools.ts:585-590`) neemt `project.endDate || cpmResult.projectEnd`. Een
-    `endDate` gaat dus voor het berekende einde. Loopt de planning daarna door, dan krijgen die jaren geen
-    feestdagen en komt er geen waarschuwing; opnieuw genereren helpt niet, want de spanne blijft op `endDate`
-    staan. Nagespeeld in een scratch-script (agent-audit 2026-10-19). Anders dan 88 (geen rekenresultaat).
-    De UI-regeneratie gebruikt dezelfde `computeGenerateSpan` (`ResourceCalendarDialog.tsx:57`); of dat daar
-    bedoeld is, is niet uitgezocht. Voorstel: het latere van `endDate` en het berekende einde nemen, of een
-    `warnings`-regel geven. — B
-125. **De eerste bibliotheek heet hardgecodeerd "Mijn resourcebibliotheek"**, ook in de Engelse app
-    (`types/library.ts:63`). Ook de terugvalnamen "Nieuwe resourcebibliotheek" (`librarySlice.ts:414`,
-    `libraryOps.ts:463`). Valt buiten 29. — B
-126. **Updatevenster: de tekst *Bezig met installeren…* is niet te bereiken.** De balk met
-    `updates.installing` staat achter `isDownloading` (`status.kind === 'downloading'`), terwijl de tekst
-    `isReadyToInstall` (`'readyToInstall'`) vraagt (`UpdateDialog.tsx:125-128,205-208`). Na de download springt
-    het venster naar *Herstarten…* (`:225-229`). Alleen in de code gezien. — S
-137. **De MCP-bridge antwoordt op een notificatie met `200` en een lege body, niet met `202 Accepted`.** De
-    MCP-spec (2025-06-18, Streamable HTTP) zegt: een geaccepteerde notificatie krijgt "MUST return HTTP status
-    code 202 Accepted with no body". `handleMcpMessage` geeft dan `''` (`dispatcher.ts`), en `forward_to_webview`
-    stuurt dat als `200 application/json` terug (`mcp_bridge.rs:331`). De officiële SDK-client (1.32.1), Claude
-    Code 2.1.306 en `mcp-remote` 0.15.2 accepteren het (gemeten met `tests/mcp/cases-externe-client.ts`); een
-    strikte client kan het weigeren. Gevolg bij de SDK: na `notifications/initialized` opent hij de GET-stream
-    niet (die is er ook niet, 405). Voorstel: in Rust bij een lege antwoordbody `202` zonder Content-Type, en
-    `bridgeMirror.ts` mee aanpassen. — B
-
-164. **Nivelleren bij 10.000 taken: tijdens *Berekenen* blokkeert de UI toch 2,8–4,1 s.** De berekening zelf
-    loopt in een Web Worker, maar de nulmeting (`npm run measure:large-plans`, 21-10-2026) zag in die fase één
-    long task van 2.825–4.115 ms op de hoofdthread (5.000 taken: 741–802 ms). Vermoedelijke oorzaak: de
-    voorsteltabel in `LevelingDialog.tsx:265` rendert alle 8.920 rijen zonder virtualisatie. Niet met een
-    profiel bevestigd. — S
 
 ## Bestanden en herstel
 
@@ -208,8 +163,6 @@ en noem het in je rapport of PR-tekst.
 46. **`.mpp` neemt de kritiek-drempel uit MS Project niet over als projectinstelling** (wel voor *Datums zoals
     opgeslagen*; MSPDI doet het wel). Gevolg: drempel 0 na openen. — B
 
-96. **Het herstelmanifest schrijft een `version`, maar niemand controleert die** (`recoveryStore.ts`). Een
-    oudere build leest een nieuwer manifest dus zonder waarschuwing. Gemeld door de bouwer van #309. — S
 97. **De sluitvraag van een tabblad ligt op een vaste z-index 80**, de gewone dialogen op 50/60. Elke vraag die
     vanuit *Opslaan* in die sluitvraag opent, valt eronder en lijkt te hangen. De twee site-dialogen liggen
     daarom op `z-[90]`; een volgende vraag op die route moet hetzelfde doen. Gezien bij #309 met een
@@ -220,29 +173,6 @@ en noem het in je rapport of PR-tekst.
     op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
     met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
     Gemeld door de review van #312. — S
-107. **`IfcTaskTime.Completion` krijgt `0.00` bij een taak zonder voortgang.** Het attribuut is een
-    `IfcPositiveRatioMeasure`, en die moet groter dan 0 zijn (regel WR1). `ifcTaskSlots.ts`, slot `completion`
-    (`ifcCompletionReal(... ?? 0)`). IfcOpenShell 0.9.0 (`ifcopenshell.validate`) geeft één melding per taak
-    zonder voortgang: 1155 in de 24 voorbeelden, 17 in het rijke testproject van `check-ifc-arity.ts`. Voorstel:
-    `$` bij 0 (de reader leest `$` al als 0); niet uitgezocht of de aanwezigheidsregistratie in hetzelfde
-    bestand dat toelaat. Gevonden bij #292, niet daar opgelost. — B
-108. **Gehele getallen in `IFCREAL(...)` en `IFCMONETARYMEASURE(...)` zonder decimale punt.** STEP vraagt voor
-    een REAL een punt (`8.`), de writer schrijft `8`. IfcOpenShell meldt dan
-    `IfcPropertySingleValue :: NominalValue: Not valid`: 210 keer in de 24 voorbeelden, 17 keer in het rijke
-    testproject (precies de 17 gehele waarden). Met `8.` in plaats van `8` verdwijnen de meldingen (met een
-    script nagemeten). Plekken: `ifcWriter.ts`: eigen velden `number`/`cost` (`case 'number'`), de
-    kalender-pset (`HoursPerDay`, `WorkStartHour`, `WorkEndHour`) en de resource-pset (`MaxUnits`,
-    `CostPerHour`). Voorstel: één hulpfunctie voor een STEP-REAL, zoals `ifcCompletionReal`. Gevonden bij
-    #292, niet daar opgelost. — B
-109. **`StartTime`/`FinishTime` van `IfcWorkPlan` en `IfcWorkSchedule` komen uit de invoerdatums, niet uit de
-    berekende planning.** `ifcWriter.ts` (blok `// Work plan & schedule`) neemt het minimum en maximum van
-    `time.scheduleStart`/`time.scheduleFinish`. Dat zijn invoervelden (`ifcTaskSlots.ts`,
-    `RECORDED_INPUT_SLOT_KEYS`). Het commentaar bij `ProjectStartDate` zegt dat deze plekken "de afgeleide
-    plan-omvang (min/max van de taak-span)" dragen. Gezien in `examples/10-villa-wassenaar.ifc`: het
-    werkschema eindigt op 2027-03-16, maar de laatste taak (Handover) eindigt volgens `IfcTaskTime`
-    (EarlyFinish/LateFinish) op 2027-12-01. Zo staat het ook op main (1e192b31a en later). Na
-    `MergeProjects` neemt IfcOpenShell deze datums over. Voorstel: de getoonde datums gebruiken (werkelijk,
-    anders early, anders invoer), zoals de baseline doet. Gevonden bij #292, niet daar opgelost. — B
 110. **Een samengevoegd 4D-bestand (bouwmodel plus planning) openen en weer opslaan wist het bouwmodel.** De
     writer schrijft alleen wat de app zelf kent; vreemde entiteiten zoals `IFCWALL`, `IFCBUILDING` en
     `IFCSITE` gaan niet mee (`ifcWriter.ts`). Nagemeten: `examples/10-villa-wassenaar.ifc` met ifcpatch
@@ -278,17 +208,6 @@ en noem het in je rapport of PR-tekst.
     (niet in de PR) als 120 taken in 6 documenten; de meting bij #357 vond vóór die fix 120 in 5 documenten,
     waaronder de 4 lopende taken op 100 % in rehab-2 die nu gelijk blijven. Voorstel: besluiten welke kant
     wint (P6-status of actuals) en dat in beide lezers gelijk trekken. — B
-116. **`readIFC` geeft een fase op 100 % zonder werkelijk einde een verzonnen werkelijk einde** (en maakt een
-    lopende fase voltooid). De writer schrijft de fase-rollup (`summaryProgress.ts`). Die kan een fase op
-    100 % zonder werkelijk einde geven: STARTED als een niet-gestarte mijlpaal onder voltooide taken hangt, of
-    COMPLETED als de taken eronder alleen voltooid of lopend op 100 % zijn. `normalizeImportedProgress` maakt
-    van zo'n fase bij het lezen COMPLETED, met een werkelijk einde op de statusdatum. Na de solve rekent de rollup de fase opnieuw uit en is het weg; het telt dus alleen op
-    paden zonder solve, zoals "Datums zoals opgeslagen" (`documentActivation.ts`). Gemeten met een script, op
-    main en met #357 gelijk: fase P met alleen een lopende taak op 100 % (statusdatum 2015-01-07) krijgt AF
-    2015-01-07; fase *Pre-Construction* in `demo-sample.xer` krijgt AF 2024-06-01T08:00. Direct na de
-    XER-import (zonder IFC) heeft de fase geen werkelijk einde. Met #357 houdt de taak geen werkelijk einde
-    meer, dus spreekt het einde van de fase haar taak nu tegen. Voorstel: fasen in de lezer niet door de
-    voortgang-invarianten halen. — B (lezer), S (gevolg in "Datums zoals opgeslagen" niet nagespeeld)
 118. **Een XER-activiteit met een onbekende `status_code` blijft "niet gestart", ook op 100 % of met een
     werkelijk einde.** `statusOf` (`src/services/xer/xerReader.ts`) geeft bij een onbekende tekst (bv.
     `TK_Weird`) de enum-fallback NOT_STARTED, met melding. Een lege of ontbrekende status leidt de lezer sinds
@@ -297,63 +216,7 @@ en noem het in je rapport of PR-tekst.
     `tests/planning/check-xer-status-afleiden.ts` pint het huidige gedrag vast. In het XER-corpus komt het
     geval 0 keer voor. Gevonden bij de review van #358. Voorstel: een onbekende status behandelen als een lege
     (afleiden uit de voortgang, melding blijft), zoals MPXJ; besluit van de eigenaar nodig. — B
-119. **`.mpp`: een werkresource kan als materiaal binnenkomen.** `readResources`
-    (`src/services/mpp/mppEntities.ts`) koppelt een resource aan het EERSTE FixedData-record met dezelfde
-    uid, ook als dat een kort plaatshoudersrecord van 16 bytes is. MPXJ's `createResourceMap` slaat records
-    korter dan de volle maat over. Gevolg: type (meta-item van de verkeerde index) en `maxUnits` komen uit het
-    plaatshoudersrecord. Gemeten met MPXJ's `junit/data/mpp14resource.mpp`: *Wade Golden* en *Jon Iles*
-    worden MATERIAL, in `mspdiresource.xml` (dezelfde planning) LABOR. Gevonden bij het importverslag
-    (#391). Voorstel: records korter dan de volle maat overslaan, zoals MPXJ. — B
 
-127. **IFC-tab *Toepassen* wist de bibliotheekkoppeling en zet *Niet opgeslagen* uit.** *Toepassen*
-    (`IFCPanel.tsx:57-62`) roept `loadState` aan zonder `linkedOpen`; `applyLoadedProject` wist dan `companyId`
-    en `companyName` (`fileSlice.ts:797-799`) en `isDirty` wordt `false` (`documentContract.ts:489`). Een
-    gewijzigd project lijkt zo opgeslagen, en sluiten vraagt niets. Nagespeeld met het voorbeeld plus
-    bibliotheek en een gewijzigde taaknaam: vóór `isDirty` true, erna false, `companyName` null, de wijziging
-    blijft aanwezig. Voorstel: `isDirty` laten staan en de koppeling behouden. — B
-128. **CSV: een datum in een onleesbare vorm wordt stil "vandaag".** `csvDateOrToday` valt terug op
-    `localTodayIso()` (`importDates.ts:71-74`, gebruikt door `csvReader.ts:135`). De Help noemt alleen de drie
-    geldige vormen. Of er elders een melding voor komt, is niet nagegaan. Niet nagespeeld. — S
-153. **MSPDI: een onleesbare taakdatum bij een urentaak breekt de hele import af.** `<Start>NA</Start>` (of
-    `<Finish>`, `<ActualStart>`, `<ConstraintDate>`, `<Deadline>`, `<EarlyStart>`, `<LateFinish>`) op een taak
-    met een uurkalender gaat door `importDateTime(raw, true)` (`importDates.ts`) → `formatInstant` →
-    `toISOString()` en geeft `RangeError: Invalid time value` (`mspdiReader.ts`, taakdatums, actuals,
-    constraint, deadline en "datums zoals opgeslagen"). Nagespeeld met een tijdelijke check op main én op de
-    lezer van vóór #392: in beide gevallen dezelfde `RangeError`, dus niet door #392 ingevoerd. Alleen
-    ongeldige invoer (het schema eist `xsd:dateTime`). Gevonden bij de fix van VERVOLG 13 van #392.
-    Voorstel: dezelfde regel als de baseline (`importDateTimeOrUndefined`): onleesbaar = ontbrekend, met de
-    bestaande terugval per veld. — B
-154. **P6 XML: dezelfde `RangeError` bij een onleesbare datum op een urentaak.** `p6xmlReader.ts` roept
-    `importDateTime(raw, hourDates)` aan voor geplande start/finish, actuals, constraints en de opgeslagen
-    datums (rond regel 920–982). Afgeleid uit de code, niet nagespeeld; de lezer is niet door #392
-    veranderd. Voorstel: zoals 153. — S
-155. **`.mpp` zonder veldkaarten: vaste kosten en tarieven ontbreken in het importverslag.** De terugval op de
-    standaardveldkaarten kent die velden niet, dus het verslag meldt hun verlies niet. VERVOLG 5 van #392,
-    gemeld door de reviewer. Niet nagespeeld. — S
-156. **MSPDI-importverslag: één tariefrecord in tabel A met overwerktarief of gebruikskosten wordt niet
-    bekeken.** `scanMspdiImportLoss` (`mspdiImportLoss.ts`, tarieven) kijkt bij tabel A alleen of er meer dan
-    één record is; `OvertimeRate`/`CostPerUse` onder één `Rates/Rate` in tabel A geven geen melding.
-    VERVOLG 6 van #392, gemeld door de reviewer. Niet nagespeeld. — S
-157. **`.mpp`: een gedeelde lange aantekening wordt per verwijzing opnieuw verwerkt.** 1.000 taken × 64 KiB
-    kost ongeveer 1,4 s. VERVOLG 8 van #392 (meting van de reviewer). Voorstel: cache per gedeeld datablok. — S
-158. **`.mpp`-importverslag: een lege baselinedatum kan vals verlies geven.** `mppImportLoss.ts` controleert
-    de ruwe bytes in plaats van `getTimestamp()`; de bytes `00 00 FF FF`, `FF FF 00 00` en `00 00 01 00`
-    tellen dan als datum. Synthetisch; niet gezien in 34 echte bestanden. VERVOLG 9 van #392. — S
-159. **`.mpp`-importverslag: verborgen RTF-metadata kan een niet-bestaande afbeelding of object melden.**
-    Bijvoorbeeld `{\info{\title \\pict}}` in een aantekening. Voorstel: herkennen via de tokenizer. VERVOLG 10
-    van #392. Niet nagespeeld. — S
-160. **MSPDI-importverslag vergelijkt numerieke XML-waarden als tekst.** `<Number>00</Number>` telt niet als
-    Baseline 0 (`baseline0Dates` in `mspdiImportLoss.ts` vergelijkt met `'0'`), terwijl de lezer
-    (`getElementInt`) hem wel als Baseline 0 leest. `<TaskUID>01</TaskUID>` geeft bij gelijke baselines
-    telling 1, terwijl de lezer wel aan taak 1 koppelt. VERVOLG 11 van #392. Voorstel: baselinenummer en
-    taak-UID numeriek parsen zoals de lezer. — S
-161. **Voortgangsblad: de preview maakt geen verschil tussen een onbekende taak-ID en een dubbele WBS.** Beide
-    staan onder *Wacht op koppeling* (`ProgressImportDialog.tsx:147-149`), met alleen WBS en naam uit het blad,
-    het bladrijnummer en *Kies een taak…* (r. 369-400). De reden (`unmatched` of `ambiguousWbs`) en de
-    `OPS Task ID` uit het blad staan pas in het venster *Resultaat*, na *Toepassen* (r. 500). Een rij met
-    alleen een onbekende ID en geen WBS of naam toont dus een lege kop. Dubbele rijen (`duplicateRow`) staan
-    wel apart, met hun reden. De store-uitkomst is wel per soort apart: `check-progress-import-ronde.ts` deel D.
-    Voorstel: in *Wacht op koppeling* de reden en de ID uit het blad tonen (#405 deel 5). — B (code en test)
 162. **Desktop (Linux/macOS): Opslaan overschrijft een alleen-lezen projectbestand als de map schrijfbaar
     is.** `replaceUserFile` (`atomicWrite.ts`) schrijft een halffabricaat met de rechten van het origineel
     (0444) en hernoemt het over het doel; op POSIX mag dat. Het bestand krijgt de nieuwe inhoud en blijft
@@ -361,65 +224,62 @@ en noem het in je rapport of PR-tekst.
     `check-save-failure-status.ts` §1R (MEETING-regel 1R-d). Is de map ook alleen-lezen, of Windows met het
     kenmerk alleen-lezen, dan faalt opslaan wel netjes (zelfde check, §1 en §2). Voorstel: bij een doel zonder
     schrijfbit eerst vragen of melden. Een besluit voor de eigenaar. — B
-163. **Web: Ctrl+S op een vergrendeld bestand opent zonder uitleg de bestandskiezer.** `saveToRefWeb`
-    (`webBackend.ts`) slikt elke fout (ook `NoModificationAllowedError`) en geeft `false`; `writeActiveDocument`
-    valt dan terug op Opslaan als. Annuleert de gebruiker, dan komt er geen melding (het document blijft
-    terecht gewijzigd). Gezien in `check-save-failure-status.ts` §3a/3b. Voorstel: een echte schrijffout
-    melden vóór de kiezer verschijnt. — B
+
+201. **Het versieloze webherstelmanifest met `docIds` forceert `isDirty=true`.** In
+    `recoveryStore.ts`, `loadWeb`, krijgt de terugvalmetadata voor `docIds` `isDirty: true`;
+    `document.isDirty ?? rec.isDirty ?? true` kiest daardoor die `true`, ook als het oude
+    documentrecord `isDirty: false` bevat. Statisch gezien bij het versiecontract van knownbug 96;
+    de bestaande legacysemantiek is in die fix behouden. Mogelijk verwant aan de herstelmelding
+    van 36, maar niet vastgesteld als dezelfde oorzaak. De bedoeling en runtimegevolgen zijn niet
+    onderzocht. — S
+
+202. **Een Tauri-snapshot met een I/O-leesfout telt niet mee als mislukt herstel.** Brononderzoek,
+    niet uitgevoerd: `recoveryStore.ts`, `loadTauri`, logt een fout uit `readSnapshotTauri` en slaat
+    de manifestregel over. Als minstens één andere snapshot leesbaar is, retourneert hij alleen
+    die documenten; de I/O-uitval wordt niet in `LoadedRecovery` doorgegeven. `useRecoveryRestore`
+    telt alleen parsefouten van de wel geladen documenten (`failed`) en de door `restoreDocuments`
+    overgeslagen documenten. Na de keuze Herstellen en gezond herstel kan daardoor `clearRecovery()`
+    volgen, dat de hele ondersteunde herstelset probeert op te ruimen, ook een nog aanwezige maar
+    onleesbare snapshot. Dit betreft
+    falend lezen van de snapshottekst; een losse `stat`-fout geeft alleen `mtime: null`. Voorwaarde
+    en mogelijk opruimpad zijn statisch afgeleid; runtimegedrag en concreet dataverlies zijn niet
+    vastgesteld. — S
+203. **De updater gaat na een afgewezen recovery-flush door naar installatie.** Brononderzoek,
+    niet uitgevoerd: `updaterService.ts`, `downloadAndInstall`, vangt een rejection van
+    `flushRecoveryNow()` op en logt die, zonder de updateroute af te breken. Daarna probeert hij
+    `update.install()` en, als die slaagt, `relaunch()`. De bronroute bestond al vóór fix 96; dit
+    punt zegt niet dat iedere mislukte snapshotwrite als rejection uit de flush komt. Geen
+    runtime-repro of concreet dataverlies vastgesteld; bedoeling en gewenste foutafhandeling
+    niet onderzocht. — S
 
 ## Rondleiding, Help en extensie-gidsen
 
 62. **Melding schuift over de knoppen van het begeleidingspaneel** (1600×950, venster Baselines open):
     `toastPlacement.ts` houdt geen rekening met het paneel. — B (gezien), oorzaak afgeleid
-67. **`pendingHelpSection` blijft hangen** (review #261, punt O7). — S
 68. **Een gidsstap die eenmaal "gedaan" is, blijft gedaan**, ook na wisselen naar een leeg project. Gezien bij
     tutorial 6 stap 8; niet uitgezocht of dat bedoeld is. — S
-72. **Tutorials-extensie linkt nog naar twee id's van vóór fase 4.** `extensions/tutorials/main.js` (branch
-    `claude/tutorials-tut2-7`, ZIP 1.2.0) linkt in tutorial 5 met de tekst *Nivelleringsopties* / *Leveling
-    options* naar `docs://ref-nivellering`, en in tutorial 4 naar `docs://ref-instellingen-lijst`. Beide werken
-    via een alias (→ `howto-overbezetting-oplossen`, → `ref-instellingen`; in de productiebuild aangeklikt),
-    maar de linktekst *Nivelleringsopties* past niet meer bij het artikel *Overbezetting oplossen*.
-    Voorstel: in de extensie de nieuwe id's en titels gebruiken. — B
+
 
 ## Teksten en helpteksten
 
-40. **Helptekst *Restwerk hervat na de al verstreken duur*** zegt in alle talen "niet op de statusdatum";
-    de statusdatum blijft ook een ondergrens. Idem codecommentaar `CPMSolver.ts` ~2367, `types/project.ts`
-    ~128. — B
-41. **Intro *Instellingen uit het bronbestand*** zegt "uit een .xer"; verschijnt ook bij *Nieuw project* met
-    Primavera P6. — B
-42. **Helpteksten van enkele conventies** noemen hun voorwaarden niet (alleen urenkalender, alleen
-    `.xer`-herkomst). — B
 57. **Statusdatum-label in de Gantt** toont ISO (`2027-06-28`), de rest dd-mm-jjjj. Mogelijk bewust. — S
 73. **Namen en beschrijvingen van de voorbeeldprojecten zijn Engels in elke interfacetaal.** Gezien in de
     nl-interface bij *Bestand › Voorbeelden*; de Help-artikelen noemen daarom de Engelse namen. Niet
     nagegaan of dat voor alle voorbeelden geldt. Voorstel: bewust laten, of per taal vertalen. — B
+
+200. **De strikte UI-vertaalpoort kan een volledig ontbrekende taalmap overslaan.**
+    `status` in `scripts/translate/cli.ts` bepaalt zonder expliciete taal de UI-talen via de aanwezige
+    mappen onder `src/i18n/locales/`. Ontbreekt bijvoorbeeld `lo/`, dan kan `status --strict` groen
+    blijven wanneer de overige UI actueel is en de Lao-termbase geldig is. De bestaande mapinventarisatie
+    staat los van de termbasedekking uit PR #537; die PR herstelt deze UI-inventarisatie niet.
+    Statisch afgeleid bij de review op `78583d1b` (regels 896–900), niet lokaal uitgevoerd.
+    De nieuwe CLI-test herstelt de verwijderde UI-map evenmin vóór zijn groene verwachting. — S
 
 102. **`apply-terms` vertrouwt `terms-NN.json` en `terms-check-01.map.json` zonder zegel.** De UI- en
      docs-pakketten hebben sinds #323 een zegel (`build/translate-seal/`); de termbase-pakketten niet, terwijl
      agents in dezelfde map schrijven. Voorstel: dezelfde `seal`/`sealErrors` in `prepare`/`apply-terms`.
      Gevonden in de review van #323 (Opus, 2026-10-12), in de code aangewezen. — S
 
-130. **De omschrijving van het voorbeeld *Refurbishment & Extension of a Family Home*** belooft een conflict
-    dat "'Distribute' can resolve" (`public/examples/manifest.json:7`, getoond in `Backstage.tsx`). Er is geen
-    Verdelen-knop; alleen de kern bestaat (`distributeUnits`, `ResourceLoad.ts`). — B
-170. **Vertaalstraat: een nieuw concept zonder doelterm valt niet op.** Na #376 stond `work-category`
-    (werksoort) in `i18n/termbase/concepts.json`, maar in geen enkele `<taal>.json`. `validate-termbase` en
-    `verify:translations` bleven groen. De straat hield toen de oude taaktype-term aan (bijv. de: `Neue Vorgangsart`),
-    en de labelpoort dwong die oude tekst af. In de release-ronde van 2026-10-21 hersteld (termen +
-    `--keys`-ronde). Voorstel: `validate-termbase` rood bij een concept zonder term in een taal. — B
-171. **Meldingen met naam óf aantal verliezen de naam in talen met één meervoudsvorm.** `common.json`
-    `notifications.milestoneRefusedAssignments_one`/`_other` (en `milestoneRefusedSummary`, `milestoneClearedOnPhase`)
-    wisselen tussen "'{{task}}' heeft …" en "{{count}} taken hebben …". zh, ja, ko en lo kennen alleen `other`, dus
-    bij één taak tonen ze "1 个任务…" zonder naam. De Help-labelpoort eist dan in `ref-meldingen` die `other`-vorm,
-    terwijl het bronartikel de vorm met naam citeert: het artikel blijft rood in zh, ko en lo (ronde 2026-10-21).
-    Voorstel: twee sleutels (met naam, met aantal) in plaats van een meervoud. — B
-172. **Vertaalstraat: de korte uureenheid werd in ar en fa vertaald, tegen het besluit "10h".** `menu.json`
-    `…hoursValue` werd in de ronde van 2026-10-21 `{{hours}}س`. De test
-    `tests/browser/calendar-file-hours-notice.spec.ts:266` eist in ar/fa "10h" (besluit eigenaar 2026-10-20: geen
-    spatie, getal en "h" als één LTR-reeks). Alleen de browsersuite in CI ving het; `verify:translations` en de
-    straat zelf zagen niets. Met de hand teruggezet op `{{hours}}h`. Voorstel: in de straat een vaste-tekstregel
-    per sleutel (bijv. in `i18n/termbase/`), zodat een volgende ronde dit niet opnieuw vertaalt. — B
 173. **Toewijzingen: lange kolomkoppen laten in veel talen weinig ruimte voor de resourcenaam.** De bron is kort
     (`task.json` `properties.assignments.units` "Units"/"Inzet", `workHours` "Work (h)"), maar de straat
     vertaalde naar de volle term (uk "Одиниця призначення", ru "Единицы назначения", bg, hu, ro, sk, da, nb,
@@ -428,12 +288,21 @@ en noem het in je rapport of PR-tekst.
     van v2026.10.0 opgelost met afkappen (`TaskAssignmentsSection.tsx`), de koppen zelf niet. Voorstel: korte
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
+
 ## Tests
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
     496–499 ms (5-10-2026); rood (535–790 ms) in `npm run verify` zodra de container druk is (meerdere agents
     tegelijk). In CI steeds groen. De grens meet de machine mee. Voorstel: grens relatief aan een
     referentiemeting in dezelfde run, of alleen in CI hard. — B
+199. **Linux-PR-CI kan stranden op de APT-updategrens via het officiële Ubuntu-archief.**
+    Bij PR #536 op `cc7d2aef` haalde de update metadata op via `https://archive.ubuntu.com/ubuntu/`,
+    maar na de start van de 14,1 MB `jammy/universe`-index brak de grens van twee minuten af met TERM.
+    Frontendinstallatie en build waren nog niet gestart. Zie
+    https://github.com/OpenAEC-Foundation/open-planner-studio/actions/runs/39859111765/job/120105089448.
+    Dit is een afzonderlijke netwerk-/doorlooptijdbevinding na #515/#523; oorzaak en herhaalbaarheid
+    zijn niet vastgesteld. De limieten en CI-poorten zijn niet verruimd. — B (CI-uitval), S (oorzaak)
+
 90. **`check-xer-tables` is rood als de `TextDecoder` van Node byte 0x80 (CP1252) niet naar € vertaalt**
     ("Café €" wordt "Café "; 6 asserties in deel 5). Gezien 7-10-2026 in een cloudcontainer (Node 22.22.0,
     ICU 77.1), óók op de onaangeraakte commit `c00163a`; daar geeft `new TextDecoder('windows-1252')` voor
@@ -447,16 +316,8 @@ en noem het in je rapport of PR-tekst.
     "Failed to load resource: 404" in de console, ook de bestaande `table-reports.spec.ts` (gedraaid op de
     branch van de DCMA-PR, die dat rapport niet raakt). Welke URL dat is, is niet vastgesteld. — S
 
-100. **Tailwind v4 scant ook bestanden buiten `src/`**, zoals `scripts/`. Een token als `[a:b]` in een
-    logtekst wordt dan een CSS-regel in de bundel. Gezien bij #308 met `[build:platform]` (+36 bytes CSS);
-    de logtekst is daarom aangepast. Voorstel: de bronnen van Tailwind beperken tot `src/` en `index.html`. — B
-
 104. **Geen automatische test voor de zegels en `check-docs`** (`scripts/translate/cli.ts`). In #323 alleen met
      de hand nagespeeld. De CLI werkt vanuit `process.cwd()`, dus een test in een tijdelijke map kan. — S
-
-120. **`delete-under-dialog.spec.ts` (regel 40) faalt soms op focus.** In CI-run 39384273333 (PR #392, browser
-    1-4): `expect(locator).toBeFocused()` gaf `inactive`. Na een herhaling van de job groen, zonder wijziging;
-    de PR raakt geen dialoog- of focuscode. Wisselvallig, oorzaak niet onderzocht. — S
 
 165. **`window.__OPS__.gantt.paintCount` telt alleen in een dev-build.** `useGanttRendererHost.ts:32` roept
     `recordGanttPaint` aan achter `import.meta.env.DEV`; in een productiebuild met `VITE_OPS_BENCH_BRIDGE=1`
@@ -471,11 +332,6 @@ en noem het in je rapport of PR-tekst.
    bleven ook shards van andere branches en van `main` lang `in_progress`. Dat wijst eerder op de runners
    dan op een test. — S
 
-168. **Een IFC met een heel diepe WBS (6.000 niveaus) laat het openen vastlopen op een `RangeError`
-   (Maximum call stack size exceeded).** Gezien via de headless kern: `openAsDocument` gooit die fout op
-   een gegenereerd bestand met 6.000 geneste taken (`tests/planning/check-headless-core.ts` §4g). De kern
-   vangt hem nu af als `PlannerCoreError` (`IFC_READ_FAILED`); de recursie zelf is niet opgelost. In de
-   app zelf niet nagespeeld. Gemeld in de review van PR #440. — B
 169. **`tests/browser/document-switch.spec.ts:75` (Gantt documenttabs herstellen beide paneviews en
    DOM-scrollbars) faalt soms in CI.** In de opbouw (`configureDocument`, regel 41) zet de test
    `setScroll(…, 190)` en leest daarna `scrollY: 0` terug. Gezien één keer in CI op PR #439
@@ -483,6 +339,12 @@ en noem het in je rapport of PR-tekst.
    op een head die verder alleen de MCP-laag raakt; op de vier eerdere heads van die PR was hij groen.
    Lokaal 5× groen op `main` (b4ee5be3) en 25× groen op de PR na merge met main. Vermoedelijk zet iets de
    verticale scroll terug (begrenzing op de inhoudshoogte) voordat de inhoud er is; niet onderzocht. — S
+
+178. **`gh pr edit --body-file` faalt op deze host door Projects Classic.** Bij het bijwerken
+    van PR #479 op 2026-10-22 gaf de CLI `GraphQL: Projects (classic) is being deprecated`
+    op `repository.pullRequest.projectCards`. De body is wel bijgewerkt via
+    `gh api --method PATCH repos/OpenAEC-Foundation/open-planner-studio/pulls/479 -F body=@<bestand>`.
+    Voorstel: de GitHub CLI op de host bijwerken; de repo zelf is niet aangepast hiervoor. — B
 
 ## Wensen en open taken (geen bug)
 
@@ -501,24 +363,13 @@ en noem het in je rapport of PR-tekst.
     zonder naar de volgende kolom te gaan. Bij snel invoeren via de spookregel (typ naam, Tab, typ duur)
     verwacht je het Excel-gedrag: vastleggen en een kolom verder (Shift+Tab terug). Gezien bij review
     vader, punt 1. — B
-133. **Het venster *Werkelijke start opgeven* heeft geen ?-knop** (`ActualStartDialog.tsx:82`,
-    `DialogHeader` zonder `help`). Het doel zou `howto-voortgang-bijwerken` zijn. — B
 
-174. **De handmatige release-invoer begint met een verouderde voorbeeldtag.**
-    `.github/workflows/release.yml:12` stelt een tag van vóór het huidige versieschema voor.
-    De versiecontrole wijst die invoer af; de standaardwaarde is dus niet bruikbaar. Gezien bij
-    de versie-audit voor #450. Voorstel: verwijder de standaardwaarde en laat de gebruiker een
-    correcte tag invullen. Geen workflow gestart. — B (bestand en lokale versiecontrole)
 
-175. **`progress-entry.spec.ts` opent de taakdialoog soms niet opnieuw.** In CI-run 39750997457
-    (PR #476, browser 3-4, 2026-10-22) faalde het scenario *Regel 2, Taak bewerken* op regel 300:
-    na `seedActualDates` en een canvasdubbelklik ontbrak `[data-ops-task-dialog]`. De eerste opening
-    en de voortgangsvraag in hetzelfde scenario slaagden. De PR wijzigt alleen Vite 7.3.5 naar 7.3.7;
-    de oorzaak en het verband met die wijziging zijn niet vastgesteld. — S
-
-176. **MSPDI: de projectstart wordt zonder XML-escaping geëxporteerd.** `mspdiWriter.ts` schrijft
-    `project.startDate` rechtstreeks in `<StartDate>`; de reader neemt een tekstprefix uit het
-    invoerveld over. Een ongeldige datum met XML-metatekens kan zo ongeldige XML opleveren. Gezien
-    bij de analyse van CodeQL #18; die melding is een false positive voor XSS omdat de reader
-    uitsluitend `application/xml` parseert en geen nodes in de pagina invoegt. De XML-integriteit
-    van zulke ongeldige datums is niet nagespeeld. Voorstel: datumvalidatie en escaping. — S
+179. **De website heeft geen PR-CI voor de automatische releasestap.** Op 2026-10-22 bevat
+    `OpenAEC-Foundation/website/.github/workflows/` alleen `auto-assign-issues.yml`, `deploy.yml`
+    (push op main/dispatch) en `update-stats.yml` (dagelijks/dispatch). `gh api .../actions/workflows`
+    bevestigt deze workflows plus de dynamische Pages-deploy; branch protection geeft
+    `required_status_checks: null`. De checker-scripts staan alleen als lokale opdrachten in `CLAUDE.md`.
+    Daardoor kan een website-release-PR niet vóór de merge aan de eis “website-CI groen” voldoen.
+    Voorstel: een website-PR-workflow met de bestaande checkers toevoegen en als poort instellen.
+    De Nozzit-bypass voor reviews bestaat wel. Alleen gelezen; niets in de website gewijzigd. — B

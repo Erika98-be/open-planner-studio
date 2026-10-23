@@ -459,6 +459,7 @@
     "jumpToTask": "Ga naar taak {{wbs}}",
     "relationPopoverTitle": "Type relatie",
     "driving": "Bepalende relatie (driving)",
+    "drivingUnknown": "Bepalende relaties onbekend zonder berekening.",
     "lag": "Lag (bv. 2d, 3ed, 2u, 50%, -25e%)",
     "recalculate": "Bereken",
     "assignments": {
@@ -523,6 +524,8 @@
     "type": "Type",
     "lag": "Lag",
     "driving": "Bepalend",
+    "drivingUnknown": "Onbekend",
+    "notDriving": "Niet bepalend",
     "freeFloat": "Vrije speling",
     "warnings": "Meldingen",
     "warnTruncatedLead": "Lead afgekapt op de projectstart — de overlap wordt niet volledig benut",

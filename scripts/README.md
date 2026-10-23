@@ -61,7 +61,7 @@ Termbase, UI- en docsvertaling door kleine Haiku-agents per werkpakket; ontwerp
 
 | script | aangeroepen door | doet |
 |---|---|---|
-| `translate/cli.ts` | `npm run translate -- <commando>` | `validate-termbase`, `concepts-candidates`, `concepts-merge`, `terms-lookup <taal>`, `apply-terms <taal>`, `prepare ui <taal> [--missing\|--stale\|--all\|--avoid [--stale]\|--keys <bestand>]`, `bundle-check`, `apply ui <taal>`, `apply-findings <taal> <bestand>`, `packages ui\|docs <taal…> [--red]` (open pakketten als JSON, invoer voor `translate/workflows/`), `status [taal] [--strict]`, `prepare docs <taal> [--missing\|--stale\|--ids a,b] [--max-words N]`, `apply docs <taal>`, `check-docs <taal> [id…]` (pakketpoort op gepubliceerde artikelen; zonder id's worden verouderde artikelen apart gemeld, met genoemde id's is een verouderd artikel rood), `rename-doc <oud> <nieuw>`, `remove-doc <id>`, `docs-budget <taal…>`, `docs-literal`; `status --strict` is de releasepoort `npm run verify:translations` (exit 1 bij elke ontbrekende, verouderde of hashloze UI-vertaling; achterlopende docs worden alleen gemeld, besluit 2026-10-12). `apply ui` keurt elk pakket ook tegen de huidige nl en de taal. `prepare` legt per pakketbestand een zegel (sha-256) vast in `build/translate-seal/<taal>.json`, buiten de map van de agents; `apply` en `packages --red` keuren een pakket rood dat daarna veranderde |
+| `translate/cli.ts` | `npm run translate -- <commando>` | `validate-termbase`, `concepts-candidates`, `concepts-merge`, `terms-lookup <taal>`, `apply-terms <taal>`, `prepare ui <taal> [--missing\|--stale\|--all\|--avoid [--stale]\|--keys <bestand>]`, `bundle-check`, `apply ui <taal>`, `apply-findings <taal> <bestand>`, `packages ui\|docs <taal…> [--red]` (open pakketten als JSON, invoer voor `translate/workflows/`), `status [taal] [--strict]`, `prepare docs <taal> [--missing\|--stale\|--ids a,b] [--max-words N]`, `apply docs <taal>`, `check-docs <taal> [id…]` (pakketpoort op gepubliceerde artikelen; zonder id's worden verouderde artikelen apart gemeld, met genoemde id's is een verouderd artikel rood), `rename-doc <oud> <nieuw>`, `remove-doc <id>`, `docs-budget <taal…>`, `docs-literal`; `status --strict` is de releasepoort `npm run verify:translations` (exit 1 bij elke ontbrekende, verouderde of hashloze UI-vertaling of termbasefout; achterlopende docs worden alleen gemeld, besluit 2026-10-12). `apply ui` keurt elk pakket ook tegen de huidige nl en de taal. `prepare` legt per pakketbestand een zegel (sha-256) vast in `build/translate-seal/<taal>.json`, buiten de map van de agents; `apply` en `packages --red` keuren een pakket rood dat daarna veranderde |
 | `translate/workflows/*.js` | de Workflow-tool (skills `update-ui-lang`, `update-docs-lang`) | `stations.js` (vertalen → nalezen → herstellen per pakket, Haiku), `docs-spotcheck.js` (steekproef, Sonnet), `docs-spotcheck-fix.js` (herstel na de steekproef, Haiku) |
 | `translate/check.ts` | gebundeld tot `build/translate/check.mjs` (door `prepare`, `terms-lookup`, `concepts-candidates`) | de poort die een agent zelf draait: `node build/translate/check.mjs <pakket>`; zelfstandig, zonder `node_modules`. Staat `<pakket>.src.md` ernaast, dan is het een docs-pakket en leest hij `<pakket>.out.md` |
 | `translate/gates.ts` | `check.ts`, `apply.ts`, `cli.ts` | de harde en zachte poorten (§7) en de schema's van concepten-, termen- en blinde-controle-uitvoer; `checkDocs` (per sectie: opbouw, subset, dubbele kop, labels a/b/c, inline code behalve display, cijfers alleen ASCII, geen "getal + punt" vooraan, tokens/keep; zacht: termen, avoid als los woord, lengte) en `checkDocsArticle` (het samengevoegde artikel) |
@@ -81,12 +81,34 @@ Bestandskolommen (CSV, voortgangsblad) staan in de bron als inline code; inline 
 anders toont, staat per artikel onder `display` in `i18n/docs-literal.json`. `docs-budget <taal…>` meet
 het grootste pakket (tekens en geschatte tokens).
 
+**Termbasecontract.** `validate-termbase` faalt bij elk ontbrekend term-concept in elke doeltaal
+uit `src/i18n/locales.ts` behalve `nl` en `en`, ook als het hele taalbestand ontbreekt. `nl` en `en`
+staan al in `concepts.json`; `token` en `keep` vereisen geen doelterm. Elke aanwezige regel moet aan
+het bestaande schema voldoen (term, vormen met gedeelde stam, bron, status en geen avoid-conflict).
+Een term met alleen witruimte, stuurtekens of onzichtbare Unicode-opmaak geldt als leeg; zulke opmaak ín een
+inhoudelijke term blijft geldig. Fouten in doeltermen noemen taal en concept-id. `status --strict` en daarmee
+`verify:translations` voeren deze controle ook uit, vóór de controle op UI-vertalingen. Een nieuw
+term-concept vereist dus doeltermen in alle doeltalen. De voorbereiding kan in deelpakketten werken;
+de validatie van de geregistreerde termbase vereist alle doeltermen.
+
 **Termbase veranderd?** `prepare ui <taal> --avoid` vindt precies de vertalingen waarin een `avoid`-variant
 van een term staat (zelfde regel als de zachte poort: eerst de vormen van de term wegstrepen,
 hoofdletterongevoelig). Zet de oude term als `avoid` in `i18n/termbase/<taal>.json`; het pakket krijgt
 `reason: "avoid"`, per item `previous` en `avoidHits`, en gaat naar de opdracht `prompts/ui-termfix.md`
 (alleen die woorden vervangen). Met `--stale` erbij komen ook de verouderde sleutels mee. `--keys <bestand>`
 kiest precies de sleutels uit een JSON-lijst `["ns:pad", …]`, met de huidige tekst als `previous`.
+
+**Vaste UI-tekst.** `fixedUiText` in `translate/ui.ts` legt alleen
+`menu:ribbon.calendarDialog.hoursValue` in ar/fa vast op `{{hours}}h` (besluit eigenaar 2026-10-20:
+"10h", geen spatie, cijfer en h als één LTR-reeks; knownbug 172). NL blijft `{{hours}}u`, EN
+`{{hours}}h`; andere talen, eenheden en sleutels vallen niet onder deze regel. Een termbase-token
+bewaakt aanwezigheid, niet de volledige tekst of spaties, en is hiervoor te breed. `prepare ui`
+geeft het item `fixedText` mee. De bestaande pakketpoort (`check.mjs`, `apply ui`, `apply-findings`)
+controleert de regel uit de code, ook zonder of met bewerkte pakketmetadata. `status --strict`
+(`verify:translations`, releasepoort) gebruikt dezelfde controle op de locale-tekst, óók met een
+actuele bron-hash. Een afwijking geeft `fixed-text` met sleutel, taal en verwachte tekst. Herstel
+zo'n bestaande tekst gericht via `prepare ui <taal> --keys <bestand>`; er start geen brede vertaalronde.
+De cijferopmaak en de browsercontrole op tekenposities blijven in de UI/browsersuite.
 
 **Labelpoort.** `prepare ui` geeft een item `labels` als zijn nl-tekst een andere UI-tekst letterlijk
 noemt (een knop, tab of blok: begint met een hoofdletter, ≥ 2 woorden of ≥ 10 tekens, geen invulplekken,

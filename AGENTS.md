@@ -8,6 +8,12 @@ imports it (`@AGENTS.md`) so Claude Code loads it automatically — never put co
 depth lives in `.claude/rules/` (see *Where the depth lives*); Claude Code loads those per path, other agents
 should read the matching rule file before touching that area.
 
+**Server restriction for all agents, including subagents:** never start Node.js processes directly
+on this server; it cannot handle that workload. This includes `node`, `npm`, `npx`, dependency
+installation, builds, tests, dev servers and scripts that launch Node indirectly. Run that work in
+GitHub CI and inspect the results with `gh`. This rule takes precedence over all local execution,
+testing and self-testing instructions below and in skills or area-specific rules.
+
 ## Commands
 
 ```bash
@@ -54,7 +60,9 @@ convention registry, provenance data gates pinned), `npm run verify:cycles` (cir
 `npm run verify:text-roles` (only the six text roles), `npm run verify:release-highlights-json` (in the chain)
 and `npm run verify:release-highlights` (separate: local update highlights and stats before a tagged release).
 `npm run verify:translations` (release gate, deliberately NOT in `verify`: every UI key in every locale translated
-and current per `i18n/ui-sources/`; `release.yml` and the release skill run it). `npm run verify:audit` is
+and current per `i18n/ui-sources/`, plus a complete valid termbase for every target locale except nl/en
+and the key/language-specific fixed UI text contracts in `scripts/translate/ui.ts`;
+`release.yml` and the release skill run it). `npm run verify:audit` is
 deliberately NOT in `verify` (Dependabot is the notification channel; an advisory gets
 its own commit). `npm run measure:profiles` (separate) measures the cell baseline per scheduling profile (rule A:
 no exact cell may become inexact); the P6 part needs `OPS_XER_CORPUS`. `npm run measure:large-plans` (separate, not in CI)
@@ -188,6 +196,14 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   `workdayAxis.ts`); interaction in `src/components/canvas/hooks/`. Change visual Gantt behaviour in the
   renderer, not in components.
 - **Notifications go through one channel** from the store — no `alert()` or ad-hoc toasts.
+- **Pending modal questions.** While the actual-start or phase-assignment question waits,
+  `isGlobalShortcutFrozen` blocks global app shortcuts and the surrounding shell controls are inert,
+  including during the actual-start question's Help pause. Help navigation and the question's own controls stay active.
+- **Tailwind sources.** `src/styles/globals.css` disables automatic detection with `source(none)` and
+  registers only `src/` and `index.html` via `@source` (paths relative to that stylesheet). This includes
+  extension UI and HTML strings in `src/`; imported component CSS and fonts still build normally.
+  Add an explicit source there if runtime utility classes move outside these paths; scripts, tests and
+  docs must not generate app utilities. The legacy `tailwind.config.js` is not loaded by the v4 build.
 - **Text:** always via `t(...)`, never hard-coded; a PR needs `nl` + `en`, a release all 28 locales
   (translation pipeline, `verify:translations`). Text sizes only via the six roles
   (`text-caption`…`text-title`); `text-xs`/`text-sm` no longer exist and silently do nothing.
@@ -195,8 +211,18 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   is gone; the Rust side still registers `tauri-plugin-store`, unused), declared in `settingsRegistry.ts`.
   A setting in `SettingsPanelContent` automatically appears in all three places (⚙, Settings tab, Backstage);
   a remembered view choice via a ribbon button or dragging does not belong there.
-- **Auto-save** (crash recovery) is throttled to 10 s — deliberately a throttle, not a debounce. Runs in both
-  Tauri (`appDataDir`) and browser (IndexedDB), keyed by worktree instance slug.
+- **Auto-save** (crash recovery) is throttled to 10 s — deliberately a throttle, not a debounce. Changed IFC snapshots
+  serialize on one reusable Web Worker (same writer fallback without Worker); only writer input and XER archive
+  references cross that boundary, never file handles or archive bytes. Stop is checked again before committing. Runs in both
+  Tauri (`appDataDir`) and browser (IndexedDB), keyed by worktree instance slug. Recovery reads versions
+  1–5 plus the historical unversioned web `docIds` form. Unknown/invalid manifests also block later writes,
+  clearing and session rotation for that recovery set; unknown foreign web generations and shared archive blobs
+  are preserved during cleanup. A manifest has unique document IDs (also historical web `docIds`). Web recovery DB v3
+  adds a non-unique `records.kind` index without rewriting record/blob content: every `kind: manifest` record
+  plus every canonical manifest key is a candidate, regardless of key or candidate order. See `recoveryManifest.ts`
+  and `recoveryStore.ts`; upgrade/blocking/error limits are in `docs/xer-recovery-guardrails.md`.
+  A blocked web upgrade completes startup with a persistent storage warning; recovery refuses further DB
+  access until reload, even after unblocking. There is no fallback to writing an older DB version.
 - **`immer` is pinned exactly to `11.1.4` (no `^`) — do not put the caret back.** Immer sits directly under
   undo/redo, snapshot sharing and auto-freeze; from 11.1.8 the build breaks too (typing of `current`/`original`,
   see `src/state/immerDraft.ts`). Bumping is a deliberate, separately reviewed change.
@@ -241,7 +267,16 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   Those guides use a limited Markdown subset (no tables/blockquotes/h4/HTML). The GitHub wiki is generated,
   never edited by hand (`wiki` skill).
 - **Releases**: only via the `release` skill; a `v*` tag is irreversible and rolls out to all users
-  (updater + Snap Store). Release text in `docs/release-notes/v<version>.md`; `docs/CHANGELOG.md` only at release.
+  (updater + Snap Store). The weekly Saturday job on aia09-mp50 runs that skill automatically,
+  without human approval before the tag (owner, conversation 2026-10-22). Green main CI and the
+  release gates are mandatory. Resume unfinished work for the latest tag before checking for new
+  commits or bumping. Also resume open release PRs and untagged versions on main without another bump,
+  only when their candidate version is numerically newer than the previous release; otherwise stop.
+  record workflow IDs, wiki commit and website PR in the release PR.
+  UI translations, wiki publication and the two website release blocks
+  are included; guide translations beyond nl/en run only on the owner's separate request.
+  The proposed schedule and literal job prompt live in `.claude/skills/release/scheduled-job.md`.
+  Release text in `docs/release-notes/v<version>.md`; `docs/CHANGELOG.md` only at release.
 - The user term is "resourcebibliotheek"; code/IFC still say `companyId`/`companyName`.
 - Screen evidence in a PR: `artifacts/<topic>/`, PNG ≤ ~150 KB, a handful; local QA screenshots in `qa/`.
 - Changing the architecture, a command or a fact above? Update this file in the same PR.

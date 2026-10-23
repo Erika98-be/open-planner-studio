@@ -93,7 +93,7 @@ eq('1n geen overgeslagen relaties ⇒ geen melding', none.length, 0);
 eq('2a Many noemt de taken (niet toegepast bij)', many[0]?.detailLines,
   [{ messageKey: 'notifications.notAppliedTaskNames', params: { names: 'B, C' } }]);
 const msMany = milestoneRefusalNotices([{ id: 'a', name: 'A', refusal: 'assignments' }, { id: 'b', name: 'B', refusal: 'assignments' }]);
-eq('2b mijlpaal _other noemt de taken (niet aangepast)', msMany[0]?.detailLines,
+eq('2b mijlpaalverzameling noemt de taken (niet aangepast)', msMany[0]?.detailLines,
   [{ messageKey: 'notifications.refusedTaskNames', params: { names: 'A, B' } }]);
 const seven = Array.from({ length: REFUSED_NAMES_SHOWN + 2 }, (_, i) => blocked(`T${i}`));
 eq('2c meer dan vijf namen ⇒ "en nog N"', startEditNotifications(seven, 'dmy', '24h')[0]?.detailLines,
@@ -164,6 +164,7 @@ const REFUSAL_KEYS = [
   'durationBelowDoneWork', 'relationDuplicate', 'relationAncestorEndpoint', 'relationCycle', 'hierarchyCycle',
   'startBlockedByConstraint', 'startBlockedByConstraintNoDate', 'startBlockedByConstraintMany',
   'dragStartIsActual', 'dragDatesAreActual', 'milestoneRefusedAssignments', 'milestoneRefusedSummary',
+  'milestoneRefusedAssignmentsMany', 'milestoneRefusedSummaryMany',
   'phaseRefusedNoAssignableChild', 'phaseRefusedDuplicateResource', 'taskEditRevertBlocked', 'pasteSkippedReadOnly',
   'relationsSkippedOnInsert', 'schedulingTemplateLimit', 'phaseQuestionOutdated', 'ambiguousThousands',
 ];

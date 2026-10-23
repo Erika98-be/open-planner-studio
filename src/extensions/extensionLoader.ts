@@ -347,7 +347,7 @@ export async function enableExtension(
     const minVersion = stored.manifest.minAppVersion;
     if (minVersion && compareVersions(APP_VERSION, minVersion) < 0) {
       throw new Error(
-        `Vereist Open Planner Studio ≥ ${minVersion} (huidige versie: ${APP_VERSION})`,
+        i18next.t('extensions.minAppVersionRequired', { ns: 'menu', minVersion, appVersion: APP_VERSION }),
       );
     }
 
