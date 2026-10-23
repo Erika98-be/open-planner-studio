@@ -32,9 +32,7 @@ function ok(label: string, cond: boolean): void {
 }
 
 type Q = 'duration' | 'units' | 'work';
-/** `shorterWholeDays`: de duur wordt niet langer en is precies W / ΣI naar boven afgerond op hele
- *  werkdagen (dus mag hij gelijk blijven: 1 dag + een tweede resource = 0,5 → 1 dag). */
-type ResourceEffect = 'workUp' | 'durationSame' | 'unitsDown' | 'durationDown' | 'shorterWholeDays';
+type ResourceEffect = 'workUp' | 'durationSame' | 'unitsDown' | 'durationDown';
 interface Meaning {
   /** Bewerking van de sleutel ⇒ de grootheid die zich aanpast (de derde blijft gelijk). */
   edits?: Partial<Record<Q, Q>>;
@@ -72,14 +70,16 @@ const MEANING: Record<WorkRuleSentence, Meaning> = {
     en: 'An extra resource takes over part of the work; the units per resource go down.' },
   resourceShorter: { resource: ['durationDown'],
     nl: 'Een extra resource maakt de taak korter.', en: 'An extra resource makes the task shorter.' },
-  resourceShorterWholeDays: { resource: ['shorterWholeDays'],
-    nl: 'Een extra resource maakt de taak korter, afgerond op hele dagen.',
-    en: 'An extra resource makes the task shorter, rounded to whole days.' },
   resourceAddsWorkSameDuration: { resource: ['workUp', 'durationSame'],
     nl: 'Een extra resource voegt werk toe; de duur blijft gelijk.',
     en: 'An extra resource adds work; the duration stays the same.' },
 };
 
+// Alleen bereikbare uitlegzinnen vormen het contract; ongebruikte vertaalsleutels horen daar niet bij.
+const reachable = new Set(WORK_RULES.flatMap(rule => [undefined, true, false].flatMap(ed => {
+  const ex = workRuleExplanation(rule, ed);
+  return [ex.lead, ...ex.rest];
+})));
 // De tekst in task.json moet letterlijk de tekst zijn waarvan hierboven de betekenis staat.
 const here = dirname(fileURLToPath(import.meta.url));
 for (const lang of ['nl', 'en'] as const) {
@@ -90,9 +90,7 @@ for (const lang of ['nl', 'en'] as const) {
   for (const s of WORK_RULE_SENTENCES) {
     ok(`${lang}: workRule.explain.${s} = "${explain[s]}", verwacht "${MEANING[s][lang]}" (pas de betekenis in deze check mee aan)`,
       explain[s] === MEANING[s][lang]);
-  }
-  for (const k of Object.keys(explain)) {
-    ok(`${lang}: workRule.explain.${k} heeft geen betekenis in deze check`, (WORK_RULE_SENTENCES as readonly string[]).includes(k));
+    ok(`${lang}: workRule.explain.${s} wordt in geen enkele uitleg gebruikt`, reachable.has(s));
   }
 }
 
@@ -138,10 +136,6 @@ function resourceEffects(rule: WorkRule, ed: boolean | undefined, unit: Unit, da
   const s1 = stateOf(applyAssignmentAdded(s0, { id: 'b', unitsPerDay: 1 }), `${rule}/${String(ed)}/${unit}/${days}d/resource`);
   if (!s1) return out;
   const totalWork = (s: TriangleState) => s.assignments.reduce((sum, a) => sum + remainingWorkOf(a, s.remainingMinutes), 0);
-  const sumUnits = s1.assignments.reduce((sum, a) => sum + a.unitsPerDay, 0);
-  const exact = totalWork(s1) / sumUnits;
-  if (s1.remainingMinutes <= s0.remainingMinutes + 1e-6
-    && same(s1.remainingMinutes, Math.ceil(exact / SLOT - 1e-9) * SLOT)) out.add('shorterWholeDays');
   if (totalWork(s1) > totalWork(s0) + 1e-6) out.add('workUp');
   if (same(s1.remainingMinutes, s0.remainingMinutes)) out.add('durationSame');
   if (s1.remainingMinutes < s0.remainingMinutes - 1e-6) out.add('durationDown');
@@ -153,7 +147,7 @@ const table: string[] = [];
 for (const rule of WORK_RULES) {
   for (const ed of [undefined, true, false] as const) {
   for (const unit of ['days', 'hours'] as const) {
-    const ex = workRuleExplanation(rule, ed, unit);
+    const ex = workRuleExplanation(rule, ed);
     const sentences = [ex.lead, ...ex.rest];
     const label = `${rule} effortDriven=${String(ed)} ${unit}`;
     // (c) volledigheid: elke bewerking precies één bewering, precies één resourcezin.
@@ -177,7 +171,7 @@ for (const rule of WORK_RULES) {
       ok(`${label}: zin zegt "${edited} gewijzigd ⇒ ${claim} past aan", de rekenkern past ${actual ?? 'niet precies één grootheid'} aan`,
         actual === claim);
     }
-    // De resourcezin moet kloppen bij 5 dagen én bij 1 dag (waar de dagafronding de duur gelijk laat).
+    // De resourcezin moet kloppen bij 5 dagen én bij 1 dag (uitkomst: een halve dag).
     for (const days of [5, 1]) {
       const effects = resourceEffects(rule, ed, unit, days);
       row.push(`resource(${days}d): ${[...effects].join('+')}`);
@@ -197,11 +191,17 @@ for (const rule of WORK_RULES) {
   const day = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'days', 1), { id: 'b', unitsPerDay: 1 }), 'dag 1 d');
   ok(`dagtaak 1 d + resource: duur ${day?.remainingMinutes} min, verwacht ${SLOT / 2}`, day?.remainingMinutes === SLOT / 2);
   ok('dagtaak: Vast werk gebruikt de korte zin',
-    workRuleExplanation('FIXED_WORK', undefined, 'days').rest.includes('resourceShorter'));
+    workRuleExplanation('FIXED_WORK', undefined).rest.includes('resourceShorter'));
+  ok('dagtaak: extra resource behoudt het totale werk', day !== null
+    && same(day.assignments.reduce((sum, a) => sum + remainingWorkOf(a, day.remainingMinutes), 0), SLOT));
+  ok('dagtaak: extra resource behoudt de inzet per resource', day !== null && day.assignments.every(a => a.unitsPerDay === 1));
   const hour = stateOf(applyAssignmentAdded(base('FIXED_WORK', undefined, 'hours', 1), { id: 'b', unitsPerDay: 1 }), 'uur 1 d');
   ok(`urentaak 8 u + resource: duur ${hour?.remainingMinutes} min, verwacht ${SLOT / 2}`, hour?.remainingMinutes === SLOT / 2);
   ok('urentaak: Vast werk gebruikt de zin zonder afronding',
-    workRuleExplanation('FIXED_WORK', undefined, 'hours').rest.includes('resourceShorter'));
+    workRuleExplanation('FIXED_WORK', undefined).rest.includes('resourceShorter'));
+  ok('urentaak: extra resource behoudt het totale werk', hour !== null
+    && same(hour.assignments.reduce((sum, a) => sum + remainingWorkOf(a, hour.remainingMinutes), 0), SLOT));
+  ok('urentaak: extra resource behoudt de inzet per resource', hour !== null && hour.assignments.every(a => a.unitsPerDay === 1));
 }
 
 if (diffs.length) {

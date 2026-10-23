@@ -137,7 +137,8 @@ console.log('-- (a-lost) verlies van tijdgefaseerde sturing: dezelfde melding al
   f.S().updateTask(f.t, { timephasedFinishFloor: '2026-06-04T17:00', timephasedStartAnchor: '2026-06-01T08:00' });
   quiet(f.store);
   f.S().updatePoolCalendar(f.cid, f.poolId, sixHours(poolCal(f)));
-  eq('al1 Z8-venster gewist bij de duurwijziging uit de werkregel', [dur(f, f.t), taskOf(f, f.t).timephasedFinishFloor], [6, undefined]);
+  eq('al1-duur 32 u op 6 u/d ⇒ 16/3 d', dur(f, f.t), 16 / 3);
+  eq('al1-nazorg Z8-venster gewist bij de duurwijziging uit de werkregel (F3c)', taskOf(f, f.t).timephasedFinishFloor, undefined);
   eq('al2 melding "sturing verloren" voor 1 taak', msgs(f, LOST_KEY), [1]);
 }
 
@@ -242,7 +243,8 @@ console.log('-- (f) activatiegrens: openen van een bestand dat achterloopt, en w
   eq('f3 voorwaarde: slapend document nog niet ververst (4 d)', pt.time.scheduleDuration, 4);
   quiet(f.store);
   f.S().switchDocument(docA);
-  eq('f4 activeren: ververst naar 6 u en Vast werk ⇒ 6 d; melding "1 taak"', [f.S().calendar.hoursPerDay, dur(f, f.t), msgs(f, DUR_KEY)], [6, 6, [1]]);
+  eq('f4-duur activeren: ververst naar 6 u en Vast werk ⇒ 16/3 d', [f.S().calendar.hoursPerDay, dur(f, f.t)], [6, 16 / 3]);
+  eq('f4-melding activeren: melding "1 taak" (F3c)', msgs(f, DUR_KEY), [1]);
   eq('f5 …activeren is geen bewerking: niet gewijzigd', f.S().isDirty, false);
 }
 

@@ -26,7 +26,6 @@ export const WORK_RULE_SENTENCES = [
   'resourceAddsWork',
   'resourceSharesWork',
   'resourceShorter',
-  'resourceShorterWholeDays',
   'resourceAddsWorkSameDuration',
 ] as const;
 
@@ -41,7 +40,6 @@ export interface WorkRuleExplanation {
 export function workRuleExplanation(
   rule: WorkRule,
   effortDriven: boolean | undefined,
-  _unit: 'days' | 'hours',
 ): WorkRuleExplanation {
   const shorter: WorkRuleSentence = 'resourceShorter';
   switch (rule) {
