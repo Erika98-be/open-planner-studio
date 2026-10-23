@@ -139,8 +139,9 @@ export interface TriangleWriteBack {
  * `verricht deel + nieuwe rest` — het verrichte deel is een feit. Beide maten houden breuken;
  * dagenmaat schrijft werkdagen, urenmaat schrijft minuten zonder afronding (T14).
  * Een aanwezig `remainingTime`/`remainingMinutes` volgt de nieuwe rest. Toewijzingen: `unitsPerDay`
- * en `remainingWorkMinutes` (aanwezig ⇒ geschreven, afwezig ⇒ verwijderd) exact zoals de kern ze
- * teruggeeft. Muteert in-place; retourneert wat er veranderde.
+ * en `remainingWorkMinutes` volgen de kern. Zodra verricht werk is vastgelegd, wordt ook het
+ * restwerk opgeslagen (zonder kernveld: nieuwe restduur × nieuwe inzet), zodat een volgende
+ * voortgangsboeking beide velden bijwerkt. Muteert in-place; retourneert wat er veranderde.
  */
 export function applyTriangleResult(
   task: Task,
@@ -151,23 +152,31 @@ export function applyTriangleResult(
   opts?: { skipDuration?: boolean; actualWork?: ReadonlyMap<string, number> },
 ): TriangleWriteBack {
   const changed: string[] = [];
+  const started = (task.time.completion ?? 0) > 0 || !!task.time.actualStart;
   for (const next of after.assignments) {
     const a = assignments.find((x) => x.id === next.id);
     if (!a) continue;
     const unitsChanged = Math.abs(a.unitsPerDay - next.unitsPerDay) > 1e-9;
-    const workChanged = (a.remainingWorkMinutes === undefined) !== (next.remainingWorkMinutes === undefined)
-      || (next.remainingWorkMinutes !== undefined && a.remainingWorkMinutes !== undefined
-        && Math.abs(a.remainingWorkMinutes - next.remainingWorkMinutes) > 1e-6);
     // De momentopname komt van vóór de mutatie: afgeleid verricht werk mag niet met de nieuwe
-    // inzet of duur worden herberekend. Expliciete actuals blijven de bron.
-    const actual = opts?.actualWork?.get(a.id);
+    // inzet of duur worden herberekend. Een nieuwe werkresource op een gestarte taak heeft geen
+    // verleden; aangeleverde expliciete actuals (ook nul) blijven de bron. Dit geldt ook bij plakken.
+    const newcomer = next.drivesDuration && started && !before.assignments.some(x => x.id === a.id);
+    const actual = opts?.actualWork?.get(a.id) ?? (newcomer ? 0 : undefined);
     const actualChanged = a.actualWorkMinutes === undefined && actual !== undefined;
+    // Vastgelegd verricht werk en onderhouden restwerk vormen één paar, onder elke regel.
+    // Zonder dit restveld slaat settleProgressWork de volgende boeking over.
+    const work = next.remainingWorkMinutes
+      ?? (next.drivesDuration && (a.actualWorkMinutes !== undefined || actual !== undefined)
+        ? after.remainingMinutes * next.unitsPerDay : undefined);
+    const workChanged = (a.remainingWorkMinutes === undefined) !== (work === undefined)
+      || (work !== undefined && a.remainingWorkMinutes !== undefined
+        && Math.abs(a.remainingWorkMinutes - work) > 1e-6);
     if (!unitsChanged && !workChanged && !actualChanged) continue;
     if (actualChanged) a.actualWorkMinutes = actual;
     // Ook afgeleide inzet blijft exact: anders zijn W en R × I na terugschrijven ongelijk.
     if (unitsChanged) a.unitsPerDay = next.unitsPerDay;
-    if (next.remainingWorkMinutes === undefined) delete a.remainingWorkMinutes;
-    else a.remainingWorkMinutes = next.remainingWorkMinutes;
+    if (work === undefined) delete a.remainingWorkMinutes;
+    else a.remainingWorkMinutes = work;
     changed.push(a.id);
   }
 
