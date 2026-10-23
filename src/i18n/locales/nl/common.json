@@ -325,6 +325,8 @@
     "experimentalSection": "Experimenteel",
     "experimentalEmpty": "Er zijn nu geen experimentele functies.",
     "experimentalHide": "Verbergen",
+    "demoTopbarAnimation": "Demo: animatie in de bovenbalk",
+    "demoTopbarAnimationHint": "Een rustige oranje glansgolf in de bovenbalk. Laat zien hoe een experimentele schakelaar werkt.",
     "tourHint": "Loop de introductie-rondleiding van de app nog eens door.",
     "theme": "Thema",
     "themeHint": "Het kleurenschema van de interface.",

@@ -8,8 +8,16 @@ export interface FeatureFlag {
   writesNewIfcData: boolean;
 }
 
-/** Voeg hier tijdelijke functies toe. Geen voorbeeldflags in de uitgeleverde app. */
-export const FEATURE_FLAGS: FeatureFlag[] = [];
+/** Voeg hier tijdelijke functies toe; de demo maakt de verborgen bediening zichtbaar toetsbaar. */
+export const FEATURE_FLAGS: FeatureFlag[] = [
+  // Demo-flag: alleen titelbalkdecoratie, zonder nieuwe documentgegevens.
+  {
+    id: 'demo-topbar-animation',
+    nameKey: 'settings.demoTopbarAnimation',
+    descriptionKey: 'settings.demoTopbarAnimationHint',
+    writesNewIfcData: false,
+  },
+];
 
 export type FeatureFlagValues = Record<string, boolean>;
 
