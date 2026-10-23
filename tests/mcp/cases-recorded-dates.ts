@@ -39,12 +39,56 @@ S().undo();
 function enterMode(tag: string): { aId: string; bId: string } {
   S().newProject();
   S().applyLoadedProject(readIFC(externIfc(tag)), { filePath: null, recompute: true });
-  S().showRecordedDates();
   return {
     aId: S().tasks.find((t) => t.wbsCode === '1.1')!.id,
     bId: S().tasks.find((t) => t.wbsCode === '1.2')!.id,
   };
 }
+
+// Knownbug 105: onbekende driving is null; lezen houdt modus, datums en historie intact.
+test('get_critical_path: opgeslagen datums geven onbekende driving, F5 herstelt de berekende keten', () => {
+  S().newProject();
+  const source = readIFC(externIfc('mcp-driving-unknown'));
+  // Het bestand kent wel kritieke taken, maar heeft geen driving-berekening opgeslagen.
+  source.recordedFields ??= {};
+  for (const task of source.tasks) {
+    task.time.totalFloat = 0;
+    task.time.isCritical = true;
+    source.recordedFields[task.id] = [...(source.recordedFields[task.id] ?? []), 'totalFloat', 'isCritical'];
+  }
+  S().applyLoadedProject(source, { filePath: null, recompute: true });
+  const before = S();
+  const aId = before.tasks.find(t => t.wbsCode === '1.1')!.id;
+  const bId = before.tasks.find(t => t.wbsCode === '1.2')!.id;
+  assertEq(before.datesAsRecorded, true, 'opzet: opgeslagen datums actief');
+  assertEq(before.cpmResult?.drivingUnknown, true, 'opzet: reconstructie kent driving niet');
+  const result = getTool('planner_get_critical_path')!.handler({}, makeMcpContext(appStoreContext)) as McpToolResult;
+  assert(result.ok, 'lezen hoort te slagen');
+  const okResult = result as McpToolOk;
+  const data = okResult.data as Record<string, unknown>;
+  assertEq(before.cpmResult!.criticalPath.length, 2, 'opzet: beide taken zijn vastgelegd als kritiek');
+  assertEq(data.hasResult, true, 'de opgeslagen planningsuitkomst blijft beschikbaar');
+  assertEq(data.drivingRelations, null, 'geen driving-informatie is null, geen lege lijst');
+  assert(typeof data.note === 'string' && /unknown/.test(data.note), 'respons legt onbekende driving uit');
+  assertEq(data.projectEnd, before.cpmResult!.projectEnd, 'projecteinde uit het bestand blijft beschikbaar');
+  assertEq((data.criticalTasks as Array<{ id: string }>).map(t => t.id), before.cpmResult!.criticalPath,
+    'opgeslagen kritieke taken blijven beschikbaar');
+  assertEq(okResult.envelope.datesAsRecorded, true, 'envelop meldt de modus');
+  assertEq(okResult.envelope.scheduleRecalculated, undefined, 'lezen rekent niet stil door');
+  assert(S().cpmResult === before.cpmResult, 'resultaat niet vervangen door lezen');
+  assert(S().tasks === before.tasks, 'taken en opgeslagen datums niet vervangen door lezen');
+  assert(S().recordedDates === before.recordedDates, 'vastlegging niet vervangen door lezen');
+  assert(S().historyEvents === before.historyEvents, 'historie niet vervangen door lezen');
+  assertEq([S().datesAsRecorded, S().scheduleStale, S().isDirty], [true, false, before.isDirty],
+    'modus, versheid en dirty blijven gelijk');
+
+  S().runCPM(); // Expliciet F5, geen stille berekening door de leestool.
+  const calculated = callOk('planner_get_critical_path');
+  assertEq(S().datesAsRecorded, false, 'F5 verlaat de modus');
+  assertEq(calculated.drivingRelations.map((rel: { predId: string; succId: string }) => [rel.predId, rel.succId]),
+    [[aId, bId]], 'bestaande berekende driving-keten blijft intact');
+  assertEq(calculated.note, undefined, 'geen onbekend-melding bij bekende driving');
+});
 
 // --- 1) K1: een geslaagde transactie in de modus blijft ÉÉN undo-stap ------------------------------
 test('MCP-transactie in de modus: één undo-stap, niet twee (K1)', () => {
@@ -120,7 +164,7 @@ test('contextfactory B verlaat recorded-dates met één B-undo en laat A buiten 
   const A = createAppStoreContext();
   const B = createAppStoreContext();
   B.store.getState().applyLoadedProject(readIFC(externIfc('factory-B')), { filePath: null, recompute: true });
-  B.store.getState().showRecordedDates();
+  assertEq(B.store.getState().datesAsRecorded, true, 'opzet: B opent in de modus');
   const bId = B.store.getState().tasks.find((task) => task.wbsCode === '1.2')!.id;
   const aTakenVoor = A.store.getState().tasks.length;
   const aUndoVoor = historyDepthsForActiveScope(A.store.getState()).undoDepth;

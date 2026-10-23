@@ -19,21 +19,25 @@ import {
   captureRecordedDates,
   countShiftedTasks,
   cpmResultFromRecorded,
+  shiftedTaskIds,
   type RecordedTime,
 } from '@/engine/scheduler/recordedDates';
+import { knownDrivingSequenceIds } from '@/engine/scheduler/drivingInfo';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import type { ImportResult } from '@/services/importTypes';
 import type { Task } from '@/types/task';
 import { createAppStoreContext, useAppStore } from '@/state/appStore';
-import { recoveryInputFromParsed } from '@/state/documentContract';
+import { payloadFromImport, recoveryInputFromParsed } from '@/state/documentContract';
+import { applyRestoredRecordedMode, prepareLoadedPayload } from '@/state/documentActivation';
 import { LOCALES } from '../../scripts/i18n-tools';
-import { recordedDatesActiveKey, recordedDatesTaskActiveKey } from '@/components/layout/recordedDatesNoticeText';
-import { recordedTaskMark, unrecordedExportGate } from '@/state/recordedDatesSelectors';
+import { recordedDatesActiveKey, recordedDatesTaskMissingKey, recordedDatesTaskShownKey } from '@/components/layout/recordedDatesNoticeText';
+import { recordedTaskMark, recordedTaskWillShift, unrecordedExportGate } from '@/state/recordedDatesSelectors';
 import { writeCSV } from '@/services/csv/csvWriter';
-import { readCSV } from '@/services/csv/csvReader';
+import { CsvDateImportError, readCSV } from '@/services/csv/csvReader';
 import { CSV_FIXTURE_UNREADABLE_DATES } from '../fixtures/recordedTimesFormats';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
+import { parseStep } from './ifcSchemaCheck';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { IFC_TASKTIME_SLOTS, TASKTIME_SLOT } from '@/services/ifc/ifcTaskSlots';
 import { externIfc, taskArgs } from '../fixtures/recordedDatesIfc';
@@ -258,10 +262,12 @@ eq('2d onbekende taak telt niet mee', countShiftedTasks([mk('c')], basis.times),
   eq('2k samenvatting: opgeslagen 62 % ⇒ in de modus haar vastgelegde einde ⇒ wijkt af', countShiftedTasks([phase], { f: phaseRec }), 1);
   eq('2k …zonder opgeslagen voortgang zou ze op haar werkelijke einde staan (niets verschoven)',
     countShiftedTasks([phase], { f: { start: '2026-03-02', finish: '2026-03-20' } }), 0);
-  // De markering per taak ("Wijkt af van de opgeslagen datums") gebruikt dezelfde vergelijking.
-  const state = { times: { v: p3Done, l: { start: '2008-05-27T08:00', finish: '2008-06-13T17:00' } }, total: 2 };
-  eq('2l markering per taak = telling: voltooid ⇒ geen markering, lopend met ander einde ⇒ wijkt af',
-    [recordedTaskMark(state, false, done), recordedTaskMark(state, false, running)], [undefined, 'deviates']);
+  // De lijst per taak (blok in het eigenschappenpaneel) gebruikt dezelfde vergelijking als de telling.
+  const times2l = { v: p3Done, l: { start: '2008-05-27T08:00', finish: '2008-06-13T17:00' } };
+  eq('2l lijst per taak = telling: voltooid ⇒ niet verschoven, lopend met ander einde ⇒ verschoven',
+    shiftedTaskIds([done, running], times2l), [running.id]);
+  // Buiten de modus markeert niets meer (geen aanbod-stand, eigenaar 2026-10-17).
+  eq('2l2 buiten de modus geen markering', recordedTaskMark({ times: times2l, total: 2 }, false, running), undefined);
 }
 
 // KLEIN-13 (kwaliteitsreview) — randgevallen die niets breken maar tot nu toe niets vastlegden.
@@ -298,6 +304,20 @@ for (const [label, got] of [
 eq('3g sequenceFreeFloat blijft leeg', rec.sequenceFreeFloat, {});
 eq('3h floatPathByTask blijft leeg', rec.floatPathByTask, {});
 
+// Knownbug 105: een gereconstrueerde lege lijst betekent onbekend, geen berekend "niets driving".
+eq('3h1 opgeslagen datums markeren driving als onbekend', rec.drivingUnknown, true);
+eq('3h2 lezers krijgen geen driving-informatie uit de reconstructie', knownDrivingSequenceIds(rec), undefined);
+eq('3h3 onbekend wint ook van een achtergebleven driving-id',
+  knownDrivingSequenceIds({ ...rec, drivingSequenceIds: ['oud'] }), undefined);
+eq('3h4 berekend zonder driving blijft een bekende lege lijst',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: [] }), []);
+eq('3h5 bekende driving-ids blijven beschikbaar',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: ['ab'] }), ['ab']);
+eq('3h6 geen berekening is onbekend', knownDrivingSequenceIds(null), undefined);
+eq('3h7 ontbrekend resultaat is onbekend', knownDrivingSequenceIds(undefined), undefined);
+eq('3h8 mislukte berekening verbergt achtergebleven driving-ids',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: ['ab'], error: 'kring' }), undefined);
+
 // Zonder isCritical in het bestand: géén kritiek pad beweren. Schedule-paar aanwezig (MOET 1),
 // anders wordt 'a' hier overgeslagen en toont deze reconstructie niets.
 const zonderKritiek = cpmResultFromRecorded(
@@ -325,8 +345,8 @@ const legeBeide = cpmResultFromRecorded({}, [], cal);
 eq('3r volledig leeg ⇒ projectDuration 0', legeBeide.projectDuration, 0);
 
 // ── (3B) applyRecordedTimesToTasks — gedeelde kern (XER-etappeplan §3.4, taak T3) ─────────────
-// Rechtstreekse eenheidstest op de kern zelf (los van de winkel/`showRecordedDates`, die in sectie
-// (8) hieronder via de ECHTE store getest wordt). Bewijst: (a) de teruggegeven `CPMResult` is
+// Rechtstreekse eenheidstest op de kern zelf (los van de winkel; de laadroute in sectie
+// (8) hieronder test hem via de ECHTE store). Bewijst: (a) de teruggegeven `CPMResult` is
 // identiek aan `cpmResultFromRecorded` op dezelfde `times`; (b) de taken worden IN-PLACE bijgewerkt
 // met exact de oude terugvallen (`?? rec.start`/`?? 0`/`?? false`); (c) `interferingFloat`/
 // `isNearCritical`/`floatPath` worden gewist — MUTATIEBEWIJS: haal één van de drie wis-regels uit
@@ -591,19 +611,17 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   // heropende IFC met XER-archief (T5) — biedt de modus alleen AAN, net als 'xer-archive' zonder
   // enige herkomst hierboven. Alleen 'xer' (verse import) zet 'm automatisch AAN. MUTATIEBEWIJS:
   // stelde `applyRecordedDatesOnLoad` 'xer-archive' gelijk aan 'xer' (`origin !== undefined` i.p.v.
-  // `origin === 'xer'`), dan zou 7ah hieronder `true` worden en dus ROOD slaan.
+  // `origin === 'xer'`), dan zou 7ag hieronder `true` worden en dus ROOD slaan.
   const asXerArchive: ImportResult = {
     ...rtOracleSource, recordedFields: undefined, recordedTimes: oracleTimes,
     recordedTimesOrigin: 'xer-archive',
   };
   S().newProject();
   S().applyLoadedProject(asXerArchive, { filePath: null, recompute: true });
-  eq('7ag "xer-archive" (heropende IFC met XER-archief) biedt de modus alleen aan, NIET gelijk aan "xer"',
+  eq('7ag "xer-archive" (heropende IFC met XER-archief, zonder vlag) gaat NIET in de modus, NIET gelijk aan "xer"',
     S().datesAsRecorded, false);
-  truthy('7ah …maar het aanbod verschijnt wél', S().recordedDates !== null);
-  eq('7ai …met dezelfde teller als de verse import (sectie 7u)', S().recordedDates?.shifted, 1);
-  eq('7ai2 …en draagt de archiefherkomst, dus óók de Primavera-tekst (sectie 14)',
-    S().recordedDates?.origin, 'xer-archive');
+  // Geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1): de app vergeet de opgeslagen datums.
+  eq('7ah …en vergeet de opgeslagen datums (geen aanbod)', S().recordedDates, null);
 
   // Heropen-beleid OPTIE B (eigenaarsbesluit 2026-09-09): dezelfde heropening gaat WEL automatisch
   // aan zolang het bestand zelf zegt dat het sinds de import ongewijzigd is (`importPristine`,
@@ -629,8 +647,11 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'csv' }, { filePath: null, recompute: true });
   eq('7aj4c CSV: geen vastlegging, geen modus, geen aanbod', [S().recordedDates, S().datesAsRecorded], [null, false]);
   // 'ifc-own' ZONDER bron (orkestratorbesluit 2026-09-24): onze eigen oude solve tegen de nieuwe ⇒
-  // niets, ook met de vlag. MET bron: zonder vlag alleen aanbod, mét vlag aan.
-  // MUTATIEBEWIJS: 'ifc-own' zonder `recordedSourceFormat` toelaten ⇒ 7aj6/7aj6b ROOD.
+  // niets, ook met de vlag. MET bron: de app schrijft `SourceFormat` alleen bij opslaan IN de modus
+  // (`ifcSaveInput.ts`), dus het bestand opent weer in de modus, ook zonder vlag ("zoals je het
+  // achterliet", eigenaar 2026-10-17; vervangt optie B van #167).
+  // MUTATIEBEWIJS: 'ifc-own' zonder `recordedSourceFormat` toelaten ⇒ 7aj6/7aj6b ROOD;
+  // `|| parsed.recordedSourceFormat !== undefined` weg uit `applyRecordedDatesOnLoad` ⇒ 7aj6c ROOD.
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own' }, { filePath: null, recompute: true });
   eq('7aj6 heropend eigen IFC zonder bron: niets', [S().datesAsRecorded, S().recordedDates], [false, null]);
@@ -639,7 +660,8 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   eq('7aj6b …ook niet met de vlag "ongewijzigd sinds import"', [S().datesAsRecorded, S().recordedDates], [false, null]);
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'mspdi' }, { filePath: null, recompute: true });
-  eq('7aj6c heropend eigen IFC mét bron, zonder vlag: alleen aanbod', [S().datesAsRecorded, S().recordedDates !== null, S().importPristine], [false, true, false]);
+  eq('7aj6c heropend eigen IFC mét bron (in de modus opgeslagen), zonder vlag: modus aan, vastlegging terug',
+    [S().datesAsRecorded, S().recordedDates !== null, S().importPristine], [true, true, false]);
   S().newProject();
   S().applyLoadedProject({ ...asUnknownOrigin, recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'mspdi', importPristine: true }, { filePath: null, recompute: true });
   eq('7aj7 heropend eigen IFC mét bron en vlag ⇒ automatisch AAN', S().datesAsRecorded, true);
@@ -650,7 +672,7 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
 // recovery-manifest (`RecoveryDocInput.datesAsRecorded`, `applyRecordedDatesOnLoad(..., restoredMode)`
 // in `documentActivation.ts`) — geen heuristiek meer. Deze sectie pint de tegenkant vast: een gewoon
 // #63-document (IFC/CSV/MSPDI/MPP/P6XML) dat met `datesAsRecorded: false` in het manifest stond,
-// komt terug in de AANBOD-stand en niet in de modus. MUTATIEBEWIJS: geef `restoredMode` in
+// komt terug ZONDER modus en vergeet de opgeslagen datums (geen aanbod-stand meer, eigenaar 2026-10-17). MUTATIEBEWIJS: geef `restoredMode` in
 // `applyRecordedDatesOnLoad` voorrang op de manifestvlag (`restoredMode ?? true`) ⇒ 7aj slaat ROOD.
 {
   const parsed = readIFC(externIfc('7C'));
@@ -658,92 +680,114 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   S().newProject();
   S().restoreDocuments([input], 'rec-63');
   eq('7aj crashherstel van een gewoon #63-document zet de modus NIET aan', S().datesAsRecorded, false);
-  truthy('7ak …maar herstelt wél het aanbod', S().recordedDates !== null);
-  eq('7al …met dezelfde teller als het gewone openen (sectie 7i)', S().recordedDates?.shifted, 1);
-  eq('7am …met de herkomst "ifc" (ander pakket), dus met de formaatneutrale tekst (sectie 14)', S().recordedDates?.origin, 'ifc');
+  eq('7ak …en vergeet de opgeslagen datums (geen aanbod)', S().recordedDates, null);
+}
+
+// ── (7D) Knownbug 116: IFC-faseactuals in opgeslagen-datummodus, expliciet ZONDER solve ──────────
+// Dezelfde productiehelpers als slapend crashherstel: lees → payload → reconstructie → save.
+// De fasedatums verschillen bewust van de kinderen: dit pad moet de bron bewaren, niet oprollen.
+{
+  const input = buildWriteIFCInput(createAppStoreContext().store.getState());
+  const variants: { label: string; children: Task[] }[] = [
+    { label: 'lopend op 100 %', children: [mk('L', { completion: 1, actualStart: '2026-03-02' }, { status: 'STARTED' })] },
+    { label: 'voltooid + niet-gestarte mijlpaal', children: [
+      mk('V', { completion: 1, actualStart: '2026-03-02', actualFinish: '2026-03-06' }, { status: 'COMPLETED' }),
+      mk('M', { scheduleDuration: 0, scheduleStart: '2026-03-09', scheduleFinish: '2026-03-09',
+        earlyStart: '2026-03-09', earlyFinish: '2026-03-09' }, { isMilestone: true }),
+    ] },
+  ];
+  const saved = (task: Task) => ({
+    status: task.status, completion: task.time.completion,
+    actualStart: task.time.actualStart ?? null, actualFinish: task.time.actualFinish ?? null,
+    remainingTime: task.time.remainingTime,
+    scheduleStart: task.time.scheduleStart, scheduleFinish: task.time.scheduleFinish,
+    earlyStart: task.time.earlyStart, earlyFinish: task.time.earlyFinish,
+    lateStart: task.time.lateStart, lateFinish: task.time.lateFinish,
+    totalFloat: task.time.totalFloat, freeFloat: task.time.freeFloat, isCritical: task.time.isCritical,
+  });
+  for (const variant of variants) {
+    const children = variant.children.map(t => ({ ...t, parentId: 'F' }));
+    const source = mk('F', {
+      completion: 1, actualStart: '2026-02-26', remainingTime: 3,
+      scheduleStart: '2026-03-16', scheduleFinish: '2026-03-27',
+      earlyStart: '2026-03-16', earlyFinish: '2026-03-27',
+      lateStart: '2026-03-23', lateFinish: '2026-04-03', totalFloat: 5, freeFloat: 2,
+    }, { status: 'STARTED', childIds: children.map(t => t.id) });
+    let text = writeIFC({ ...input, project: { ...input.project, startDate: '2026-02-23', statusDate: '2026-03-10' },
+      tasks: [source, ...children], recordedSourceFormat: 'ifc' });
+    for (let n = 1; n <= 2; n++) {
+      // Knownbug 109: ook ín de opgeslagen-datummodus volgt de native planomvang de getoonde
+      // fase (werkelijke start, berekend einde), niet de invoer of alleen de bladen. De tweede
+      // ronde schrijft via buildWriteIFCInput, dus ook de opgeslagen modus en bronherkomst tellen mee.
+      const planHeaders = parseStep(text).filter(e => e.type === 'IFCWORKPLAN' || e.type === 'IFCWORKSCHEDULE');
+      eq(`7D ${variant.label}, ronde ${n}: workplan en schema volgen de getoonde fase`,
+        planHeaders.map(e => [e.type, ...[11, 12].map(i => { const v = e.args[i]; return v.k === 'str' ? v.raw : '$'; })]),
+        [['IFCWORKPLAN', "'2026-02-26T07:00:00'", "'2026-03-27T07:00:00'"],
+          ['IFCWORKSCHEDULE', "'2026-02-26T07:00:00'", "'2026-03-27T07:00:00'"]]);
+      const parsed = readIFC(text);
+      const payload = prepareLoadedPayload(payloadFromImport(parsed, null), { recompute: false });
+      eq(`7D ${variant.label}, ronde ${n}: geen solve bij payloadvoorbereiding`, payload.cpmResult, null);
+      applyRestoredRecordedMode(payload, parsed);
+      eq(`7D ${variant.label}, ronde ${n}: opgeslagen-datummodus actief`,
+        [payload.datesAsRecorded, payload.scheduleStale, payload.recordedDates?.sourceFormat], [true, false, 'ifc']);
+      const phase = payload.tasks.find(t => t.id === source.id)!;
+      eq(`7D ${variant.label}, ronde ${n}: fase houdt al haar eigen datums en voortgang`, saved(phase), saved(source));
+      eq(`7D ${variant.label}, ronde ${n}: vastlegging heeft geen verzonnen werkelijk einde`,
+        payload.recordedDates?.times[source.id]?.summaryProgress,
+        { completion: 1, status: 'STARTED', actualStart: '2026-02-26' });
+      eq(`7D ${variant.label}, ronde ${n}: reconstructie toont het opgeslagen fase-einde`,
+        payload.cpmResult?.tasks.get(source.id)?.earlyFinish, '2026-03-27');
+      text = writeIFC(buildWriteIFCInput(payload));
+    }
+  }
 }
 
 /**
- * Secties 8 t/m 13 testen het HANDMATIG betreden en verlaten van de modus op een document dat de
- * modus alleen AANBIEDT. Sinds 2026-09-09 gaat een IFC uit een ander pakket (herkomst 'ifc')
- * automatisch de modus in (sectie 7/7B/16), dus de aanbiedende uitgangstoestand wordt hier
- * expliciet nagebootst door de herkomst te wissen — het geval van een importer zonder stempel.
- * De inhoud van de vastlegging is exact dezelfde als bij het echte openen.
+ * Secties 8 t/m 13 testen het betreden en verlaten van de modus. De uitgangstoestand is een
+ * heropend eigen IFC, nagebootst op de gedeelde #63-fixture. BUITEN de modus opgeslagen
+ * (`offerOnly`: bewerkt, en zonder `SourceFormat`, want dat schrijft de app alleen in de modus) ⇒ de
+ * app opent met de berekening. IN de modus opgeslagen (`inMode`: met `SourceFormat`) ⇒ de app opent
+ * in de modus. "Zoals je het achterliet" (eigenaar, 2026-10-17); er is geen aanbod-stand meer.
  */
-// Eigenaarsbesluit 2026-09-24 ("beperken"): een importer zonder herkomst krijgt geen aanbod meer. Het
-// ECHTE productpad naar de aanbodstand is een bewerkt, heropend eigen IFC waarvan de bron bekend is
-// (OPS_ImportProvenance.SourceFormat) — dat simuleren we hier op de gedeelde #63-fixture.
 const offerOnly = (ifcText: string): ImportResult => ({
-  ...readIFC(ifcText), recordedTimesOrigin: 'ifc-own', recordedSourceFormat: 'ifc', importPristine: false,
+  ...readIFC(ifcText), recordedTimesOrigin: 'ifc-own', recordedSourceFormat: undefined, importPristine: false,
 });
+// Hetzelfde eigen IFC, maar IN de modus opgeslagen en ONBEWERKT sinds de import: dat opent in de modus.
+const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), recordedSourceFormat: 'ifc', importPristine: true });
 
-// ── (8) showRecordedDates — de modus betreden (Taak 5) ────────────────────────
+// ── (8) Geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1) ────────────────
 // Zelfde fixture als (7): één FS-relatie waarvan de opgeslagen datums niet uit de logica volgen
-// (b staat vast op 2026-03-16, ver ná a's werkelijke opvolgdatum 2026-03-09), zodat er na de echte
-// solve écht iets "terug te tonen" is.
+// (b staat vast op 2026-03-16, ver ná a's werkelijke opvolgdatum 2026-03-09).
+//  - Een BUITEN de modus opgeslagen eigen IFC (bewerkt, geen `SourceFormat`) vergeet de opgeslagen
+//    datums: geen `recordedDates`, geen modus, de herberekening blijft staan.
+//  - Hetzelfde bestand ONBEWERKT opent in de modus, met de opgeslagen datums en de meting per taak.
 {
   S().newProject();
   S().applyLoadedProject(offerOnly(externIfc('2')), { filePath: null, recompute: true });
-  truthy('8a voorwaarde: recordedDates is gezet (b verschoof)', S().recordedDates !== null);
-
-  const aId = idOfWbs('1.1');
   const bId = idOfWbs('1.2');
+  eq('8a buiten de modus opgeslagen eigen IFC: geen vastlegging (geen aanbod)', S().recordedDates, null);
+  eq('8b buiten de modus opgeslagen eigen IFC: modus uit', S().datesAsRecorded, false);
+  eq('8c buiten de modus opgeslagen eigen IFC: b staat op de herberekende datum', S().tasks.find((t) => t.id === bId)!.time.earlyStart, '2026-03-09');
 
-  // Zet near-critical/float-paths AAN buiten een actie om (directe draft-mutatie, geen undo/isDirty-
-  // bijwerking), zodat de aansluitende runCPM écht een waarde in interferingFloat/isNearCritical/
-  // floatPath schrijft — zonder dit blijven isNearCritical/floatPath toch al `undefined` (de
-  // projectdefaults staan uit) en zou de wis-assertie hieronder niets bewijzen.
-  useAppStore.setState((s) => {
-    s.project.schedulingOptions = {
-      nearCriticalThreshold: 5,
-      floatPaths: { enabled: true, method: 'TOTAL_FLOAT', maxPaths: 5 },
-    };
-  });
-  S().runCPM();
-  truthy('8b voorwaarde: interferingFloat staat vóór het betreden op een waarde',
-    S().tasks.find((t) => t.id === aId)!.time.interferingFloat !== undefined);
-  truthy('8c voorwaarde: isNearCritical staat vóór het betreden op een waarde',
-    S().tasks.find((t) => t.id === aId)!.time.isNearCritical !== undefined);
-  truthy('8d voorwaarde: floatPath staat vóór het betreden op een waarde',
-    S().tasks.find((t) => t.id === aId)!.time.floatPath !== undefined);
-  eq('8e voorwaarde: isDirty nog steeds false (setState/runCPM zijn geen acties)', S().isDirty, false);
-
-  // Zet scheduleStale ook expres AAN (direct, geen actie): zonder dit staat hij door de zojuist
-  // gedraaide runCPM al op false, en zou de assertie "scheduleStale is false" hieronder een mutatie
-  // die de eigen `s.scheduleStale = false`-regel weghaalt niet vangen (was al false vóór de aanroep).
-  useAppStore.setState((s) => { s.scheduleStale = true; });
-  truthy('8e2 voorwaarde: scheduleStale staat vóór het betreden op waar', S().scheduleStale);
-
-  const undoDepthBefore = S().historyEvents.filter(event => event.state === 'applied').length;
-  S().showRecordedDates();
-
-  eq('8f modus staat aan', S().datesAsRecorded, true);
-  eq('8g verschoven taak toont weer opgeslagen earlyStart', S().tasks.find((t) => t.id === bId)!.time.earlyStart, '2026-03-16');
-  eq('8h verschoven taak toont weer opgeslagen earlyFinish', S().tasks.find((t) => t.id === bId)!.time.earlyFinish, '2026-03-20');
+  S().newProject();
+  S().applyLoadedProject(inMode(externIfc('2')), { filePath: null, recompute: true });
+  const aId = idOfWbs('1.1');
+  const bId2 = idOfWbs('1.2');
+  eq('8f onbewerkt eigen IFC: modus staat aan', S().datesAsRecorded, true);
+  eq('8g verschoven taak toont de opgeslagen earlyStart', S().tasks.find((t) => t.id === bId2)!.time.earlyStart, '2026-03-16');
+  eq('8h verschoven taak toont de opgeslagen earlyFinish', S().tasks.find((t) => t.id === bId2)!.time.earlyFinish, '2026-03-20');
   eq('8i scheduleStale is false', S().scheduleStale, false);
   eq('8j isDirty blijft false — openen en bekijken maakt niet vies', S().isDirty, false);
-  truthy('8k cpmResult is niet null', S().cpmResult !== null);
   eq('8l projectEnd komt uit het bestand', S().cpmResult?.projectEnd, '2026-03-20');
   eq('8m drivingSequenceIds is leeg (niet in IFC)', S().cpmResult?.drivingSequenceIds, []);
-  eq('8n precies één undo-stap erbij', S().historyEvents.filter(event => event.state === 'applied').length, undoDepthBefore + 1);
-  eq('8o interferingFloat gewist', S().tasks.find((t) => t.id === aId)!.time.interferingFloat, undefined);
-  eq('8p isNearCritical gewist', S().tasks.find((t) => t.id === aId)!.time.isNearCritical, undefined);
-  eq('8q floatPath gewist', S().tasks.find((t) => t.id === aId)!.time.floatPath, undefined);
-
-  // Tweede aanroep: no-op (géén tweede undo-stap, geen wijziging).
-  const undoDepthAfterFirst = S().historyEvents.filter(event => event.state === 'applied').length;
-  S().showRecordedDates();
-  eq('8r tweede aanroep pusht geen undo-stap', S().historyEvents.filter(event => event.state === 'applied').length, undoDepthAfterFirst);
-  eq('8s tweede aanroep laat de modus aan staan', S().datesAsRecorded, true);
-  eq('8t tweede aanroep laat de opgeslagen datum met rust', S().tasks.find((t) => t.id === bId)!.time.earlyStart, '2026-03-16');
-
-  // Zonder recordedDates (bv. na newProject()) doet de actie niets.
-  S().newProject();
-  eq('8u voorwaarde: newProject geeft geen recordedDates', S().recordedDates, null);
-  const undoDepthZonder = S().historyEvents.filter(event => event.state === 'applied').length;
-  S().showRecordedDates();
-  eq('8v zonder recordedDates blijft de modus uit', S().datesAsRecorded, false);
-  eq('8w zonder recordedDates geen undo-stap', S().historyEvents.filter(event => event.state === 'applied').length, undoDepthZonder);
+  // De meting per taak (blok in het eigenschappenpaneel): b verschuift bij herberekenen, a niet.
+  eq('8n shiftedTaskIds noemt precies b', S().recordedDates?.shiftedTaskIds, [bId2]);
+  eq('8o shifted telt hetzelfde als shiftedTaskIds', S().recordedDates?.shifted, 1);
+  eq('8p recordedTaskWillShift: b ja, a nee',
+    [recordedTaskWillShift(S().recordedDates, S().datesAsRecorded, bId2), recordedTaskWillShift(S().recordedDates, S().datesAsRecorded, aId)],
+    [true, false]);
+  eq('8q recordedTaskWillShift buiten de modus: onbekend',
+    recordedTaskWillShift(S().recordedDates, false, bId2), undefined);
 }
 
 // ── (9) De modus verlaten (Taak 6) ───────────────────────────────────────────
@@ -757,13 +801,11 @@ const offerOnly = (ifcText: string): ImportResult => ({
 // (9.A) Route A — bewerken verlaat de modus, Ctrl+Z draait modus én datums in één stap terug.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('9a')), { filePath: null, recompute: true });
+  S().applyLoadedProject(inMode(externIfc('9a')), { filePath: null, recompute: true });
   const aId = idOfWbs('1.1');
   const bId = idOfWbs('1.2');
 
   truthy('9A-1 voorwaarde: recordedDates gezet (b verschoof)', S().recordedDates !== null);
-  eq('9A-2 voorwaarde: de solve zette b op zijn logische datum', earlyStartOf(bId), '2026-03-09');
-  S().showRecordedDates();
   eq('9A-3 voorwaarde: modus staat aan', S().datesAsRecorded, true);
   eq('9A-4 voorwaarde: b toont weer de opgeslagen datum', earlyStartOf(bId), '2026-03-16');
   eq('9A-5 voorwaarde: planning geldt als vers vóór de bewerking', S().scheduleStale, false);
@@ -803,10 +845,9 @@ const offerOnly = (ifcText: string): ImportResult => ({
 // (9.B) Route B — F5/"Bereken" verlaat de modus, mét een werkende Ctrl+Z.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('9b')), { filePath: null, recompute: true });
+  S().applyLoadedProject(inMode(externIfc('9b')), { filePath: null, recompute: true });
   const bId = idOfWbs('1.2');
 
-  S().showRecordedDates();
   eq('9B-1 voorwaarde: modus staat aan', S().datesAsRecorded, true);
   eq('9B-2 voorwaarde: b toont de opgeslagen datum', earlyStartOf(bId), '2026-03-16');
   eq('9B-3 voorwaarde: isDirty is nog false (betreden maakt niet vies)', S().isDirty, false);
@@ -837,8 +878,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
 {
   S().newProject();
   S().applyLoadedProject(offerOnly(externIfc('9c')), { filePath: null, recompute: true });
-  eq('9C-1 voorwaarde: de modus staat UIT (detectie zet hem niet aan)', S().datesAsRecorded, false);
-  truthy('9C-2 voorwaarde: er is wél iets aan te bieden (anders meet dit een vacuüm)', S().recordedDates !== null);
+  eq('9C-1 voorwaarde: de modus staat UIT (buiten de modus opgeslagen eigen IFC)', S().datesAsRecorded, false);
   // Zet `scheduleStale` expres aan (direct, geen actie): zonder dit zou runCPM hooguit "niets te
   // doen" bevestigen, terwijl de assertie moet bewijzen dat een ECHTE herberekening niets pusht.
   useAppStore.setState((s) => { s.scheduleStale = true; });
@@ -846,19 +886,18 @@ const offerOnly = (ifcText: string): ImportResult => ({
   const undoVoorC = S().historyEvents.filter(event => event.state === 'applied').length;
   S().runCPM();
   eq('9C-3 runCPM buiten de modus pusht GEEN undo-snapshot', S().historyEvents.filter(event => event.state === 'applied').length, undoVoorC);
-  truthy('9C-4 runCPM buiten de modus laat de vastlegging staan', S().recordedDates !== null);
+  eq('9C-4 buiten de modus is er geen vastlegging (geen aanbod-stand)', S().recordedDates, null);
   eq('9C-5 runCPM buiten de modus zet geen isDirty', S().isDirty, false);
 }
 
 // (9.D) De bewuste asymmetrie: een bewerking die GÉÉN datums raakt (`finishMutation` zonder
 // `stale`) laat de modus staan. Zou élke `finishMutation` de modus verlaten, dan zou een
-// hernummering het aanbod stil weggooien — en er is dan niets dat de weergegeven datums nog
+// hernummering de modus stil verlaten — en er is dan niets dat de weergegeven datums nog
 // herrekent, want `scheduleStale` blijft uit. Precies de mengvorm die de modus moet voorkomen.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('9d')), { filePath: null, recompute: true });
+  S().applyLoadedProject(inMode(externIfc('9d')), { filePath: null, recompute: true });
   const bId = idOfWbs('1.2');
-  S().showRecordedDates();
   eq('9D-1 voorwaarde: modus staat aan', S().datesAsRecorded, true);
 
   S().renumberWbs();
@@ -866,6 +905,38 @@ const offerOnly = (ifcText: string): ImportResult => ({
   truthy('9D-3 …en laat de vastlegging staan', S().recordedDates !== null);
   eq('9D-4 …en zet de planning niet op verouderd', S().scheduleStale, false);
   eq('9D-5 …en laat de getoonde opgeslagen datum met rust', earlyStartOf(bId), '2026-03-16');
+
+  // Het eigenschappenpaneel schrijft via `updateTask`. Een naam wijzigen raakt geen datum en laat de
+  // modus staan (gids `uitleg-datums-zoals-opgeslagen`: "Een naam wijzigen doet dat niet"), net als
+  // de naamcel in het taakraster. MUTATIEBEWIJS: `const keepsRecordedMode = false` in
+  // `taskSlice.ts` ⇒ 9D-6 ROOD; `'priority'` in `DATE_NEUTRAL_TASK_FIELDS` ⇒ 9D-8 ROOD.
+  S().updateTask(bId, { name: 'Hernoemd', description: 'Omschrijving' });
+  eq('9D-6 naam + omschrijving via updateTask: modus blijft, niet verouderd, wel vuil',
+    [S().datesAsRecorded, S().recordedDates !== null, S().scheduleStale, S().isDirty, S().tasks.find((t) => t.id === bId)!.name],
+    [true, true, false, true, 'Hernoemd']);
+  eq('9D-7 …en de getoonde opgeslagen datum blijft', earlyStartOf(bId), '2026-03-16');
+  // Het paneel (`TaskTypeField`) en *Taak bewerken* schrijven het taaktype via `updateTask`; het
+  // raster laat de modus daarbij al staan. Zelfde uitkomst hier. Ook een werkregel via `updateTask`
+  // (zoals `setTaskWorkRule`). MUTATIEBEWIJS: `'taskType'` uit `DATE_NEUTRAL_TASK_FIELDS` ⇒ 9D-7a
+  // ROOD; `'workRule'` eruit ⇒ 9D-7b ROOD.
+  {
+    const huidig = S().tasks.find((t) => t.id === bId)!.taskType;
+    S().updateTask(bId, { taskType: huidig === 'LOGISTIC' ? 'MOVE' : 'LOGISTIC', customTaskTypeId: undefined });
+    eq('9D-7a taaktype via updateTask: modus blijft, niet verouderd, datum blijft',
+      [S().datesAsRecorded, S().scheduleStale, earlyStartOf(bId)], [true, false, '2026-03-16']);
+    const regel = S().tasks.find((t) => t.id === bId)!.workRule;
+    S().updateTask(bId, { workRule: regel === 'FIXED_WORK' ? 'FIXED_DURATION_WORK' : 'FIXED_WORK' });
+    eq('9D-7b werkregel via updateTask: modus blijft, niet verouderd, datum blijft',
+      [S().datesAsRecorded, S().scheduleStale, earlyStartOf(bId), S().tasks.find((t) => t.id === bId)!.workRule !== regel],
+      [true, false, '2026-03-16', true]);
+  }
+  // Een patch met één planningsveld erbij (prioriteit: invoer voor nivelleren) verlaat de modus wél.
+  S().updateTask(bId, { name: 'Nog eens', priority: S().tasks.find((t) => t.id === bId)!.priority + 1 });
+  eq('9D-8 naam + prioriteit: modus uit, vastlegging weg, verouderd', [S().datesAsRecorded, S().recordedDates, S().scheduleStale], [false, null, true]);
+  // Buiten de modus blijft het pad ongewijzigd: ook een naamwijziging zet de planning op verouderd.
+  S().runCPM();
+  S().updateTask(bId, { name: 'Buiten de modus' });
+  eq('9D-9 buiten de modus: naamwijziging zet de planning (ongewijzigd) op verouderd', S().scheduleStale, true);
 }
 
 // ── (10) De tweede ring: élk ánder pad dat herrekent (review taak 6) ─────────
@@ -876,8 +947,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
 // (10.A) K3 — een SLAPEND document dat op de achtergrond wordt doorgerekend.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('10a')), { filePath: null, recompute: true });
-  S().showRecordedDates();
+  S().applyLoadedProject(inMode(externIfc('10a')), { filePath: null, recompute: true });
   const slapendId = S().activeDocumentId;
   const bId = idOfWbs('1.2');
   eq('10A-1 voorwaarde: modus staat aan in het straks-slapende document', S().datesAsRecorded, true);
@@ -926,8 +996,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
 // modus niet weggooien en de undo-stack niet raken.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('10c')), { filePath: null, recompute: true });
-  S().showRecordedDates();
+  S().applyLoadedProject(inMode(externIfc('10c')), { filePath: null, recompute: true });
   eq('10C-1 voorwaarde: modus staat aan', S().datesAsRecorded, true);
   eq('10C-2 in de modus geldt de planning als vers', S().scheduleStale, false);
   truthy('10C-3 in de modus is cpmResult gevuld (de reconstructie)', S().cpmResult !== null);
@@ -946,8 +1015,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
 // het, in een tweede undo-stap met een tussentoestand die de gebruiker nooit gezien heeft.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('10d')), { filePath: null, recompute: true });
-  S().showRecordedDates();
+  S().applyLoadedProject(inMode(externIfc('10d')), { filePath: null, recompute: true });
   const bId = idOfWbs('1.2');
   const startVoor = S().project.startDate;
   eq('10D-1 voorwaarde: modus staat aan', S().datesAsRecorded, true);
@@ -1064,10 +1132,8 @@ const offerOnly = (ifcText: string): ImportResult => ({
   };
 
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('11')), { filePath: null, recompute: true });
-  geenModusEnStale('11d na laden');
-  S().showRecordedDates();
-  geenModusEnStale('11e in de modus');
+  S().applyLoadedProject(inMode(externIfc('11')), { filePath: null, recompute: true });
+  geenModusEnStale('11d na laden (in de modus)');
   const aId = idOfWbs('1.1');
   const aTime = S().tasks.find((t) => t.id === aId)!.time;
   S().updateTask(aId, { time: { ...aTime, scheduleDuration: 3 } });
@@ -1077,7 +1143,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
 
   // (11h) XER-etappeplan §3.5/§4-T4, risico §5.1: het bron-orakel-laadpad zet de modus AAN in
   // `applyRecordedDatesOnLoad`, dus deze invariant moet ook ná EEN AUTO-AAN-LOAD gelden — niet
-  // alleen ná een handmatige `showRecordedDates()`-aanroep zoals 11d/11e hierboven.
+  // alleen ná het heropenen van een onbewerkt eigen IFC zoals 11d hierboven.
   const rt11h = offerOnly(externIfc('11h'));
   const oracleTimesFor11h = captureRecordedDates(rt11h.tasks, rt11h.recordedFields).times;
   const asXerFor11h: ImportResult = {
@@ -1182,8 +1248,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
 // `writeCSV` in `fileSlice.exportFile` ⇒ 13Bb hieronder slaat rood.
 {
   S().newProject();
-  S().applyLoadedProject(offerOnly(externIfc('csv')), { filePath: null, recompute: true });
-  S().showRecordedDates();
+  S().applyLoadedProject(inMode(externIfc('csv')), { filePath: null, recompute: true });
   truthy('13Ba voorwaarde: de modus staat aan', S().datesAsRecorded);
 
   // Kolommen op KOP, niet op index: de kopregel groeit mee met de export (issue #27 zette
@@ -1281,11 +1346,11 @@ const offerOnly = (ifcText: string): ImportResult => ({
     eq('14h de Primavera-tekst noemt Primavera juist WEL in elke taal (anders bewijst 14g niets)',
       primaveraNoemtHetNiet, []);
 
-    // Her-check laag 3, bevinding 5: dezelfde regel voor de per-taak-BADGE (`task.json`,
-    // `properties.recordedDatesActive[Neutral]`) — die zei "Primavera" op élk #63-document.
-    eq('14i badge: XER-herkomst ⇒ Primavera-sleutel', recordedDatesTaskActiveKey('xer'), 'properties.recordedDatesActive');
-    eq('14j badge: archiefherkomst ⇒ óók Primavera-sleutel', recordedDatesTaskActiveKey('xer-archive'), 'properties.recordedDatesActive');
-    eq('14k badge: zonder herkomst ⇒ neutrale sleutel', recordedDatesTaskActiveKey(undefined), 'properties.recordedDatesActiveNeutral');
+    // Her-check laag 3, bevinding 5: dezelfde regel voor het per-taak-BLOK (`task.json`, teksten
+    // eigenaar 2026-10-17) — dat zei "Primavera" op élk #63-document.
+    eq('14i blok: XER-herkomst ⇒ Primavera-sleutels', [recordedDatesTaskShownKey('xer'), recordedDatesTaskMissingKey('xer')], ['properties.recordedDatesShown', 'properties.recordedDatesMissing']);
+    eq('14j blok: archiefherkomst ⇒ óók Primavera-sleutels', [recordedDatesTaskShownKey('xer-archive'), recordedDatesTaskMissingKey('xer-archive')], ['properties.recordedDatesShown', 'properties.recordedDatesMissing']);
+    eq('14k blok: zonder herkomst ⇒ neutrale sleutels', [recordedDatesTaskShownKey(undefined), recordedDatesTaskMissingKey(undefined)], ['properties.recordedDatesShownNeutral', 'properties.recordedDatesMissingNeutral']);
     const badgeZonderNeutraal: string[] = [];
     const badgeNeutraalNoemtPrimavera: string[] = [];
     const badgePrimaveraNoemtHetNiet: string[] = [];
@@ -1293,16 +1358,18 @@ const offerOnly = (ifcText: string): ImportResult => ({
       const json = JSON.parse(readFileSync(joinPath(localesRoot, taal, 'task.json'), 'utf8')) as
         Record<string, Record<string, string>>;
       const props = json.properties ?? {};
-      const primavera = props.recordedDatesActive;
-      const neutraal = props.recordedDatesActiveNeutral;
-      if (neutraal === undefined && optioneel(taal)) { /* B5: mag nog ontbreken */ } else if (typeof neutraal !== 'string' || neutraal.length === 0) badgeZonderNeutraal.push(taal);
-      else if (noemtPrimavera(neutraal)) badgeNeutraalNoemtPrimavera.push(taal);
-      // Op de stam (`noemtPrimavera`): het Pools verbuigt de naam ("przez Primaverę").
-      if (!(primavera === undefined && optioneel(taal)) && !noemtPrimavera(primavera)) badgePrimaveraNoemtHetNiet.push(taal);
+      for (const stam of ['recordedDatesShown', 'recordedDatesMissing']) {
+        const primavera = props[stam];
+        const neutraal = props[`${stam}Neutral`];
+        if (neutraal === undefined && optioneel(taal)) { /* B5: mag nog ontbreken */ } else if (typeof neutraal !== 'string' || neutraal.length === 0) badgeZonderNeutraal.push(`${taal}:${stam}`);
+        else if (noemtPrimavera(neutraal)) badgeNeutraalNoemtPrimavera.push(`${taal}:${stam}`);
+        // Op de stam (`noemtPrimavera`): het Pools verbuigt de naam ("przez Primaverę").
+        if (!(primavera === undefined && optioneel(taal)) && !noemtPrimavera(primavera)) badgePrimaveraNoemtHetNiet.push(`${taal}:${stam}`);
+      }
     }
-    eq('14l elke taal heeft de neutrale badge-tekst', badgeZonderNeutraal, []);
-    eq('14m de NEUTRALE badge noemt Primavera in geen enkele taal', badgeNeutraalNoemtPrimavera, []);
-    eq('14n de Primavera-badge noemt Primavera juist WEL in elke taal', badgePrimaveraNoemtHetNiet, []);
+    eq('14l elke taal heeft de neutrale bloktekst', badgeZonderNeutraal, []);
+    eq('14m de NEUTRALE bloktekst noemt Primavera in geen enkele taal', badgeNeutraalNoemtPrimavera, []);
+    eq('14n de Primavera-bloktekst noemt Primavera juist WEL in elke taal', badgePrimaveraNoemtHetNiet, []);
   }
 }
 
@@ -1424,9 +1491,10 @@ const offerOnly = (ifcText: string): ImportResult => ({
   // ís dan de herberekening, dus er valt niets meer te tonen. Geen modus, geen aanbod.
   eq('16h heropenen na F5+opslaan: het bestand draagt de herberekening zelf ⇒ niets te melden', [S().datesAsRecorded, S().recordedDates], [false, null]);
 
-  // Eén bewerking (echte mutator) wist de vlag; daarna alleen nog het aanbod.
+  // Eén bewerking (echte mutator) wist de vlag. De modus stond sinds 16h al uit, dus deze check
+  // toetst alleen de vlag en het vuil worden; het verlaten van de modus staat in 9D-8.
   S().updateTask(S().tasks[0]!.id, { name: 'Bewerkt' });
-  eq('16i een bewerking verlaat de modus én wist de vlag', [S().datesAsRecorded, S().importPristine, S().isDirty], [false, false, true]);
+  eq('16i een bewerking (modus stond al uit, 16h) wist de vlag en maakt vuil', [S().datesAsRecorded, S().importPristine, S().isDirty], [false, false, true]);
   const savedEdited = writeIFC(buildWriteIFCInput(S()));
   truthy('16j het bewerkte bestand draagt geen OPS_ImportProvenance meer', !savedEdited.includes("'OPS_ImportProvenance'"));
   S().newProject();
@@ -1469,18 +1537,13 @@ const offerOnly = (ifcText: string): ImportResult => ({
     S().newProject();
     S().restoreDocuments([recoveryInputFromParsed(na_f5, { id: 'rec-16s', filePath: null, isDirty: false, datesAsRecorded: false })], 'rec-16s');
   }
-  eq('16s0 aanbodstand met vlag aan', [S().datesAsRecorded, S().recordedDates !== null, S().importPristine, S().isDirty], [false, true, true, false]);
-  S().showRecordedDates();
-  eq('16s "toon opgeslagen datums": modus aan, vlag aan, niet vuil', [S().datesAsRecorded, S().importPristine, S().isDirty], [true, true, false]);
-  S().undo();
-  eq('16t Ctrl+Z daarvan: modus uit, vlag aan, vuil', [S().datesAsRecorded, S().importPristine, S().isDirty], [false, true, true]);
-  S().redo();
-  // Tegenproef: na een ECHTE bewerking blijft 16l gelden, ook als de undo-keten daarna over een
-  // niet-bewerking heen loopt.
+  // Geen aanbod-stand meer (eigenaar, 2026-10-17, optie 1): herstel buiten de modus VERGEET de
+  // opgeslagen datums, ook met de vlag aan.
+  eq('16s herstel buiten de modus: geen modus, geen vastlegging, vlag aan, niet vuil', [S().datesAsRecorded, S().recordedDates, S().importPristine, S().isDirty], [false, null, true, false]);
+  // Tegenproef: na een ECHTE bewerking blijft 16l gelden.
   S().updateTask(S().tasks[0]!.id, { name: 'Bewerkt' });
   S().undo();
-  S().undo();
-  eq('16u bewerking + twee undo\'s (bewerking, dan "toon"): vlag blijft uit, document blijft vuil', [S().importPristine, S().isDirty], [false, true]);
+  eq('16u bewerking + undo: vlag blijft uit, document blijft vuil', [S().importPristine, S().isDirty], [false, true]);
   // 16w (her-check): laden → F5 → OPSLAAN → Ctrl+Z. Het geheugen wijkt daarna af van het bestand:
   // het document MOET vuil zijn (anders sluit het zonder vraag en schrijft autosave niets), terwijl
   // de importvlag en de modus terugkomen. "Opslaan" via het echte versie-opgeslagen-pad.
@@ -1586,26 +1649,90 @@ const offerOnly = (ifcText: string): ImportResult => ({
     eq('16n2 elke uitzondering vangt nog een regel (geen verouderde lijst)',
       UITZONDERINGEN.filter((_, i) => !gebruikt.has(i)).map((x) => `${x.file}: ${x.fragment}`), []);
   }
+
+  // 16y: een SLAPEND hersteld document in de modus heeft geen meting (`applyRestoredRecordedMode`
+  // rekent niet door). Na de wissel ernaartoe zegt het paneel per taak dus NIETS over verschuiven:
+  // `recordedTaskWillShift` geeft `undefined`, nooit een verzonnen `false`.
+  // MUTATIEBEWIJS: `return recorded.shiftedTaskIds?.includes(taskId) ?? false` in
+  // `recordedDatesSelectors.ts` ⇒ 16y3 slaat ROOD.
+  {
+    const slaap = recoveryInputFromParsed(inMode(externIfc('16y')), { id: 'rec-16y-slaap', filePath: null, isDirty: false, datesAsRecorded: true });
+    const wakker = recoveryInputFromParsed(inMode(externIfc('16y')), { id: 'rec-16y-wakker', filePath: null, isDirty: false, datesAsRecorded: true });
+    S().newProject();
+    S().restoreDocuments([slaap, wakker], 'rec-16y-wakker');
+    S().switchDocument('rec-16y-slaap');
+    const bId = idOfWbs('1.2');
+    eq('16y1 na de wissel: het slapend herstelde document staat in de modus, met vastlegging',
+      [S().activeDocumentId, S().datesAsRecorded, S().recordedDates !== null], ['rec-16y-slaap', true, true]);
+    eq('16y2 …maar zonder meting', [S().recordedDates?.shifted, S().recordedDates?.shiftedTaskIds], [undefined, undefined]);
+    eq('16y3 recordedTaskWillShift: onbekend, geen verzonnen "nee"',
+      recordedTaskWillShift(S().recordedDates, S().datesAsRecorded, bId), undefined);
+  }
 }
 
-// ── (17) CSV met onleesbare datumcellen opent NIET in de modus (critreview ded4d8c3, bevinding 1) ─
-// Vóór de fix legde de CSV-lezer "vandaag" vast voor een gevulde maar onleesbare datumcel; B hangt
-// aan A, dus na de solve verschoof B t.o.v. die verzonnen vastlegging en ging het document de modus
-// in met alle taken op vandaag. Het laadpad hieronder is het echte (`applyOpenedImport`).
+// ── (17) CSV met onleesbare datumcellen weigert vóór activatie (knownbug 128) ────────────────────
+// De oude terugval kon een vastlegging op vandaag verzinnen en daarmee de datummodus aanzetten.
+// Een onleesbare CSV levert nu geen importresultaat op. Het bestaande, bewerkte IFC-document met
+// echte vastlegging moet volledig behouden blijven; de laadactie mag niet bereikt worden.
 {
-  S().newProject();
-  S().applyOpenedImport(readCSV(CSV_FIXTURE_UNREADABLE_DATES), { filePath: null, recompute: true });
-  eq('17a onleesbare CSV-datums: geen modus, geen vastlegging', [S().datesAsRecorded, S().recordedDates], [false, null]);
+  // Eigen context: de bestaande meldings-/documentstand van de volgende secties blijft ongemoeid.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  const state = () => ctx.store.getState();
+  state().applyOpenedImport(readIFC(externIfc('17')), { filePath: '/projecten/bestaand-17.ifc', recompute: true });
+  const historyCount = state().historyEvents.length;
+  state().setProject({ description: 'Bestaande bewerking behouden bij een geweigerde CSV' });
+  const before = state();
+  const documentsBefore = J(before.getOpenDocumentPayloads());
+  eq('17a tegenproef: bestaand IFC met twee taken en echte vastlegging in de modus', {
+    tasks: before.tasks.map(t => [t.name, t.time.earlyStart, t.time.earlyFinish]),
+    datesAsRecorded: before.datesAsRecorded,
+    recordedCount: Object.keys(before.recordedDates?.times ?? {}).length,
+  }, {
+    tasks: [['A', '2026-03-02', '2026-03-06'], ['B', '2026-03-16', '2026-03-20']],
+    datesAsRecorded: true, recordedCount: 2,
+  });
+  eq('17b tegenproef: eigen bewerking, historie en bestaand opslagdoel',
+    [before.isDirty, before.historyEvents.length - historyCount, before.importPristine, before.filePath],
+    [true, 1, false, '/projecten/bestaand-17.ifc']);
+
+  let applyReached = false;
+  let error: CsvDateImportError | undefined;
+  try {
+    const parsed = readCSV(CSV_FIXTURE_UNREADABLE_DATES);
+    applyReached = true;
+    state().applyOpenedImport(parsed, { filePath: null, recompute: true });
+  } catch (e) {
+    if (!(e instanceof CsvDateImportError)) throw e;
+    error = e;
+  }
+  truthy('17c onleesbare CSV geeft de specifieke datumvalidatiefout', error instanceof CsvDateImportError);
+  eq('17d de fout noemt onafhankelijk verwachte naam, melding en oorspronkelijke celcontext', error ? {
+    name: error.name, message: error.message, row: error.row, column: error.column, value: error.value,
+  } : null, {
+    name: 'CsvDateImportError',
+    message: 'CSV record 2, column "Start": unrecognised date "Mon 3/2/26". Use YYYY-MM-DD, DD-MM-YYYY or DD/MM/YYYY.',
+    row: 2, column: 'Start', value: 'Mon 3/2/26',
+  });
+  eq('17e mislukte parse bereikt applyOpenedImport niet', applyReached, false);
+  truthy('17f geen activatie of andere storemutatie', state() === before);
+  eq('17g alle bestaande documenten en taakgegevens behouden', J(state().getOpenDocumentPayloads()), documentsBefore);
+  eq('17h bestaande datummodus en vastlegging behouden, geen verzonnen CSV-vastlegging',
+    [state().datesAsRecorded, state().recordedDates, state().importPristine],
+    [before.datesAsRecorded, before.recordedDates, before.importPristine]);
+  eq('17i historie, dirty-status en opslagdoel behouden',
+    [state().historyEvents, state().nextHistorySequence, state().isDirty, state().filePath, state().fileHandle, state().siteFileId, state().siteFileVersion],
+    [before.historyEvents, before.nextHistorySequence, before.isDirty, before.filePath, before.fileHandle, before.siteFileId, before.siteFileVersion]);
 }
 
 // ── (18) Heropenen van een EIGEN IFC geeft geen openingsmelding (critreview ded4d8c3, bevinding 6) ─
 // Scenario: verse import (modus aan) → een bewerking die de modus NIET verlaat (projectomschrijving,
 // geen datumwijziging) wist "ongewijzigd sinds import" → opslaan ín de modus → heropenen. Het eigen
-// IFC ('ifc-own', vlag uit) biedt de weergave alleen aan; dat aanbod hoort in de strook, niet als
-// openingsmelding. Het echte openpad (`applyOpenedImport`), dat ook de melding plaatst.
+// IFC ('ifc-own', vlag uit, mét `SourceFormat`) opent weer in de modus, zoals je het achterliet
+// (eigenaar, 2026-10-17), maar zonder openingsmelding: het is geen nieuwe import. Het echte openpad
+// (`applyOpenedImport`), dat ook de melding plaatst.
 {
   const importMeldingen = () => S().ui.notifications.filter((n) =>
-    n.messageKey === 'notifications.importDatesAsRecorded' || n.messageKey === 'notifications.importDatesAsRecordedOffer').length;
+    n.messageKey === 'notifications.importDatesAsRecorded').length;
   S().newProject();
   const voorImport = importMeldingen();
   S().applyOpenedImport(readIFC(externIfc('18')), { filePath: null, recompute: true });
@@ -1617,7 +1744,7 @@ const offerOnly = (ifcText: string): ImportResult => ({
   S().newProject();
   const voorHeropen = importMeldingen();
   S().applyOpenedImport(eigen, { filePath: null, recompute: true });
-  eq('18d heropenen: alleen het aanbod in de strook (recordedDates gezet, modus uit)', [S().recordedDates !== null, S().datesAsRecorded], [true, false]);
+  eq('18d heropenen: in de modus opgeslagen ⇒ weer in de modus, met vastlegging', [S().recordedDates !== null, S().datesAsRecorded], [true, true]);
   eq('18e …en GEEN openingsmelding', importMeldingen() - voorHeropen, 0);
 }
 

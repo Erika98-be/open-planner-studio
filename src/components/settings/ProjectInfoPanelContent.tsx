@@ -94,11 +94,12 @@ export interface ProjectInfoPanelContentProps {
  *    inhoudelijk gelijke instellingen; anders één undo-stap + `runCPM()` + telling).
  *
  * STALE-DRAFT-GUARD: `ProjectInfoSection` in Backstage blijft
- * gemount zolang de gebruiker op die pagina staat. `nav.switchDocumentN` (Ctrl+1..9) en `edit.undo`/
- * `edit.redo` (Ctrl+Z/Y) hebben GEEN `when`-guard tegen open dialogen/Backstage (zie
- * `shortcutRegistry.ts`) en negeren alleen invoervelden-met-focus (`isTypingTarget`) — dus een klik
- * buiten een veld gevolgd door zo'n sneltoets kan het ACTIEVE document verwisselen terwijl deze
- * component met de OUDE `useState`-waarden gemount blijft. Twee onafhankelijke vangnetten:
+ * gemount zolang de gebruiker op die pagina staat. `edit.undo`/`edit.redo` (Ctrl+Z/Y) zijn alleen
+ * dicht onder een modaal venster, NIET in Backstage (zie `isEditShortcutBlocked` in
+ * `shortcutRegistry.ts`), en negeren invoervelden-met-focus (`isTypingTarget`) — dus een klik buiten
+ * een veld gevolgd door Ctrl+Z/Y kan `project` wijzigen terwijl deze component met de OUDE
+ * `useState`-waarden gemount blijft. De draftbewaking blokkeert een documentwissel (Ctrl+1..9,
+ * `isDocumentLeaveBlocked`). Twee onafhankelijke vangnetten:
  *  (a) re-init-effect op `activeDocumentId` (documentwissel — swapt `project` als geheel, dus dít is
  *      het bewezen identiteitssignaal; zie hieronder waarom NIET op undo).
  *  (b) `companyTouched`/`calcTouched`: de bibliotheek-(ont)koppeling en de rekenprofiel-tak
@@ -328,9 +329,13 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
 
       if (isNew) {
         const isCustom = calState.country === 'custom';
+        // Alleen bij aanmaak vertalen: een latere taalwissel hernoemt geen projectdata.
+        const calendarName = tCommon(constructionMode
+          ? 'calendar.defaultConstructionName'
+          : 'calendar.defaultStandardName');
         const calendar = isCustom
-          ? buildGeneratedCalendar({ country: 'none', bouwvak: 'geen' }, calSpan)
-          : buildGeneratedCalendar(calState as HolidayGenParams, calSpan);
+          ? buildGeneratedCalendar({ country: 'none', bouwvak: 'geen' }, calSpan, calendarName)
+          : buildGeneratedCalendar(calState as HolidayGenParams, calSpan, calendarName);
         // Ploeg-preset materialiseren: default 'day' laat de kalender een dag-kalender (geen
         // workTime); een niet-default preset zet workTime + shift + scalar-fallback op nieuwe entries.
         if (enableHourPlanning && shiftPreset !== 'day') {

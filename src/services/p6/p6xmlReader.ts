@@ -1,5 +1,6 @@
 import { nameWithProjectCode } from '@/utils/projectCodeName';
 import { P6XmlImportError } from './p6xmlErrors';
+import { p6ConstraintFromCodeOrLabel } from './p6ConstraintTypes';
 import { Task, TaskConstraint, ConstraintType } from '@/types/task';
 import type { P6CompletePctType, P6DurationType } from '@/types/task';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
@@ -14,7 +15,7 @@ import { parseInstant, localTodayIso, parseDate, formatDate, addCalendarDays } f
 import { UNNAMED_HOLIDAY_NAME, UNNAMED_WORKING_EXCEPTION_NAME } from '@/services/calendarRecurrence';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
 import { flattenOrder } from '@/utils/wbs';
-import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
+import { emptyMissingScheduleDates, importDateTimeOrUndefined, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { directChildText, toInt, toFloat } from '@/services/xmlDom';
 import type { ImportResult, OpenedImport, P6XmlEmptyReason, P6XmlImportReport } from '@/services/importTypes';
 import type { Baseline } from '@/types/baseline';
@@ -173,23 +174,25 @@ function p6HoursToDays(hours: number, hoursPerDay: number): number {
 }
 
 /**
- * P6 `CS_*`-code → OPS-constraint (spiegel van `p6ConstraintCode` in de writer). De harde
- * `CS_MANDSTART`/`CS_MANDFIN` komen terug als `MSO`/`MFO` mét `hard:true`; de soft-typen als hun
- * OPS-equivalent. Onbekende code ⇒ `undefined` (veld afwezig).
+ * P6-constraintsoort → OPS-constraint. Echte P6 XML (PMXML) schrijft `<PrimaryConstraintType>` en
+ * `<SecondaryConstraintType>` als Engels label (`Start On or After`); de eigen writer schrijft het
+ * label sinds deze fix ook, maar oudere OPS-exports dragen het XER-token (`CS_MSOA`). Beide
+ * schrijfwijzen worden gelezen, via de gedeelde helper `p6ConstraintFromCodeOrLabel`
+ * (`p6ConstraintTypes.ts`, bron MPXJ `ConstraintTypeHelper`). De harde `Mandatory Start`/
+ * `Mandatory Finish` komen terug als `MSO`/`MFO` mét `hard:true`.
+ *
+ * `<Primary|SecondaryConstraintType>` → OPS-constraint. Leeg ⇒ `undefined` (ASAP). Een onbekende
+ * waarde ⇒ `undefined` mét waarschuwing, zodat een vreemd label zichtbaar blijft (zoals bij
+ * `<DurationType>`).
  */
-function p6CodeToConstraint(code: string): { type: ConstraintType; hard?: boolean } | undefined {
-  switch (code) {
-    case 'CS_MSO': return { type: 'MSO' };
-    case 'CS_MSOA': return { type: 'SNET' };
-    case 'CS_MSOB': return { type: 'SNLT' };
-    case 'CS_MEO': return { type: 'MFO' };
-    case 'CS_MEOA': return { type: 'FNET' };
-    case 'CS_MEOB': return { type: 'FNLT' };
-    case 'CS_ALAP': return { type: 'ALAP' };
-    case 'CS_MANDSTART': return { type: 'MSO', hard: true };
-    case 'CS_MANDFIN': return { type: 'MFO', hard: true };
-    default: return undefined;
-  }
+function p6ConstraintFromXml(raw: string, tag: string): { type: ConstraintType; hard?: boolean } | undefined {
+  const value = raw.trim();
+  if (!value) return undefined;
+  // Eigen sleutel (in de helper): een waarde als `toString` of `__proto__` raakt geen prototype-sleutel.
+  const known = p6ConstraintFromCodeOrLabel(value);
+  if (known) return known;
+  console.warn(`P6-XML-import: onbekende <${tag}>-waarde '${value}' — constraint blijft afwezig.`);
+  return undefined;
 }
 
 // P6-XML (PMXML) draagt `<DurationType>` als Engels label, niet als het XER-token
@@ -859,8 +862,10 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (!cal) continue;
     const durHours = getElementFloat(actEl, 'PlannedDuration');
     const durSignal = durHours > 0 && isSubDayMinutes(Math.round(durHours * 60), cal.hoursPerDay);
-    const dateSignal = hasNonAnchorTime(getElementText(actEl, 'PlannedStartDate'), DAY_TIME_ANCHOR)
-      || hasNonAnchorTime(getElementText(actEl, 'PlannedFinishDate'), DAY_TIME_ANCHOR);
+    const dateSignal = ['PlannedStartDate', 'PlannedFinishDate'].some(field => {
+      const raw = getElementText(actEl, field);
+      return hasNonAnchorTime(raw, DAY_TIME_ANCHOR) && importDateTimeOrUndefined(raw, true) !== undefined;
+    });
     if (durSignal || dateSignal) cSignalCalIds.add(calId);
   }
   // P6 valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
@@ -914,14 +919,17 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const effCal = calById.get(effCalId) ?? calendar;
     const effHpd = effCal.hoursPerDay;
     // Datum-parser: uur ⇒ echte tijd (`parseInstant`+`formatInstant`), dag ⇒ tijd-strippen.
-    const plannedStart = importDateTime(plannedStartRaw, hourDates);
-    const plannedFinish = importDateTime(plannedFinishRaw, hourDates);
-    if (!plannedStartRaw) missingDates.start.add(id);
-    if (!plannedFinishRaw) missingDates.finish.add(id);
+    const parseTaskDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, hourDates);
+    const sourceStart = parseTaskDate(plannedStartRaw);
+    const sourceFinish = parseTaskDate(plannedFinishRaw);
+    const plannedStart = sourceStart ?? localTodayIso();
+    const plannedFinish = sourceFinish ?? localTodayIso();
+    // Onleesbaar is ontbrekend; alleen de invoer krijgt een plaatshouder, de bronuitvoer nooit.
+    if (sourceStart === undefined) missingDates.start.add(id);
+    if (sourceFinish === undefined) missingDates.finish.add(id);
 
     {
-      const recordedDate = (raw: string): string | undefined =>
-        raw ? importDateTime(raw, isHour) : undefined;
+      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);
@@ -933,8 +941,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
       };
       const criticalRaw = getElementText(actEl, 'IsCritical');
       const recorded = buildRecordedTime({
-        start: recordedDate(getElementText(actEl, 'EarlyStartDate') || getElementText(actEl, 'StartDate')),
-        finish: recordedDate(getElementText(actEl, 'EarlyFinishDate') || getElementText(actEl, 'FinishDate')),
+        start: recordedDate(getElementText(actEl, 'EarlyStartDate')) ?? recordedDate(getElementText(actEl, 'StartDate')),
+        finish: recordedDate(getElementText(actEl, 'EarlyFinishDate')) ?? recordedDate(getElementText(actEl, 'FinishDate')),
         lateStart: recordedDate(getElementText(actEl, 'LateStartDate')),
         lateFinish: recordedDate(getElementText(actEl, 'LateFinishDate')),
         totalFloat: floatDays(getElementText(actEl, 'TotalFloat')),
@@ -953,8 +961,8 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const actualStartRaw = notStarted ? '' : getElementText(actEl, 'ActualStartDate');
     const actualFinishRaw = notStarted ? '' : getElementText(actEl, 'ActualFinishDate');
     const remainingRaw = getElementText(actEl, 'RemainingDuration');
-    const actualStart = actualStartRaw ? importDateTime(actualStartRaw, hourDates) : undefined;
-    const actualFinish = actualFinishRaw ? importDateTime(actualFinishRaw, hourDates) : undefined;
+    const actualStart = parseTaskDate(actualStartRaw);
+    const actualFinish = parseTaskDate(actualFinishRaw);
     // RemainingDuration: uur ⇒ minuten (`uren × 60`, geen afronding); dag ⇒ het dag-pad.
     const remainingMinutes = isHour && remainingRaw ? Math.round(parseFloat(remainingRaw) * 60) : undefined;
     // Zelfde `effHpd` als de duur hieronder — symmetrisch met de writer.
@@ -974,31 +982,30 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
 
     const parentId = wbsObjId >= 0 ? wbsObjIdToId.get(wbsObjId) || null : null;
 
-    // Datumconstraints: primair + secundair uit de `CS_*`-codes. Secundair is altijd soft
+    // Datumconstraints: primair + secundair uit het PMXML-label of de `CS_*`-code. Secundair is altijd soft
     // (P6-invariant) ⇒ `hard` wordt gedropt. Datum: uur ⇒ echte tijd, dag ⇒ tijd-strippen.
-    const parseCstrDate = (raw: string): string => importDateTime(raw, hourDates);
     let constraint: TaskConstraint | undefined;
     const primCode = getElementText(actEl, 'PrimaryConstraintType');
     if (primCode) {
-      const mapped = p6CodeToConstraint(primCode);
+      const mapped = p6ConstraintFromXml(primCode, 'PrimaryConstraintType');
       if (mapped) {
-        const cdateRaw = getElementText(actEl, 'PrimaryConstraintDate');
+        const cdate = parseTaskDate(getElementText(actEl, 'PrimaryConstraintDate'));
         constraint = {
           type: mapped.type,
           ...(mapped.hard ? { hard: true } : {}),
-          ...(cdateRaw ? { date: parseCstrDate(cdateRaw) } : {}),
+          ...(cdate ? { date: cdate } : {}),
         };
       }
     }
     let constraint2: TaskConstraint | undefined;
     const secCode = getElementText(actEl, 'SecondaryConstraintType');
     if (secCode) {
-      const mapped2 = p6CodeToConstraint(secCode);
+      const mapped2 = p6ConstraintFromXml(secCode, 'SecondaryConstraintType');
       if (mapped2) {
-        const cdate2Raw = getElementText(actEl, 'SecondaryConstraintDate');
+        const cdate2 = parseTaskDate(getElementText(actEl, 'SecondaryConstraintDate'));
         constraint2 = {
           type: mapped2.type,
-          ...(cdate2Raw ? { date: parseCstrDate(cdate2Raw) } : {}),
+          ...(cdate2 ? { date: cdate2 } : {}),
         };
       }
     }

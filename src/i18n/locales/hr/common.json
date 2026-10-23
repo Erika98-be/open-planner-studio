@@ -15,7 +15,9 @@
     "openFailed": "Otvaranje datoteke nije uspjelo",
     "extGuideCallbackFailed": "Jedan korak proširenja {{name}} javio je grešku. Vodič se nastavlja.",
     "extHelpProjectOpenFailed": "Projektnu datoteku {{file}} iz proširenja {{name}} nije bilo moguće otvoriti.",
+    "extImportFailed": "Uvoz pomoću {{name}} nije uspio.",
     "extensionMessage": "Proširenje {{name}}: {{message}}",
+    "extensionInstallFailed": "Proširenje nije moglo biti instalirano. Provjerite datoteku i pokušajte ponovno.",
     "xerInvalidInput": "Uvoz XER-a zahtijeva izvorne bajtove datoteke.",
     "xerInvalidFile": "Ovo nije valjana ni podržana XER datoteka.",
     "xerInvalidEncoding": "Kodiranje teksta u ovoj XER datoteci nije valjano ili je skraćeno.",
@@ -66,25 +68,23 @@
     "xerImportEnumFallbacks_one": "{{count}} zamjensko rješenje za nabrajanje.",
     "xerImportEnumFallbacks_few": "{{count}} zamjenska rješenja za nabrajanje.",
     "xerImportEnumFallbacks_other": "{{count}} zamjenskih rješenja za nabrajanje.",
+    "xerImportMissingPlannedStarts_one": "{{count}} zadatak nije imao planirani početak i sada počinje na datumu stanja ili datumu početka projekta iz datoteke.",
+    "xerImportMissingPlannedStarts_few": "{{count}} zadatka nisu imala planirani početak i sada počinju na datumu stanja ili datumu početka projekta iz datoteke.",
+    "xerImportMissingPlannedStarts_other": "{{count}} zadataka nije imalo planirani početak i sada počinje na datumu stanja ili datumu početka projekta iz datoteke.",
     "xerImportUnsupportedSemantics_one": "{{count}} postavka rasporeda P6 upotrijebila je sigurno zamjensko rješenje.",
     "xerImportUnsupportedSemantics_few": "{{count}} postavke rasporeda P6 upotrijebile su sigurno zamjensko rješenje.",
     "xerImportUnsupportedSemantics_other": "{{count}} postavki rasporeda P6 upotrijebilo je sigurno zamjensko rješenje.",
     "xerImportDatesAsRecorded_one": "{{count}} zadatak prikazuje datume onako kako ih je Primavera spremila (nisu ponovno izračunati).",
     "xerImportDatesAsRecorded_few": "{{count}} zadatka prikazuju datume onako kako ih je Primavera spremila (nisu ponovno izračunati).",
     "xerImportDatesAsRecorded_other": "{{count}} zadataka prikazuje datume onako kako ih je Primavera spremila (nisu ponovno izračunati).",
-    "xerImportDatesAsRecordedOffer_one": "{{count}} zadatak odstupa od datuma u datoteci. Možete prikazati te datume.",
-    "xerImportDatesAsRecordedOffer_few": "{{count}} zadatka odstupaju od datuma u datoteci. Možete prikazati te datume.",
-    "xerImportDatesAsRecordedOffer_other": "{{count}} zadataka odstupa od datuma u datoteci. Možete prikazati te datume.",
     "importDatesAsRecorded_one": "{{count}} zadatak prikazuje datume onako kako su zapisani u datoteci (nisu ponovno izračunati).",
     "importDatesAsRecorded_few": "{{count}} zadatka prikazuju datume onako kako su zapisani u datoteci (nisu ponovno izračunati).",
     "importDatesAsRecorded_other": "{{count}} zadataka prikazuje datume onako kako su zapisani u datoteci (nisu ponovno izračunati).",
-    "importDatesAsRecordedOffer_one": "{{count}} zadatak odstupa od datuma u datoteci. Možete prikazati te datume.",
-    "importDatesAsRecordedOffer_few": "{{count}} zadatka odstupaju od datuma u datoteci. Možete prikazati te datume.",
-    "importDatesAsRecordedOffer_other": "{{count}} zadataka odstupa od datuma u datoteci. Možete prikazati te datume.",
     "xerExportLoss": "Izvoz u {{format}} gubi informacije o izvoru XER-a.",
     "mppLegacy": "Ova .mpp datoteka koristi stariji format (Project 2007 ili stariji). Izvezite je u MS Project kao XML (Datoteka → Spremi kao → XML) i otvorite tu datoteku.",
     "mppEncrypted": "Ova .mpp datoteka zaštićena je lozinkom. Izvezite je u MS Project kao XML (Datoteka → Spremi kao → XML) i otvorite tu datoteku.",
     "saveFailed": "Spremanje nije uspjelo",
+    "ambiguousThousands": "\"{{text}}\" je dvosmislen: mislite li na decimalni broj ili na tisućice? Decimale upisujte s \"{{separator}}\" (1{{separator}}5), a tisućice bez razdjelnika (1500). Vrijednost nije promijenjena.",
     "siteSaveConflict": "Nije spremljeno: „{{name}}“ na lokaciji je u međuvremenu promijenila druga osoba. Vaše promjene su još u aplikaciji. Odaberite Spremi kao da biste ih spremili kao novu datoteku.",
     "siteFileGone": "„{{name}}“ više nije na lokaciji. Datoteka je uklonjena s popisa „Nedavno“.",
     "savedViaDownload": "Spremljeno kao preuzimanje: '{{name}}' sada je u vašoj mapi za preuzimanja. Ovo okruženje ne dopušta aplikaciji da izravno zapisuje na odabrano mjesto.",
@@ -117,6 +117,9 @@
     "exportSplitsLost_one": "{{count}} zadatak s prekidima izvezen je bez prekida: MS Project i P6 poznaju prekide samo kao raspodjelu rada.",
     "exportSplitsLost_few": "{{count}} zadatka s prekidima izvezena su bez prekida: MS Project i P6 poznaju prekide samo kao raspodjelu rada.",
     "exportSplitsLost_other": "{{count}} zadataka s prekidima izvezeno je bez prekida: MS Project i P6 poznaju prekide samo kao raspodjelu rada.",
+    "exportP6Truncated_one": "{{count}} naziv ili šifra skraćen je na duljinu koju P6 dopušta.",
+    "exportP6Truncated_few": "{{count}} naziva ili šifre skraćena su na duljinu koju P6 dopušta.",
+    "exportP6Truncated_other": "{{count}} naziva ili šifara skraćeno je na duljinu koju P6 dopušta.",
     "projectStartAnchorsClamped_one": "{{count}} zadatak pomaknut je s početkom projekta.",
     "projectStartAnchorsClamped_few": "{{count}} zadatka pomaknuta su s početkom projekta.",
     "projectStartAnchorsClamped_other": "{{count}} zadataka pomaknuto je s početkom projekta.",
@@ -124,12 +127,12 @@
     "mppTimephasedSteeringLost_few": "Datumski prozor iz MS Projecta više ne određuje {{count}} zadatka nakon ove izmjene; sama raspodjela rada i dalje vrijedi i ostaje spremljena u datoteci.",
     "mppTimephasedSteeringLost_other": "Datumski prozor iz MS Projecta više ne određuje {{count}} zadataka nakon ove izmjene; sama raspodjela rada i dalje vrijedi i ostaje spremljena u datoteci.",
     "readMore": "Pročitaj više",
-    "taskTypesUnlocked": "Ova datoteka sadrži spremljeni rad ili vlastita pravila rada; pravilo rada i preostali posao vidljivi su za ovaj projekt.",
-    "taskTypesUnlockedDetail": "Ova datoteka sadrži spremljeni rad ili vlastita pravila rada; pravilo rada i preostali posao vidljivi su za ovaj projekt.",
-    "workRulesReadMore": "Objašnjenje pravila rada",
-    "workRuleDurationsChanged_one": "Nakon promjene kalendara pravilo rada prilagodilo je trajanje za {{count}} zadatak (rad ostaje, sati dnevno su se promijenili).",
-    "workRuleDurationsChanged_few": "Nakon promjene kalendara pravilo rada prilagodilo je trajanje za {{count}} zadatka (rad ostaje, sati dnevno su se promijenili).",
-    "workRuleDurationsChanged_other": "Nakon promjene kalendara pravilo rada prilagodilo je trajanje za {{count}} zadataka (rad ostaje, sati dnevno su se promijenili).",
+    "taskTypesUnlocked": "Ova datoteka sadrži spremljeni rad ili vrste zadataka; vrsta zadatka i preostali posao vidljivi su za ovaj projekt.",
+    "taskTypesUnlockedDetail": "Ova datoteka sadrži spremljeni rad ili vrste zadataka; vrsta zadatka i preostali posao vidljivi su za ovaj projekt.",
+    "workRulesReadMore": "Objašnjenje vrsta zadataka",
+    "workRuleDurationsChanged_one": "Nakon promjene kalendara vrsta zadatka prilagodila je trajanje za {{count}} zadatak (rad ostaje, sati dnevno su se promijenili).",
+    "workRuleDurationsChanged_few": "Nakon promjene kalendara vrsta zadatka prilagodila je trajanje za {{count}} zadatka (rad ostaje, sati dnevno su se promijenili).",
+    "workRuleDurationsChanged_other": "Nakon promjene kalendara vrsta zadatka prilagodila je trajanje za {{count}} zadataka (rad ostaje, sati dnevno su se promijenili).",
     "pasteSkippedReadOnly_one": "Preskočena je {{count}} ćelija: ona je samo za čitanje (na primjer automatski numerirana oznaka WBS-a ili izračunati stupac).",
     "pasteSkippedReadOnly_few": "Preskočene su {{count}} ćelije: one su samo za čitanje (na primjer automatski numerirana oznaka WBS-a ili izračunati stupac).",
     "pasteSkippedReadOnly_other": "Preskočeno je {{count}} ćelija: one su samo za čitanje (na primjer automatski numerirana oznaka WBS-a ili izračunati stupac).",
@@ -147,27 +150,28 @@
     "startBlockedByConstraintMany_one": "Novi početak za {{count}} zadatak nije primijenjen: taj zadatak ima prethodnika i ograničenje koje nije „ne početi prije“ (SNET). Promijenite to ograničenje da biste pomaknuli početak.",
     "startBlockedByConstraintMany_few": "Novi počeci za {{count}} zadatka nisu primijenjeni: ti zadaci imaju prethodnika i ograničenja koja nisu „ne početi prije“ (SNET). Promijenite ta ograničenja da biste pomaknuli početke.",
     "startBlockedByConstraintMany_other": "Novi počeci za {{count}} zadataka nisu primijenjeni: ti zadaci imaju prethodnika i ograničenja koja nisu „ne početi prije“ (SNET). Promijenite ta ograničenja da biste pomaknuli početke.",
-    "referencesClearedOnPaste_one": "{{count}} referenca nije postojala u ovom dokumentu i uklonjena je (kalendar zadatka, prilagođena vrsta zadatka, šifra zadatka ili prilagođeno polje iz izvornog dokumenta).",
-    "referencesClearedOnPaste_few": "{{count}} reference nisu postojale u ovom dokumentu i uklonjene su (kalendari zadataka, prilagođene vrste zadataka, šifre zadatka ili prilagođena polja iz izvornog dokumenta).",
-    "referencesClearedOnPaste_other": "{{count}} referenci nije postojalo u ovom dokumentu i uklonjeno je (kalendari zadataka, prilagođene vrste zadataka, šifre zadatka ili prilagođena polja iz izvornog dokumenta).",
-    "milestoneRefusedAssignments_one": "'{{task}}' ima dodjele resursa i ne može postati kontrolna točka. Prvo uklonite dodjele.",
-    "milestoneRefusedAssignments_few": "Zadaci s dodjelama resursa ({{count}}) ne mogu postati kontrolne točke. Prvo uklonite dodjele.",
-    "milestoneRefusedAssignments_other": "Zadaci s dodjelama resursa ({{count}}) ne mogu postati kontrolne točke. Prvo uklonite dodjele.",
-    "milestoneRefusedSummary_one": "'{{task}}' je zadatak sažetka s podzadacima i ne može postati kontrolna točka.",
-    "milestoneRefusedSummary_few": "Zadaci sažetka s podzadacima ({{count}}) ne mogu postati kontrolne točke.",
-    "milestoneRefusedSummary_other": "Zadaci sažetka s podzadacima ({{count}}) ne mogu postati kontrolne točke.",
+    "dragStartIsActual": "„{{name}}“ je započet: početak je stvarni početak i ne pomiče se. Promijenite ga putem napretka.",
+    "dragDatesAreActual": "„{{name}}“ je dovršen: početak i završetak su stvarni datumi i ne pomiču se. Promijenite ih putem napretka.",
+    "referencesClearedOnPaste_one": "{{count}} referenca nije postojala u ovom dokumentu i uklonjena je (kalendar zadatka, prilagođena kategorija radova, šifra zadatka ili prilagođeno polje iz izvornog dokumenta).",
+    "referencesClearedOnPaste_few": "{{count}} reference nisu postojale u ovom dokumentu i uklonjene su (kalendari zadataka, prilagođene kategorije radova, šifre zadatka ili prilagođena polja iz izvornog dokumenta).",
+    "referencesClearedOnPaste_other": "{{count}} referenci nije postojalo u ovom dokumentu i uklonjeno je (kalendari zadataka, prilagođene kategorije radova, šifre zadatka ili prilagođena polja iz izvornog dokumenta).",
+    "milestoneRefusedAssignments": "'{{task}}' ima dodjele resursa i ne može postati kontrolna točka. Prvo uklonite dodjele.",
+    "milestoneRefusedSummary": "'{{task}}' je zadatak sažetka s podzadacima i ne može postati kontrolna točka.",
     "assignmentsMovedToSubtask_one": "{{count}} dodjela premještena u podzadatak '{{child}}'.",
     "assignmentsMovedToSubtask_few": "{{count}} dodjele premještene u podzadatak '{{child}}'.",
     "assignmentsMovedToSubtask_other": "{{count}} dodjela premješteno u podzadatak '{{child}}'.",
     "assignmentsMovedToSubtasks_one": "Dodjele {{count}} zadatka premještene u podzadatak.",
     "assignmentsMovedToSubtasks_few": "Dodjele {{count}} zadatka premještene u podzadatke.",
     "assignmentsMovedToSubtasks_other": "Dodjele {{count}} zadataka premještene u podzadatke.",
-    "milestoneClearedOnPhase_one": "'{{phase}}' više nije kontrolna točka.",
-    "milestoneClearedOnPhase_few": "{{count}} zadatka više nisu kontrolne točke.",
-    "milestoneClearedOnPhase_other": "{{count}} zadataka više nisu kontrolne točke.",
+    "milestoneClearedOnPhase": "'{{phase}}' više nije kontrolna točka.",
     "phaseRefusedNoAssignableChild": "'{{phase}}' ne može postati zadatak sažetka: njegove dodjele nemaju kamo otići, jer nijedan od novih podzadataka ne smije nositi dodjele (kontrolna točka ili zadatak sažetka). Ništa nije promijenjeno.",
     "phaseRefusedDuplicateResource": "'{{phase}}' ne može postati zadatak sažetka: dodjela za {{resource}} ne može preći u novi podzadatak '{{child}}', jer on već ima {{resource}}. Ništa nije promijenjeno.",
-    "schedulingProfileApplied": "Ovaj projekt izračunava se kao {{profile}}. Promijenite u Datoteka → Podaci o projektu → Profil izračuna i opcije izračuna.",
+    "phaseQuestionOutdated": "Zadaci ili dodjele promijenili su se dok je pitanje bilo otvoreno. Ništa nije promijenjeno; pokušajte ponovno.",
+    "schedulingProfileApplied": "Ovaj projekt se izračunava kao {{profile}}. Promijenite u Datoteka → Informacije o projektu → Profil izračuna i opcije izračuna.",
+    "schedulingTemplateSaved": "Predložak „{{name}}“ je spremljen.",
+    "schedulingTemplateLimit": "Predložak nije spremljen: već ima {{max}} predložaka. Najprije izbrišite jedan predložak.",
+    "schedulingTemplateStorageFailed": "Predložak nije spremljen: pohrana aplikacije je puna ili nije dostupna.",
+    "schedulingTemplateDeleteFailed": "Predložak nije izbrisan: pohrana aplikacije je puna ili nije dostupna.",
     "schedulingProfileShifted_one": "Nakon primjene pomaknut je {{count}} zadatak.",
     "schedulingProfileShifted_few": "Nakon primjene pomaknuta su {{count}} zadatka.",
     "schedulingProfileShifted_other": "Nakon primjene pomaknuto je {{count}} zadataka.",
@@ -186,8 +190,83 @@
     "xerArchiveReasonStructure": "Razlog: struktura arhiva u IFC-u nije ispravna (udvostručena, poredana drugačije ili pogrešno povezana).",
     "statusDateSetToday": "Datum stanja postavljen na danas ({{date}}).",
     "durationBelowDoneWork": "'{{name}}' je već {{percent}}% završen: trajanje kraće od već obavljenog rada nije moguće. Trajanje nije promijenjeno.",
+    "refusedTaskNames": "Nije promijenjeno: {{names}}.",
+    "refusedTaskNamesMore_one": "Nije promijenjeno: {{names}} i još {{count}} zadatak.",
+    "refusedTaskNamesMore_few": "Nije promijenjeno: {{names}} i još {{count}} zadatka.",
+    "refusedTaskNamesMore_other": "Nije promijenjeno: {{names}} i još {{count}} zadataka.",
+    "notAppliedTaskNames": "Nije primijenjeno kod: {{names}}.",
+    "notAppliedTaskNamesMore_one": "Nije primijenjeno kod: {{names}} i još {{count}} zadatak.",
+    "notAppliedTaskNamesMore_few": "Nije primijenjeno kod: {{names}} i još {{count}} zadatka.",
+    "notAppliedTaskNamesMore_other": "Nije primijenjeno kod: {{names}} i još {{count}} zadataka.",
+    "refusedRelationNames": "Nije stvoreno: {{names}}.",
+    "refusedRelationNamesMore_one": "Nije stvoreno: {{names}} i još {{count}} ovisnost.",
+    "refusedRelationNamesMore_few": "Nije stvoreno: {{names}} i još {{count}} ovisnosti.",
+    "refusedRelationNamesMore_other": "Nije stvoreno: {{names}} i još {{count}} ovisnosti.",
+    "remainingWorkRecomputed": "Preostali posao zadatka „{{name}}“ ponovno je izračunat: {{before}} h → {{after}} h (vrijednost je došla iz datoteke). Ctrl+Z to poništava.",
+    "remainingWorkRecomputedMany_one": "Preostali posao za {{count}} zadatak ponovno je izračunat (vrijednost je došla iz datoteke). Ctrl+Z to poništava.",
+    "remainingWorkRecomputedMany_few": "Preostali posao za {{count}} zadatka ponovno je izračunat (vrijednosti su došle iz datoteke). Ctrl+Z to poništava.",
+    "remainingWorkRecomputedMany_other": "Preostali posao za {{count}} zadataka ponovno je izračunat (vrijednosti su došle iz datoteke). Ctrl+Z to poništava.",
     "tutorialOfferLater": "Lekcije uvijek možete pronaći u izborniku Pomoć › Lekcije.",
-    "tutorialOfferUnavailable": "Lekcije trenutno nisu mogle biti instalirane ni pokrenute. Pokušajte ponovno kasnije u Pomoć › Lekcije."
+    "tutorialOfferUnavailable": "Lekcije trenutno nisu mogle biti instalirane ni pokrenute. Pokušajte ponovno kasnije u Pomoć › Lekcije.",
+    "taskAddedAtEnd": "Novi zadatak dodan je na kraj. Tijekom filtriranja, grupiranja ili sortiranja aplikacija ga ne može postaviti ispod vašeg odabira.",
+    "p6xmlImportEmpty": "Ova datoteka ne sadrži zadatke koje aplikacija može pročitati.",
+    "p6xmlImportEmptyNoObjectIds": "Zadaci nemaju ObjectId. Zbog toga ih aplikacija ne može povezati. Ovo nije standardni Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "Datoteka koristi nazive stupaca XER-a (kao što je task_code) umjesto polja P6 XML. Otvorite samu .xer datoteku.",
+    "p6xmlImportOpened_one": "P6 XML datoteka otvorena: {{count}} projektni dokument.",
+    "p6xmlImportOpened_few": "P6 XML datoteka otvorena: {{count}} projektna dokumenta.",
+    "p6xmlImportOpened_other": "P6 XML datoteka otvorena: {{count}} projektnih dokumenata.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} ovisnost između projekata nije preuzeta kao ovisnost.",
+    "p6xmlImportCrossProjectRelations_few": "{{count}} ovisnosti između projekata nisu preuzete kao ovisnosti.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} ovisnosti između projekata nije preuzeto kao ovisnost.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} zadatak bez projekta nije učitan.",
+    "p6xmlImportUnassignedActivities_few": "{{count}} zadatka bez projekta nisu učitana.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} zadataka bez projekta nije učitano.",
+    "msProjectImportLoss": "Nije sve iz ove MS Project datoteke preuzeto.",
+    "msProjectLostSubprojects_one": "{{count}} umetnuti projekt učitan je kao obični zadatak, bez poveznice na drugu datoteku.",
+    "msProjectLostSubprojects_few": "{{count}} umetnuta projekta učitana su kao obični zadaci, bez poveznice na drugu datoteku.",
+    "msProjectLostSubprojects_other": "{{count}} umetnutih projekata učitano je kao obični zadaci, bez poveznice na drugu datoteku.",
+    "msProjectLostExternalTasks_one": "{{count}} vanjski zadatak iz drugog projekta učitan je kao obični zadatak.",
+    "msProjectLostExternalTasks_few": "{{count}} vanjska zadatka iz drugog projekta učitana su kao obični zadaci.",
+    "msProjectLostExternalTasks_other": "{{count}} vanjskih zadataka iz drugog projekta učitano je kao obični zadaci.",
+    "msProjectLostInactiveTasks_one": "{{count}} neaktivan zadatak učitan je kao aktivan zadatak i ulazi u izračun.",
+    "msProjectLostInactiveTasks_few": "{{count}} neaktivna zadatka učitana su kao aktivni zadaci i ulaze u izračun.",
+    "msProjectLostInactiveTasks_other": "{{count}} neaktivnih zadataka učitano je kao aktivni zadaci i ulazi u izračun.",
+    "msProjectLostManualTasks_one": "{{count}} ručno planiran zadatak učitan je kao automatski planiran zadatak.",
+    "msProjectLostManualTasks_few": "{{count}} ručno planirana zadatka učitana su kao automatski planirani zadaci.",
+    "msProjectLostManualTasks_other": "{{count}} ručno planiranih zadataka učitano je kao automatski planirani zadaci.",
+    "msProjectLostLevelingDelays_one": "Kašnjenje zbog uravnoteživanja za {{count}} zadatak nije preuzeto.",
+    "msProjectLostLevelingDelays_few": "Kašnjenja zbog uravnoteživanja za {{count}} zadatka nisu preuzeta.",
+    "msProjectLostLevelingDelays_other": "Kašnjenja zbog uravnoteživanja za {{count}} zadataka nisu preuzeta.",
+    "msProjectLostCriticalSlack_one": "Prag za kritične zadatke iz datoteke (vremenska rezerva do {{count}} radni dan) nije preuzet. Aplikacija računa s pragom 0.",
+    "msProjectLostCriticalSlack_few": "Prag za kritične zadatke iz datoteke (vremenska rezerva do {{count}} radna dana) nije preuzet. Aplikacija računa s pragom 0.",
+    "msProjectLostCriticalSlack_other": "Prag za kritične zadatke iz datoteke (vremenska rezerva do {{count}} radnih dana) nije preuzet. Aplikacija računa s pragom 0.",
+    "msProjectLostBaselines_one": "{{count}} temeljni plan nije preuzet.",
+    "msProjectLostBaselines_few": "{{count}} temeljna plana nisu preuzeta.",
+    "msProjectLostBaselines_other": "{{count}} temeljnih planova nije preuzeto.",
+    "msProjectLostExtraBaselines_one": "{{count}} temeljni plan (Baseline 1–10) nije preuzet.",
+    "msProjectLostExtraBaselines_few": "{{count}} temeljna plana (Baseline 1–10) nisu preuzeta.",
+    "msProjectLostExtraBaselines_other": "{{count}} temeljnih planova (Baseline 1–10) nije preuzeto.",
+    "msProjectLostBaselineWorkCost_one": "Za {{count}} zadatak, resurs ili dodjelu rad ili trošak iz Baseline 0 nije preuzet.",
+    "msProjectLostBaselineWorkCost_few": "Za {{count}} zadatka, resursa ili dodjele rad ili trošak iz Baseline 0 nije preuzet.",
+    "msProjectLostBaselineWorkCost_other": "Za {{count}} zadataka, resursa ili dodjela rad ili trošak iz Baseline 0 nije preuzet.",
+    "msProjectLostAssignmentBaselineDates_one": "Za {{count}} dodjelu temeljni plan odstupa od zadatka; to odstupanje nije preuzeto.",
+    "msProjectLostAssignmentBaselineDates_few": "Za {{count}} dodjele temeljni plan odstupa od zadatka; to odstupanje nije preuzeto.",
+    "msProjectLostAssignmentBaselineDates_other": "Za {{count}} dodjela temeljni plan odstupa od zadatka; to odstupanje nije preuzeto.",
+    "msProjectLostCustomFields_one": "{{count}} prilagođeno polje s vrijednostima (prilagođeno polje ili šifra strukture) nije preuzeto.",
+    "msProjectLostCustomFields_few": "{{count}} prilagođena polja s vrijednostima (prilagođena polja ili šifre strukture) nisu preuzeta.",
+    "msProjectLostCustomFields_other": "{{count}} prilagođenih polja s vrijednostima (prilagođena polja i šifre strukture) nije preuzeto.",
+    "msProjectLostNotes_one": "{{count}} bilješka nije preuzeta.",
+    "msProjectLostNotes_few": "{{count}} bilješke nisu preuzete.",
+    "msProjectLostNotes_other": "{{count}} bilješki nije preuzeto.",
+    "msProjectLostHyperlinks_one": "{{count}} hiperveza nije preuzeta.",
+    "msProjectLostHyperlinks_few": "{{count}} hiperveze nisu preuzete.",
+    "msProjectLostHyperlinks_other": "{{count}} hiperveza nije preuzeto.",
+    "msProjectLostFixedCosts_one": "Fiksni trošak za {{count}} zadatak nije preuzet.",
+    "msProjectLostFixedCosts_few": "Fiksni troškovi za {{count}} zadatka nisu preuzeti.",
+    "msProjectLostFixedCosts_other": "Fiksni troškovi za {{count}} zadataka nisu preuzeti.",
+    "msProjectLostResourceRates_one": "Standardna tarifa za {{count}} resurs nije preuzeta.",
+    "msProjectLostResourceRates_few": "Standardne tarife za {{count}} resursa nisu preuzete.",
+    "msProjectLostResourceRates_other": "Standardne tarife za {{count}} resursa nisu preuzete."
   },
   "scheduleErrors": {
     "cycle": "Kružna ovisnost između zadataka: {{path}}",
@@ -201,6 +280,9 @@
   "no": "Ne",
   "days": "d",
   "daysLong": "dani",
+  "dayUnitLong_one": "dan",
+  "dayUnitLong_few": "dana",
+  "dayUnitLong_other": "dana",
   "ok": "U redu",
   "apply": "Primijeni",
   "create": "Stvori",
@@ -252,7 +334,7 @@
     "collapseAll": "Sažmi sve"
   },
   "settings": {
-    "title": "Postavke",
+    "title": "Postavke aplikacije",
     "appearanceTab": "Prikaz",
     "planningTab": "Raspored",
     "advancedTab": "Napredno",
@@ -297,8 +379,8 @@
     "hourPlanningSection": "Planiranje u satima",
     "enableHourPlanning": "Uključi planiranje u satima",
     "enableHourPlanningHint": "Uključuje raspored u satima i minutama: vremensku ljestvicu sati, smjene s trakama radnog vremena i trake zadataka točne do sata. Isključeno ⇒ aplikacija radi potpuno po danima, kao prije.",
-    "showTaskTypes": "Prikaži pravila rada i rad",
-    "showTaskTypesHint": "Datoteke iz MS Project ili Primavera P6 uvijek to prikazuju. Isključeno: trajanje i jedinice dodjele ostaju kakvi jesu, a rad se i dalje uračunava.",
+    "showTaskTypes": "Koristi vrste zadataka",
+    "showTaskTypesHint": "Odaberite za svaki zadatak što se mijenja kad se promijeni trajanje, jedinice dodjele ili rad, kao Task Type u MS Project i Duration Type u P6. Isključeno: trajanje i jedinice dodjele ostaju isti. Datoteka s vrstama zadataka ili spremljenim radom ih prikazuje i kad je ovo isključeno.",
     "allowMixedDayHour": "Dopusti mješoviti raspored po danima i satima",
     "defaultTaskDurationUnit": "Zadana jedinica za nove zadatke",
     "defaultTaskDurationUnitHint": "Određuje hoće li novi zadaci početi u radnim danima ili radnim satima. Postojeći zadaci se ne mijenjaju.",
@@ -359,6 +441,10 @@
     "dateNotationDmy": "dd-mm-gggg",
     "dateNotationMdy": "mm-dd-gggg",
     "dateNotationYmd": "gggg-mm-dd",
+    "timeNotation": "Oblik vremena",
+    "timeNotationHint": "Određuje kako se prikazuju i unose satna vremena: u prozoru kalendara, kod zadataka u satima u tablici, na skali sati u Gantt prikazu i u porukama. Datoteke i izračuni ostaju nepromijenjeni (24 sata).",
+    "timeNotation24h": "24 sata (13:00)",
+    "timeNotation12h": "12 sati (1:00 PM)",
     "fontFamilyLabel": "Font",
     "fontScaleLabel": "Veličina teksta",
     "fontScaleHint": "Mijenja veličinu teksta i izgleda sučelja.",
@@ -473,6 +559,8 @@
     "newProject": "Novi projekt",
     "openExistingProject": "Otvori postojeći projekt",
     "allProjects": "Svi projekti",
+    "scrollTabsStart": "Pomakni kartice na početak",
+    "scrollTabsEnd": "Pomakni kartice na kraj",
     "active": "Aktivno",
     "tasksWord": "zadaci",
     "criticalWord": "kritični",
@@ -484,19 +572,45 @@
   "feedback": {
     "buttonTooltip": "Pošalji povratne informacije",
     "title": "Povratne informacije",
-    "typeBug": "Greška",
-    "typeFeature": "Zahtjev za funkcijom",
+    "typeBug": "Nešto ne radi",
+    "typeFeature": "Ideja",
+    "typeGeneral": "Pitanje ili napomena",
     "fieldTitle": "Naslov",
+    "titlePlaceholder": "Npr. Kritični put skače nakon spremanja",
     "fieldDescription": "Opis",
+    "descriptionPlaceholder": "Što ste učinili, što ste očekivali i što se dogodilo?",
     "attachScreenshot": "Priloži snimku zaslona",
+    "screenshotPreview": "Pregled snimke zaslona",
+    "retake": "Ponovno snimi",
+    "removeScreenshot": "Ukloni",
     "capturing": "Snimanje zaslona…",
     "captureFailed": "Snimanje zaslona nije uspjelo. Povratne informacije i dalje možete poslati bez snimke zaslona.",
-    "submit": "Pošalji na GitHub",
+    "submit": "Pošalji",
+    "sending": "Slanje…",
+    "fieldEmail": "E-adresa (izborno, za odgovor)",
+    "emailInvalid": "Ova e-adresa nije ispravna. Ispravite je ili ostavite polje prazno.",
+    "titleRequired": "Unesite naslov.",
+    "tooShort": "Napišite u naslovu i opisu zajedno najmanje 10 znakova.",
+    "privacy": "Vaša prijava i snimka zaslona idu u Open Feedback Studio od OpenAEC-a i mogu se pojaviti kao javni issue na GitHubu. Ne unosite ništa što ne želite podijeliti.",
+    "sentWith": "Poslano uz: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "Hvala, vaša prijava je poslana.",
+    "alreadyIn": "Ova prijava je već zaprimljena. Želite li nešto dodati? Tada promijenite tekst i pošaljite ga ponovno.",
+    "sentScreenshotDropped": "Snimka zaslona bila je prevelika i nije poslana.",
+    "viewOnGithub": "Pogledaj na GitHubu",
+    "errorValidation": "Prijava nije prihvaćena. Provjerite tekst (ne samo poveznice) i e-adresu te pokušajte ponovno.",
+    "errorRateLimited": "U kratkom vremenu poslali ste mnogo prijava. Pokušajte ponovno za sat vremena.",
+    "errorFailed": "Slanje nije uspjelo. Provjerite internetsku vezu i pokušajte ponovno ili otvorite prijavu na GitHubu.",
+    "errorUncertain": "Nismo sigurni je li vaša prijava stigla. Pričekajte minutu pa je pošaljite ponovno; ako je već tamo, to ćemo vidjeti automatski.",
+    "fallbackGithub": "Otvori na GitHubu",
     "cancel": "Odustani",
+    "clearDraft": "Očisti",
+    "clearDraftTitle": "Izbriši sva polja i snimku zaslona",
     "close": "Zatvori",
+    "saveAndClose": "Spremi i zatvori",
     "tools": {
       "arrow": "Strelica",
       "rectangle": "Pravokutnik",
+      "mask": "Prekrij",
       "pen": "Olovka",
       "text": "Tekst",
       "color": "Boja",
@@ -513,6 +627,7 @@
     "openGithub": "U redu, idi na GitHub",
     "annotate": "Označi",
     "editorDone": "Gotovo",
+    "annotationSaveFailed": "Vaše izmjene nisu mogle biti spremljene. Pokušajte ponovno. Vaša snimka zaslona nije promijenjena i neće biti poslana iz ovog uređivača.",
     "rotateFeedback": "Pošalji feedback",
     "rotateBug": "Prijavi grešku",
     "rotateFeature": "Dodaj novu značajku"
@@ -781,7 +896,7 @@
       "projectEndUnchanged": "Datum završetka projekta: nepromijenjen ({{date}})",
       "projectEndChanged": "Datum završetka projekta: {{before}} → {{after}}",
       "remainingConflicts": "Preostali sukobi",
-      "remainingConflictsHint": "Ovi zadaci ne stanu u svoju vremensku rezervu — često zato što resurs tih dana ne radi ili nema dovoljan kapacitet.",
+      "remainingConflictsHint": "Ovi zadaci i dalje imaju sukobe resursa. Pogledajte pojedinosti u nastavku.",
       "intrinsicOverrun": "Resurs {{resource}}: vrhunac dnevnih jedinica dodjele je {{peak}}, kapacitet je {{capacity}} — ne može se riješiti pomicanjem.",
       "noChanges": "Nijedan zadatak ne treba pomaknuti — raspored je već bez sukoba.",
       "notCalculated": "Kliknite Izračunaj da biste stvorili prijedlog uravnoteživanja.",
@@ -865,7 +980,7 @@
       "cancel": "Odustani"
     },
     "regen": {
-      "hint": "Praznici pokrivaju {{from}}–{{to}}; projekt traje do {{year}}. Želite li ponovno generirati?",
+      "hint": "Praznici pokrivaju {{from}}–{{to}}; želite li ponovno generirati do uključivo {{year}}?",
       "button": "Ponovno generiraj"
     },
     "countryName": {
@@ -900,7 +1015,7 @@
       "decreaseBreakDuration": "Smanji trajanje pauze za 15 minuta",
       "start": "Početak pauze",
       "duration": "Trajanje pauze (minute)",
-      "hint": "Postavite početak i trajanje pauze; neto sati i blokovi radnog vremena izračunavaju se automatski. Postavite trajanje na 0 za neprekinuti radni dan.",
+      "hint": "Odaberite početak i trajanje pauze; uobičajeni radni dan i blokovi radnog vremena izračunavaju se automatski. Postavite trajanje na 0 za neprekinuti radni dan.",
       "errors": {
         "invalidDuration": "Trajanje pauze mora biti cijeli broj minuta od 0 ili više.",
         "outsideWorkingDay": "Pauza mora u potpunosti biti unutar postavljenog radnog dana.",
@@ -924,9 +1039,13 @@
       "copyToAll": "Kopiraj na sve radne dane",
       "noBands": "Neradno",
       "nextDay": "sljedeći dan",
+      "bandStart": "Početak bloka",
+      "bandEnd": "Završetak bloka",
       "shiftPreset": "Smjena",
       "breakHint": "Razmak između dvaju blokova je pauza — po potrebi prilagodite vremena."
-    }
+    },
+    "defaultConstructionName": "Građevinski kalendar NL",
+    "defaultStandardName": "Standardni kalendar"
   },
   "view": {
     "structureLockedHint": "Nije dostupno tijekom filtriranja, grupiranja ili sortiranja",
@@ -1043,19 +1162,14 @@
     "enable": "Uključi planiranje u satima"
   },
   "recordedDates": {
-    "offer_one": "Ponovno izračunavanje pomaknulo je {{count}} zadatak od ukupno {{total}} u odnosu na datume u datoteci.",
-    "offer_few": "Ponovno izračunavanje pomaknulo je {{count}} zadatka od ukupno {{total}} u odnosu na datume u datoteci.",
-    "offer_other": "Ponovno izračunavanje pomaknulo je {{count}} zadataka od ukupno {{total}} u odnosu na datume u datoteci.",
     "activeCount_one": "Prikazujete raspored onako kako ga je Primavera spremila; pri ponovnom izračunavanju pomaknut će se {{count}} zadatak.",
     "activeCount_few": "Prikazujete raspored onako kako ga je Primavera spremila; pri ponovnom izračunavanju pomaknut će se {{count}} zadatka.",
     "activeCount_other": "Prikazujete raspored onako kako ga je Primavera spremila; pri ponovnom izračunavanju pomaknut će se {{count}} zadataka.",
     "activeCountNeutral_one": "Prikazujete datume onako kako su zapisani u datoteci; pri ponovnom izračunavanju pomaknut će se {{count}} zadatak.",
     "activeCountNeutral_few": "Prikazujete datume onako kako su zapisani u datoteci; pri ponovnom izračunavanju pomaknut će se {{count}} zadatka.",
     "activeCountNeutral_other": "Prikazujete datume onako kako su zapisani u datoteci; pri ponovnom izračunavanju pomaknut će se {{count}} zadataka.",
-    "show": "Prikaži spremljene datume",
     "active": "Prikazujete datume onako kako su zapisani u datoteci. Ništa nije ponovno izračunato.",
     "recalculate": "Ponovno izračunaj",
-    "markDeviates": "Odstupa",
     "markPartlyUnrecorded": "Djelomično nije zabilježeno",
     "notRecorded": "Nije zabilježeno"
   },
@@ -1177,7 +1291,7 @@
     "warnPast": "Novi datum početka je u prošlosti.",
     "noTasks": "Ovaj projekt još nema zadataka; pomiču se samo datumi projekta.",
     "invalidDate": "Odaberite valjani datum.",
-    "invalidCurrentStart": "Projekt nema valjani datum početka; prvo ga postavite u Informacijama o projektu.",
+    "invalidCurrentStart": "Projekt nema valjani datum početka; prvo ga postavite na stranici „Informacije o projektu“.",
     "apply": "Premjesti",
     "calcError": "Raspored se nije mogao izračunati: {{error}}"
   },
@@ -1253,7 +1367,7 @@
   "progressImport": {
     "title": "Ažuriranje napretka iz lista",
     "chooseFile": "Odaberi datoteku…",
-    "intro": "Odaberite vraćeni CSV list. Aplikacija čita samo dovršenost, stvarni početak i stvarni završetak. Ostatak vašeg rasporeda ostaje nepromijenjen.",
+    "intro": "Odaberite vraćeni CSV ili XLSX list. Aplikacija čita samo dovršenost, stvarni početak i stvarni završetak. Ostatak vašeg rasporeda ostaje nepromijenjen.",
     "summaryApplied": "Primijenjeno: {{applied}}",
     "summaryNoop": "Nepromijenjeno: {{noop}}",
     "summaryNeedsLink": "Čeka povezivanje: {{needsLink}}",
@@ -1319,7 +1433,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Kontrolna točka prati planiranu granicu kalendara",
-      "help": "Kontrolna točka bez trajanja ostaje na granici kalendara koju je datoteka planirala. Početak dana ostaje početna kontrolna točka. Završetak radnog bloka smije pasti na završetak prethodnika."
+      "help": "Kontrolna točka bez trajanja ostaje na granici kalendara koju je datoteka planirala: početak dana ostaje početna kontrolna točka, a završetak radnog bloka smije pasti na završetak prethodnika."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Planirani početak kao dodatna donja granica",
@@ -1327,11 +1441,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Završna kontrolna točka kao prozor granica",
-      "help": "Završna kontrolna točka može biti na dvije susjedne granice kalendara: najraniji početak na početku radnog bloka, najraniji završetak na završetku prethodnog bloka."
+      "help": "Završna kontrolna točka smije biti na dvije susjedne granice kalendara: najraniji početak na početku radnog bloka, najraniji završetak na završetku prethodnog radnog bloka."
     },
     "p6PreserveActualInstants": {
       "label": "Stvarni datumi ostaju točni",
-      "help": "Zabilježeni stvarni početak i završetak ne pomiču se na radni blok."
+      "help": "Zabilježeni stvarni početak i stvarni završetak ne pomiču se na rub radnog bloka."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Zadatak u tijeku: najraniji početak = početak preostalog posla",
@@ -1339,7 +1453,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Točan trenutak ograničenja na kontrolnoj točki",
-      "help": "Ograničenje datuma i vremena na kontrolnoj točki bez trajanja je točan trenutak, i na početku radnog bloka."
+      "help": "Ograničenje datuma i vremena na kontrolnoj točki bez trajanja točan je trenutak, također i na početku radnog bloka."
     },
     "resumeFromActualElapsed": {
       "label": "Preostali posao nastavlja se nakon proteklog vremena",
@@ -1351,23 +1465,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Nasljednik počinje na granici završetka",
-      "help": "Kod ovisnosti završetak-početak bez vremena odgode na zajedničkoj granici radnih blokova počinje nasljednik na završetku prethodnika (samo ovisnosti koje datoteka tako označava). Pri unatražnom izračunu nasljednik svoj kasni početak prikazuje jednostavno kao početak radnog bloka."
+      "help": "Kod ovisnosti završetak-početak bez vremena odgode, kad nasljednik u datoteci počinje točno na završetku prethodnika, na završetku radnog bloka, počinje nasljednik na tom završetku, a ne na početku sljedećeg radnog bloka. Datoteka to ne označava: aplikacija takvu ovisnost sama prepoznaje pri otvaranju .xer datoteke. Ovisnost koju sami unesete ne spada pod ovo pravilo. Pri unatražnom izračunu nasljednik svoj kasni početak jednostavno prikazuje kao početak radnog bloka."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Vrijeme odgode unatrag od granice završetka",
-      "help": "Ako unatražni izračun oduzme vrijeme odgode u radnom vremenu od granice završetka i dobije točno početak radnog bloka, završava na prethodnoj granici završetka. Kod ovisnosti završetak-završetak bez vremena odgode kasni završetak na završetku radnog bloka ostaje na toj granici završetka."
+      "help": "Ako unatražni izračun oduzme vrijeme odgode u radnom vremenu od granice završetka i dobije točno početak radnog bloka, završava na prethodnoj granici završetka. I kod ovisnosti završetak-završetak bez vremena odgode kasni završetak koji pada na završetak radnog bloka ostaje na toj granici završetka."
     },
     "p6CompletedDataDateWindow": {
       "label": "Dovršeni zadatak u prozoru datuma stanja",
-      "help": "Dovršeni zadatak dobiva najranije datume u prozoru datuma stanja, a njegov završetak ulazi u datum završetka projekta (samo zadaci s P6 podrijetlom)."
+      "help": "Dovršeni zadatak dobiva najranije datume u prozoru datuma stanja, a njegov završetak ulazi u datum završetka projekta."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Dovršena LOE preko stvarnog završetka",
-      "help": "Dovršeni zadatak razine napora (LOE) s jedinim ulazom početak-početak prati put kroz svoj stvarni završetak (samo zadaci s P6 podrijetlom)."
+      "help": "Dovršeni zadatak razine napora (LOE) s jedinom ovisnošću početak-početak slijedi put kroz svoj stvarni završetak."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Nezapočeta LOE koristi ciljni prozor",
-      "help": "Zadatak razine napora koji još nije započeo uzima svoj ciljni prozor kao trajanje (samo zadaci s P6 podrijetlom)."
+      "help": "Zadatak razine napora koji još nije započeo uzima svoj ciljni prozor kao trajanje."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Dovršeni prethodnik ne zadržava nakon datuma stanja",
@@ -1383,7 +1497,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Dovršeni zadatak izvan redoslijeda čeka prethodnike",
-      "help": "Dovršeni zadatak čiji prethodnik još nije gotov dobiva nulti prozor nakon tog prethodnika, umjesto na datumu stanja (P6: Retained Logic)."
+      "help": "Dovršeni zadatak čiji prethodnik još nije završen dobiva nulti prozor nakon tog prethodnika, umjesto na datumu stanja (P6: Retained Logic). Radi samo ako su također uključene opcije „Dovršeni zadatak u prozoru datuma stanja“ i „Zadatak u tijeku: najraniji početak = početak preostalog posla“."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Dovršeni zadatak fizičkog napretka stoji na datumu stanja",
@@ -1395,7 +1509,7 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Ovisnost završetak-završetak do početne kontrolne točke veže se uz nju",
-      "help": "Ovisnost završetak-završetak do početne kontrolne točke računa se do same kontrolne točke, a ne do početka dana kontrolne točke: kasni završetak prethodnika smije ići do kasnog završetka kontrolne točke."
+      "help": "Ovisnost završetak-završetak prema početnoj kontrolnoj točki računa se do same kontrolne točke, a ne do početka dana kontrolne točke: kasni završetak prethodnika smije ići do kasnog završetka kontrolne točke."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "Planirani početak nije donja granica za zadatak u tijeku",
@@ -1403,7 +1517,7 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "Kasni završetak u vlastitom kalendaru",
-      "help": "Ako kasni završetak koji nasljednik nameće pada izvan radnog vremena zadatka, postaje završetak prethodnog radnog razdoblja u vlastitom kalendaru zadatka."
+      "help": "Ako kasni završetak koji nasljednik nameće padne izvan radnog vremena zadatka, postaje završetak prethodnog radnog razdoblja u vlastitom kalendaru zadatka."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override ignorira započetog nasljednika i unatrag",
@@ -1411,11 +1525,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Najraniji završetak nije prije granice završetak-završetak",
-      "help": "Kod ovisnosti završetak-završetak najraniji završetak nasljednika nikad nije ranije u kalendarskom vremenu od granice koju postavlja prethodnik. Ako ta granica pada u neradno vrijeme nasljednika, završetak postaje početak sljedećeg radnog razdoblja."
+      "help": "Kod ovisnosti završetak-završetak najraniji završetak nasljednika u kalendarskom vremenu nikad nije prije granice koju postavlja prethodnik. Ako ta granica padne u neradno vrijeme nasljednika, završetak postaje početak sljedećeg radnog razdoblja."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP zadaci tako kasno kao što nasljednici dopuštaju",
-      "help": "Nezapočeti zadatak s ograničenjem “što kasnije moguće” završava u minuti kada ga njegovi nasljednici trebaju, najprije nasljednici, tako da se lanac zatvori. Njegov vlastiti planirani početak se ne računa. Zadatak bez prethodnika tada ne počinje prije datuma stanja. Vrijedi samo za satni kalendar."
+      "help": "Nezapočeti zadatak s ograničenjem „što kasnije moguće“ završava u minuti u kojoj ga njegovi nasljednici trebaju, najprije nasljednici, tako da se lanac zatvori. Njegov planirani početak se ne računa. Zadatak bez prethodnika tada ne počinje prije datuma stanja."
     }
   },
   "profiles": {
@@ -1430,13 +1544,22 @@
   "schedulingProfile": {
     "title": "Profil izračuna i opcije izračuna",
     "profile": "Profil izračuna",
+    "newProfile": "Novi profil",
+    "newProfileTitle": "Novi profil izračuna",
+    "newProfileIntro": "Novi profil dobiva sva pravila izračuna profila „{{name}}“, uključujući odstupanja. Zatim svako pravilo možete sami uključiti ili isključiti. Projekt računa s novim profilom tek nakon što kliknete „Primijeni“.",
+    "newProfileName": "Naziv novog profila",
+    "newProfileCreate": "Stvori",
+    "bareBaseHint": "„{{name}}“ je čista osnova, bez odstupanja ovog projekta. Želite li ih zadržati, odaberite „{{modified}}“.",
     "conventionsTitle": "Pravila izračuna ovog profila",
+    "builtInReadOnly": "{{name}} je ugrađeni profil. Pravila su ovdje prikazana za informaciju i ne mogu se mijenjati. Želite li druga pravila, odaberite {{button}}.",
+    "builtInDeviations": "Ovaj projekt dolazi iz starije datoteke. Narančasta pravila odstupaju od osnove {{name}} i računaju se tako kako su prikazana. Želite li ih promijeniti, odaberite {{button}}.",
     "optionsTitle": "Opcije izračuna ovog projekta",
     "customName": "Naziv ovog vlastitog profila",
     "saveAsTemplate": "Spremi kao predložak",
     "updateTemplate": "Ažuriraj predložak iz ovog projekta",
     "applyTemplate": "Ažuriraj iz predloška",
     "deleteTemplate": "Izbriši predložak",
+    "deleteTemplateConfirm": "Izbrisati predložak „{{name}}“? Projekti s ovim profilom zadržavaju svoju kopiju.",
     "templateDeviates": "Ovaj profil odstupa od predloška „{{name}}”.",
     "themes": {
       "completedWork": "Napredak i dovršeni rad",
@@ -1447,12 +1570,13 @@
       "msproject": "Napredak kao u programu Microsoft Project",
       "ownProfilesOnly": "Samo za vlastite profile"
     },
-    "ownProfilesOnlyNote": "Ova pravila izračuna isključena su u svakom ugrađenom profilu, uključujući Primavera P6. Uključite li jedno, profil postaje vlastiti.",
+    "ownProfilesOnlyNote": "Ta pravila izračuna isključena su u svakom ugrađenom profilu, uključujući Primavera P6. Samo vlastiti profil ih može uključiti: za to odaberite Novi profil.",
     "deviatingCount": "odstupanja: {{n}}",
     "baseValue": "osnovno: {{value}}",
     "on": "uključeno",
     "off": "isključeno",
     "resetToBase": "Vrati na osnovno",
+    "storeChangedUnderDraft": "Profil izračuna projekta u međuvremenu je promijenjen, na primjer naredbom Poništi. Ispod je još vaš vlastiti izbor. Pomoću {{apply}} vraćate taj izbor u projekt.",
     "showHelp": "Objašnjenje o „{{name}}”",
     "sourceOptions": {
       "title": "Postavke iz izvorne datoteke",
@@ -1461,6 +1585,25 @@
       "useProjectEndDateForFloat": "Izračunati vremensku rezervu do datuma završetka projekta",
       "p6CompletedLateFromRemainingWindow": "Dovršeni zadatak: kasni datumi od datuma stanja",
       "needsConvention": "Radi samo zajedno s pravilom izračuna „{{convention}}”, koje je trenutno isključeno."
+    },
+    "requires": {
+      "xerOrigin": "samo zadaci iz .xer",
+      "hourPlanning": "samo uz planiranje u satima",
+      "hourPlanningTitle": "Radi samo uz planiranje u satima: kalendar s radnim blokovima, zadatak u satima ili kalendar za vrijeme odgode na 24-satnom prikazu."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (zadano: {{standard}})",
+      "intro": "Ove opcije izračuna odstupaju od zadanih vrijednosti profila {{name}}. To je često namjerno, na primjer zato što potječu iz otvorene datoteke.",
+      "introNeutral": "Ove opcije izračuna odstupaju od zadanih vrijednosti profila {{name}}. To može biti namjerni izbor.",
+      "useDefaults": "Upotrijebi zadane postavke profila {{name}}",
+      "totalFloatAtMost": "ukupan slobodni hod ≤ {{amount}}",
+      "hours_one": "{{count}} sat",
+      "hours_few": "{{count}} sata",
+      "hours_other": "{{count}} sati",
+      "days_one": "{{count}} radni dan",
+      "days_few": "{{count}} radna dana",
+      "days_other": "{{count}} radnih dana",
+      "tfAuto": "Automatski"
     }
   },
   "dialogHelp": {
@@ -1518,5 +1661,76 @@
     "saveHint": "Projekt se sprema na lokaciju kao nova IFC datoteka. Nakon toga Spremi (Ctrl+S) tamo sprema novu verziju.",
     "saveToSite": "Spremi na lokaciju",
     "toThisPc": "Na ovo računalo…"
+  },
+  "formatNotice": {
+    "title": "{{format}} otvoren",
+    "readMore": "Pročitaj više",
+    "dontShowAgain": "Ne prikazuj više za {{format}}",
+    "close": "Razumijem",
+    "settingsSection": "Prikaži objašnjenje nakon otvaranja",
+    "formats": {
+      "xer": {
+        "name": "Primavera datoteka (.xer)",
+        "kept": "Aplikacija je preuzela WBS i zadatke, s ovisnostima, kalendarima, resursima, napretkom, šiframa zadataka i prilagođenim poljima. Projekt koji služi kao temeljni plan postaje temeljni plan projekta koji na njega upućuje.",
+        "limited": "Ovisnost između dva projekta ne postaje ovisnost u vašem rasporedu. Ako se izračun razlikuje, prvo vidite datume kako ih je Primavera spremila.",
+        "save": "Spremi zapisuje novu IFC datoteku s izvornom .xer datotekom u njoj. Zapisivanje natrag u .xer nije moguće: vaša .xer datoteka se nikad ne mijenja."
+      },
+      "mpp": {
+        "name": "MS Project datoteka (.mpp)",
+        "kept": "Aplikacija je preuzela zadatke sa strukturom, trajanjem i ograničenjima, a uz to ovisnosti, kalendare, resurse, dodjele i napredak.",
+        "limited": "Temeljni planovi, troškovi i standardne tarife, bilješke i prilagođena polja programa MS Project nisu uključeni. Ako se izračun razlikuje, prvo vidite datume kako ih je MS Project spremio.",
+        "save": "Spremi zapisuje novu IFC datoteku: vaša .mpp datoteka se nikad ne mijenja. Zapisivanje natrag u .mpp nije moguće. Izvoz u MS Project XML je moguć."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "Aplikacija je preuzela zadatke sa strukturom, a uz to ovisnosti, ograničenja, kalendare, resurse, dodjele, napredak, datum stanja i temeljni plan 0.",
+        "limited": "Bilješke, šifre zadatka i prilagođena polja nisu uključeni. Projekt računa s profilom Open Planner Studio, a ne kao Microsoft Project.",
+        "save": "Spremi zapisuje novu IFC datoteku: vaša XML datoteka se ne mijenja. Zapisivanje natrag moguće je u izborniku Izvoz › MS Project XML."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "Aplikacija je preuzela WBS i zadatke, s ovisnostima, ograničenjima, kalendarima, resursima, dodjelama, napretkom i datumom stanja. Projekt temeljnog plana postaje temeljni plan projekta kojem pripada.",
+        "limited": "Rokovi za dovršetak, šifre zadatka, prilagođena polja i bilješke nisu uključeni. Projekt računa s profilom Open Planner Studio, a ne kao Primavera P6.",
+        "save": "Spremi zapisuje novu IFC datoteku: vaša XML datoteka se ne mijenja. Zapisivanje natrag moguće je u izborniku Izvoz › Primavera P6 XML."
+      },
+      "csv": {
+        "name": "CSV datoteka",
+        "kept": "Aplikacija je čitala po jedan zadatak u retku: naziv, WBS-šifru, trajanje, datume, prethodnike i napredak.",
+        "limited": "CSV datoteka ne sadrži resurse, kalendare, ograničenja, rokove za dovršetak ni temeljne planove. Projekt se zove CSV Import.",
+        "save": "Spremi zapisuje novu IFC datoteku: vaša CSV datoteka se ne mijenja. Zapisivanje natrag moguće je u izborniku Izvoz › CSV (odvojeno točka-zarezom)."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "U kojoj IFC shemi želite spremiti?",
+    "body": "Ova datoteka je spremljena kao {{schema}}. Aplikacija zadano sprema kao IFC 4.3 ADD2, shemu koju koriste IfcOpenShell i Bonsai. Želite li ovu datoteku zadržati kao {{schema}}? Ovo kasnije možete promijeniti u izborniku: „Informacije o projektu“.",
+    "bodyUnwritable": "Ova datoteka je spremljena kao {{schema}}. Aplikacija ne može zapisati tu shemu. Odaberite shemu u kojoj aplikacija sprema datoteku. Ovo kasnije možete promijeniti u izborniku: „Informacije o projektu“.",
+    "keep": "Zadrži {{schema}}",
+    "toDefault": "Spremi kao IFC 4.3 ADD2"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Zadatak postaje zadatak sažetka",
+    "intro_one": "„{{phase}}“ dobiva podzadatak „{{child}}“ i postaje zadatak sažetka.",
+    "intro_few": "„{{phase}}“ dobiva {{count}} podzadatka i postaje zadatak sažetka.",
+    "intro_other": "„{{phase}}“ dobiva {{count}} podzadataka i postaje zadatak sažetka.",
+    "introMany_one": "Ova radnja pretvara {{count}} zadatak u zadatak sažetka.",
+    "introMany_few": "Ova radnja pretvara {{count}} zadatka u zadatke sažetka.",
+    "introMany_other": "Ova radnja pretvara {{count}} zadataka u zadatke sažetka.",
+    "noOwnAssignments": "Zadatak sažetka nema vlastitih dodjela.",
+    "question_one": "Što želite učiniti s dodjelom za {{resources}}?",
+    "question_few": "Što želite učiniti s dodjelama za {{resources}}?",
+    "question_other": "Što želite učiniti s dodjelama za {{resources}}?",
+    "questionMany": "Što želite učiniti s njihovim dodjelama?",
+    "row": "„{{phase}}“: {{resources}}",
+    "remove_one": "Izbriši dodjelu",
+    "remove_few": "Izbriši dodjele",
+    "remove_other": "Izbriši dodjele",
+    "moveTo": "Premjesti na „{{child}}“",
+    "moveToSubtasks": "Premjesti na podzadatke",
+    "blockedDuplicate": "Premještanje nije moguće: „{{child}}“ već ima {{resources}}.",
+    "blockedNoChild": "Premještanje nije moguće: „{{phase}}“ ne dobiva podzadatak koji može nositi dodjelu, nego samo kontrolne točke ili zadatke sažetka.",
+    "actualWorkLost_one": "Na dodjeli za {{resource}} već je evidentirano {{hours}} sat stvarnog rada. Brisanjem se taj rad gubi.",
+    "actualWorkLost_few": "Na dodjeli za {{resource}} već je evidentirano {{hours}} sata stvarnog rada. Brisanjem se taj rad gubi.",
+    "actualWorkLost_other": "Na dodjeli za {{resource}} već je evidentirano {{hours}} sati stvarnog rada. Brisanjem se taj rad gubi."
   }
 }

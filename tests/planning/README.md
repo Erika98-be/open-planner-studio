@@ -42,6 +42,56 @@ Vertrouw pas op een gerichte run voor snel itereren; draai vóór een commit/PR 
 argumenten. Een onbekende bestandsnaam (geen bestaand `cases-*.json`/`check-*.ts` in deze map) geeft
 een `XX`-foutregel en exitcode ≠ 0, zonder de rest van de gevraagde bestanden te blokkeren.
 
+### Optionele MPP-corpora: brede root en rooktestset
+
+De scopes hebben verschillende, ongewijzigde meetlatten. `mppCorpus.ts` kiest de paden zonder
+bestanden te lezen, mapnamen te raden of een ontbrekende scope door een andere te vervangen.
+
+| Optie | Scope | Checks |
+|---|---|---|
+| `OPS_MPP_CORPUS` | Bedrijfscorpus, los van de crawl | Bestaande corpuschecks; samen met de brede crawl de F4-pin van 216 bestanden / 3413 taken |
+| `OPS_MPP_CRAWL` | Brede `testdata-crawl`-root, met onder meer `mpxj/junit/data` en `crawl-mpp` | Import H4/F4/Z2/Z3/Z4; F4 telt recursief samen met het bedrijfscorpus |
+| `OPS_MPP_CRAWL_SMOKE` | Exacte map voor de rooktestset; standaard `<OPS_MPP_CRAWL>/crawl-mpp` | T9-import (49 bestanden / 788 taken), T7-relaties en T6-kalenders |
+
+Zonder opties blijven de historische standaardpaden gelijk: de brede root is
+`/home/nozzit/open-aec/voor claude/testdata-crawl`, de rooktestset de submap `crawl-mpp`.
+`OPS_MPP_CRAWL_SMOKE` kan ook zonder `OPS_MPP_CRAWL` worden gezet; de brede root houdt dan zijn
+standaard. `OPS_MPP_DURATION_FIXTURE` blijft een afzonderlijke override voor de T10-fixture.
+Ontbrekende mappen blijven optioneel en geven de bestaande skipmelding; een aanwezige map kiest
+geen andere baseline en schakelt geen inhoudelijke guard uit.
+
+Bestaande configuraties bewust migreren:
+
+- `OPS_MPP_CRAWL=/data/testdata-crawl` blijft de brede root. T6/T7/T9 gebruiken voortaan de submap
+  `crawl-mpp`, precies zoals bij de configuratie zonder override.
+- `OPS_MPP_CRAWL=/data/testdata-crawl/crawl-mpp` koos vroeger alleen voor T6/T7/T9 de juiste scope
+  en gaf F4 de verkeerde meetlat. Zet voortaan `OPS_MPP_CRAWL=/data/testdata-crawl`. Staat de
+  rooktestset elders, stel daarnaast `OPS_MPP_CRAWL_SMOKE=/andere/rooktestset` in. Een kale map
+  met alleen rooktestbestanden is geen vervanging voor de brede root.
+- Om beide crawls bewust over te slaan, moet de brede root ontbreken en mag er geen bestaande
+  rooktestoverride zijn. `OPS_MPP_CRAWL=/niet-aanwezig` kiest standaard ook een ontbrekende
+  `/niet-aanwezig/crawl-mpp`; het bedrijfscorpus blijft apart via `OPS_MPP_CORPUS` instelbaar.
+
+T6 krijgt uitsluitend dezelfde padselectie: zijn kalenderverwachtingen blijven gelijk. De overige
+optionele corpuschecks (onder meer fidelity en recorded-times) houden hun bestaande brede
+`OPS_MPP_CRAWL`-scope en vallen buiten deze wijziging.
+
+T7 en F4 onderscheiden ondersteund MPP14 van bewust geweigerd MPP8/9/12. De container moet
+onafhankelijk de oude variant herkennen én de echte lezer moet `MppUnsupportedError` met
+`MPP_LEGACY` gooien. Die bestanden tellen apart, niet als gelezen bestanden of leesfouten.
+Alle andere fouten blijven rood: gewone lees-/containerfouten, onbekende formaten, versleuteling,
+een legacyfout op MPP14 en een lezer die een oude variant ineens accepteert. F4 meldt onverwachte
+fouten alleen met hash (indien leesbaar) en fouttype om bedrijfsnamen buiten de uitvoer te houden.
+De 216/3413-pins, TYPE/EFFORT_DRIVEN-pins en T7-domeinbaselines blijven staan, ook als alle
+gevonden bestanden geweigerd of onleesbaar zijn. T9 blijft een strikte rooktest van 49 bestanden
+met 788 taken; daar worden geen versieafwijzingen vrijgesteld.
+
+`check-mpp-corpus-contract.ts` draait automatisch in de gewone suite, ook zonder extern corpus.
+Hij controleert standaardpaden, verplaatste roots, beide onafhankelijke overrides en migratie,
+en gebruikt synthetische CFB/MPP-bytes met de echte reader plus geïnjecteerde foutpaden voor de
+versieclassificatie. Dit bewijst niet dat de optionele echte corpora hun historische totalen of
+fidelity behouden: zonder die data slaat CI die corpuslagen over.
+
 ## Hoe het werkt (en waarom zo)
 
 Een testgeval is **data**: een netwerkje van taken + relaties + de verwachte uitkomst. `harness.ts`
@@ -102,10 +152,10 @@ guards; alles wat de JSON-batterij niet kan zien omdat het niet via de solver lo
 
 ### Gedeelde fixtures (`tests/fixtures/`)
 
-Fixtures die door MEER DAN ÉÉN suite gebruikt worden staan in `tests/fixtures/` — nu alleen
-`recordedDatesIfc.ts`, de IFC van issue #63 (twee taken, één FS-relatie, opgeslagen datums die niet
-uit de logica volgen), gedeeld door `check-recorded-dates.ts` en `tests/mcp/cases-recorded-dates.ts`.
-Eén bron, zodat de twee batterijen niet uit elkaar lopen over wat het geval precies ís. Fixtures die
+Fixtures die door MEER DAN ÉÉN suite gebruikt worden staan in `tests/fixtures/`: `recordedDatesIfc.ts`
+(de IFC van issue #63: twee taken, één FS-relatie, opgeslagen datums die niet uit de logica volgen) en
+`recordedTimesFormats.ts` (de "datums zoals opgeslagen"-formaten). Zoek de gebruikers met grep; noem ze hier niet.
+Eén bron, zodat de batterijen niet uit elkaar lopen over wat het geval precies ís. Fixtures die
 maar één batterij dient horen gewoon in die batterij thuis.
 
 ## Een geval toevoegen

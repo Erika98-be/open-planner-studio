@@ -11,8 +11,8 @@ import { ActivityCodeType, CustomFieldDef, CustomFieldType, CustomFieldValue } f
 import { Baseline } from '@/types/baseline';
 import type { CustomTaskType } from '@/types/taskType';
 import {
-  deriveHoursPerDay, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration, scalarHourFromClock,
-  taskMinutesForWrite,
+  canonicalizeBands, clockToMinutes, deriveHoursPerDay, hoursPerDayDiffers, effectiveCalendarByTask, minutesToClock, minutesToIsoDuration,
+  scalarHourFromClock, taskMinutesForWrite,
 } from '@/services/subdayIo';
 import { effectiveWorkTimeBands } from '@/utils/effectiveWorkTime';
 import type { ImportResult, RecordedSourceFormat } from '@/services/importTypes';
@@ -22,6 +22,7 @@ import {
 import { PSET, PER_TASK_PSETS, OPS_APP_VERSION, ifcStr, ifcJson, asciiJson, ifcTypedReal, stepReal, ifcDateValue } from './ifcPsets';
 import { ifcSchemaQuestionFor } from './ifcSchemaQuestion';
 import { isSummaryTask } from '@/utils/taskHierarchy';
+import { shownFinish, shownStart } from '@/utils/taskDates';
 import { projectFileBase } from '@/utils/documents';
 import {
   XER_SOURCE_ARCHIVE_CHUNK_BYTES, XER_SOURCE_ARCHIVE_COMPACT_STORAGE_FORMAT,
@@ -118,6 +119,12 @@ function ifcDateTimeHour(iso: string): string {
   return `'${iso}'`;
 }
 
+/** Eén formatterkeuze voor de taakslots én hun getoonde planomvang: een kale datum is bij
+ *  een urentaak middernacht, bij een dagtaak het bestaande IFC-daganker. */
+function taskDateTimeFormatter(task: Task): (iso: string) => string {
+  return taskDurationUnit(task) === 'hours' ? ifcDateTimeHour : ifcDateTime;
+}
+
 /**
  * Het getal in een ISO-8601-dagduur (`P…D`). Hele dagen (en niet-eindige waarden) blijven exact
  * `${days}`. Een fractionele dag (CSV-import, Tabel
@@ -159,7 +166,9 @@ function ifcDurationHour(minutes: number): string {
  */
 function workControlArgs(a: {
   guid: string; ownerHistId: number; name: string; description: string;
-  creationDate: string; startTime: string; finishTime: string; predefinedType: 'PLANNED' | 'BASELINE';
+  creationDate: string; predefinedType: 'PLANNED' | 'BASELINE';
+  // Al geformatteerde STEP-waarden: de taakgebonden dag-/uursemantiek moet behouden blijven.
+  startTimeArg: string; finishTimeArg: string;
 }): string {
   return [
     ifcStr(a.guid), `#${a.ownerHistId}`, ifcStr(a.name), ifcStr(a.description),
@@ -170,8 +179,8 @@ function workControlArgs(a: {
     '$', // Purpose
     '$', // Duration
     '$', // TotalFloat
-    ifcDateTime(a.startTime),
-    ifcDateTime(a.finishTime),
+    a.startTimeArg,
+    a.finishTimeArg,
     `.${a.predefinedType}.`,
   ].join(',');
 }
@@ -393,25 +402,41 @@ export function writeIFC(input: WriteIFCInput): string {
   const projectCalWritten = writeCalendar(ctx, calendar, ownerHistId, '_calendar', hourTaskCalendarIds.has(calendar.id));
   writeCalendarGenerationMeta(ctx, calendar, ownerHistId, projectCalWritten);
 
-  // Work plan & schedule
-  const startDates = tasks.map(t => t.time.scheduleStart).filter(Boolean).sort();
-  const endDates = tasks.map(t => t.time.scheduleFinish).filter(Boolean).sort();
-  const planStart = startDates[0] || project.startDate;
-  const planEnd = endDates[endDates.length - 1] || project.endDate;
+  // Planomvang van de GETOONDE taken, zoals de Gantt en de basislijn: werkelijke datums waar
+  // die vaststaan, anders early, anders invoer (`taskDates`). Ook samenvattingen tellen mee.
+  // Invoerankers en contractuele projectdatums blijven apart bewaard; opslaan rekent niet.
+  // Normaliseer vóór de GETOONDE datumkeuze én min/max met de IfcTaskTime-formatter: een kale
+  // uurdatum is 00:00, een kale dagdatum 07:00. Ook de vergelijking actual/computed in een fase
+  // moet die tijden zien. Alleen een tijdelijke kopie; de invoer en taakslots blijven onaangeroerd.
+  const taskSpans = tasks.map(task => {
+    const dt = taskDateTimeFormatter(task);
+    // Hergebruik de echte writersemantiek en haal alleen de STEP-aanhalingstekens weg, zodat
+    // shownStart/shownFinish ISO-datums vergelijken. Leeg blijft leeg; `$` is geen taakdatum.
+    const iso = (value: string | undefined): string => value ? dt(value).slice(1, -1) : '';
+    const normalized: Task = { ...task, time: { ...task.time,
+      scheduleStart: iso(task.time.scheduleStart), scheduleFinish: iso(task.time.scheduleFinish),
+      earlyStart: iso(task.time.earlyStart), earlyFinish: iso(task.time.earlyFinish),
+      actualStart: iso(task.time.actualStart), actualFinish: iso(task.time.actualFinish),
+    } };
+    return { start: dt(shownStart(normalized)), finish: dt(shownFinish(normalized)) };
+  });
+  const startArgs = taskSpans.map(span => span.start).filter(arg => arg !== '$').sort();
+  const endArgs = taskSpans.map(span => span.finish).filter(arg => arg !== '$').sort();
 
   // IfcWorkPlan en IfcWorkSchedule: de 14 argumenten van het schema (`workControlArgs`). StartTime is
   // VERPLICHT. Een project zonder taken en zonder startdatum heeft geen planstart; dan het
   // schrijfmoment, zodat StartTime nooit `$` is. De OPS-lezer gebruikt dit slot dan niet:
   // OPS_ProjectSettings draagt `ProjectStartDate` altijd (ook leeg) en wint.
-  const workControlStart = planStart || now;
+  const workControlStartArg = startArgs[0] || ifcDateTime(project.startDate || now);
+  const workControlFinishArg = endArgs[endArgs.length - 1] || ifcDateTime(project.endDate);
   const workPlanId = addLine(ctx, '_workplan', `IFCWORKPLAN(${workControlArgs({
     guid: objectGuid(ctx, 'wp', project.id), ownerHistId, name: project.name, description: project.description,
-    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
+    creationDate: now, startTimeArg: workControlStartArg, finishTimeArg: workControlFinishArg, predefinedType: 'PLANNED',
   })})`);
 
   const workSchedId = addLine(ctx, '_worksched', `IFCWORKSCHEDULE(${workControlArgs({
     guid: objectGuid(ctx, 'ws', project.id), ownerHistId, name: 'Construction schedule v1.0', description: '',
-    creationDate: now, startTime: workControlStart, finishTime: planEnd, predefinedType: 'PLANNED',
+    creationDate: now, startTimeArg: workControlStartArg, finishTimeArg: workControlFinishArg, predefinedType: 'PLANNED',
   })})`);
 
   // Baselines — per baseline één `.BASELINE.`-IfcWorkSchedule-header (Name +
@@ -423,9 +448,11 @@ export function writeIFC(input: WriteIFCInput): string {
   // De OPS-lezer leest deze slots niet (de datums staan in het JSON); ze zijn er voor andere pakketten.
   const baselineSchedRefs: string[] = [];
   for (const b of baselines) {
+    const start = baselineStart(b);
     const bId = addLine(ctx, `_baseline_ws_${b.id}`, `IFCWORKSCHEDULE(${workControlArgs({
       guid: guidOf(ctx, 'baseline_ws_' + b.id), ownerHistId, name: b.name, description: '',
-      creationDate: b.createdAt || now, startTime: baselineStart(b) || workControlStart, finishTime: b.projectEnd,
+      creationDate: b.createdAt || now, startTimeArg: start ? ifcDateTime(start) : workControlStartArg,
+      finishTimeArg: ifcDateTime(b.projectEnd),
       predefinedType: 'BASELINE',
     })})`);
     baselineSchedRefs.push(`#${bId}`);
@@ -1011,6 +1038,10 @@ interface WriteCalendarResult {
   /** De `IFCTIMEPERIOD`s zijn de EFFECTIEVE banden van een SCALAIRE kalender (een urentaak
    *  gebruikt hem), niet de expliciete `workTime` van een uurkalender. */
   materializedScalarBands: boolean;
+  /** Een DAGkalender zonder gematerialiseerde blokken, waarvan de lezer de ene geschreven periode zelf
+   *  als afwijkend ziet (`canonicalizeBands`: een hele dag of over middernacht) en dus zonder markering
+   *  zou promoveren naar een uurkalender. */
+  scalarPeriodReadsAsHour: boolean;
   /** `WorkingTimes` draagt meer dan één weekgroep (werkblokken die per weekdag verschillen, zie
    *  `weekBandGroups`). Dan is de scalar werktijd niet eenduidig uit de periodes af te leiden: een
    *  oudere lezer neemt de eerste groep, deze lezer de eerste werkdag met blokken. */
@@ -1081,6 +1112,7 @@ function writeCalendar(
   // Work time recurrence (weekdays)
   let firstPeriod: [string, string] | undefined;
   let perDayWeek = false;
+  let scalarPeriodReadsAsHour = false;
   const workTime = cal.workTime ?? (includeEffectiveScalarBands ? effectiveWorkTimeBands(cal) : undefined);
   // Werkblokken die per weekdag verschillen ⇒ meer groepen, elk een eigen `IFCWORKTIME` (zie
   // `weekBandGroups`). Een uniforme week (één groep) en een kalender zonder blokken nemen de tak
@@ -1133,6 +1165,13 @@ function writeCalendar(
       const timePeriodId = addLine(ctx, '_timeperiod', `IFCTIMEPERIOD('${startTime}','${endTime}')`);
       timePeriodRefs = `#${timePeriodId}`;
       firstPeriod = [startTime, endTime];
+      // Leest de lezer deze ene periode zelf als afwijkend (een hele dag 00:00–24:00, of over
+      // middernacht; `canonicalizeBands`), dan promoveert hij de dagkalender zonder markering naar een
+      // uurkalender, met de dagsom als uren per dag (0402ScheduleMSP.xml: 8 ⇒ 24). Zelfde toets als de
+      // lezer, op dezelfde klokstrings.
+      const s = clockToMinutes(startTime);
+      const e = clockToMinutes(endTime);
+      scalarPeriodReadsAsHour = s != null && e != null && canonicalizeBands({ 1: [{ start: s, end: e }] }).deviates;
     }
     // WeekdayComponent en TimePeriods zijn OPTIONAL SET/LIST [1:?]: een lege lijst `()` is ongeldig,
     // dus leeg ⇒ `$` (een kalender zonder werkdagen, of een uurkalender zonder blokken). De lezer leest
@@ -1199,6 +1238,7 @@ function writeCalendar(
       ? { start: scalarHourFromClock(firstPeriod[0]), end: scalarHourFromClock(firstPeriod[1]) }
       : undefined,
     materializedScalarBands: !cal.workTime && workTime !== undefined,
+    scalarPeriodReadsAsHour,
     perDayWeek,
     readerHourCalendarHoursPerDay: cal.workTime ? writtenWeekHoursPerDay(groups) : undefined,
   };
@@ -1246,6 +1286,9 @@ function writtenWeekHoursPerDay(groups: readonly WeekBandGroup[]): number {
  *  - `IsHourCalendar = .F.`: alleen wanneer de `IFCTIMEPERIOD`s gematerialiseerde effectieve banden van
  *    een SCALAIRE kalender zijn (een urentaak gebruikt hem). IFC zelf ziet daar gewoon de lunchpauze
  *    (interop); de OPS-lezer weet zo dat de kalender scalair was en promoveert hem niet naar uur-modus.
+ *    Ook bij een SCALAIRE kalender waarvan de lezer de ene periode zelf als afwijkend ziet (een hele dag
+ *    00:00–24:00, of over middernacht; `scalarPeriodReadsAsHour`): zonder markering werd zo'n
+ *    dagkalender na heropenen een uurkalender met de dagsom als uren per dag.
  */
 function writeCalendarGenerationMeta(
   ctx: WriteContext,
@@ -1255,15 +1298,16 @@ function writeCalendarGenerationMeta(
 ): void {
   const {
     calStepId, workingExceptionStepIds, readerScalarHours, materializedScalarBands, perDayWeek,
-    readerHourCalendarHoursPerDay,
+    readerHourCalendarHoursPerDay, scalarPeriodReadsAsHour,
   } = written;
+  const markScalar = materializedScalarBands || scalarPeriodReadsAsHour;
   const gen = cal.generation;
   // De uren per dag die de lezer zonder deze eigenschap zou afleiden: bij een dagkalender
   // einde − begin, bij een uurkalender de modale dagsom van de geschreven blokken.
   const derivedHoursPerDay = cal.workTime
     ? readerHourCalendarHoursPerDay
     : cal.workEndHour - cal.workStartHour;
-  const needsHoursPerDayOverride = cal.hoursPerDay !== derivedHoursPerDay;
+  const needsHoursPerDayOverride = hoursPerDayDiffers(cal.hoursPerDay, derivedHoursPerDay);
   const hasWorkingExceptions = workingExceptionStepIds.length > 0;
   const hasP6Source = cal.p6Source === 'XER';
   const hasRejectedPenaltyDiagnostic = cal.p6NonWorkPenaltyDatesState === 'REJECTED';
@@ -1279,7 +1323,7 @@ function writeCalendarGenerationMeta(
   const needsWorkEndHour = Number.isFinite(cal.workEndHour)
     && (perDayWeek || readerScalarHours?.end !== cal.workEndHour);
   if (!gen && !cal.libraryOrigin && !needsHoursPerDayOverride && !hasWorkingExceptions
-    && !hasSimpleBreak && !isHourCalendar && !materializedScalarBands && !needsWorkStartHour && !needsWorkEndHour
+    && !hasSimpleBreak && !isHourCalendar && !markScalar && !needsWorkStartHour && !needsWorkEndHour
     && !hasP6Source && !hasRejectedPenaltyDiagnostic) return;
   const props: number[] = [];
   if (gen) {
@@ -1329,7 +1373,7 @@ function writeCalendarGenerationMeta(
   if (isHourCalendar) {
     props.push(addLine(ctx, `_opscal_hourmode_${cal.id}`,
       `IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.T.),$)`));
-  } else if (materializedScalarBands) {
+  } else if (markScalar) {
     props.push(addLine(ctx, `_opscal_hourmode_${cal.id}`,
       `IFCPROPERTYSINGLEVALUE('IsHourCalendar',$,IFCBOOLEAN(.F.),$)`));
   }
@@ -1409,7 +1453,7 @@ function writeTask(
   // In UUR-modus dragen de datetimes de echte tijd-van-de-dag en is de duur minuut-precies
   // (`durationMinutes`, bron van waarheid; anders afgeleid uit de dag-duur). In DAG-modus valt alles
   // terug op het `T07:00:00`/`P0Y0M{days}D`-pad.
-  const dt = isHour ? ifcDateTimeHour : ifcDateTime;
+  const dt = taskDateTimeFormatter(task);
   // De ISO-vorm bewaart de TAAK-eenheid: P…D = werkdagen, PT…H…M = werkuren. De kalender bepaalt
   // alleen de datetime-precisie en plaatsing; een uurkalender maakt van een dagtaak geen urentaak.
   const schedDurArg = taskDurationUnit(task) === 'hours'

@@ -25,8 +25,8 @@ bouwen), `dispatcher.ts`, `schemaValidate.ts` (schema's worden in de dispatcher 
 binnen `planner_batch` — een draaiboek mag de poort niet omzeilen), `toolRegistry.ts`/`toolIndex.ts`,
 `staleGuard.ts` (`ensureFreshSchedule`; leestools met berekende waarden rekenen via
 `freshenScheduleForRead` in `tools/runtime.ts` zelf bij, behalve in "datums zoals opgeslagen", tijdens een
-lopende bewerking (`editHold.ts`) en na een mislukte berekening met ongewijzigde invoer (`failedSolveGate.ts`)), `backup.ts` (AI-backups per document in `appDataDir`,
-`MAX_PER_DOC = 10`) en `activityLog.ts` (ring-buffer achter het AI-activiteitenpaneel). De 41
+lopende bewerking (`editHold.ts`) en na een mislukte berekening met ongewijzigde invoer (`failedSolveGate.ts`)), `backup.ts` (AI-backups per document onder `<appDataDir>/ai-backups/<docId>/`, uitgedund volgens
+`BACKUP_RETENTION`: alles van de laatste 7 dagen (max. 20), daarna één per week tot 30 dagen, één per maand tot een jaar, daarna één per jaar) en `activityLog.ts` (ring-buffer achter het AI-activiteitenpaneel). De 41
 `planner_*`-tools staan in `src/services/mcp/tools/` (taken, relaties, resources, kalender, project,
 baselines, documenten/bestanden, leestools, XER/P6-bronprovenance, en `planner_batch` als transactionele executor met
 temp-id-resolutie).
@@ -42,7 +42,12 @@ koppeling met het Help-artikel; `tests/mcp/cases-agent-texts.ts` houdt elke `pla
 Veiligheid is state, geen conventie: `ui.aiMode` (de hele AI-tab en bridge verschijnen pas hierdoor),
 `ui.aiPaused`, `ui.aiReadOnly` en `ui.aiServerStatus` leven in `uiSlice`; de per-request `McpContext`
 leest ze live, plus een drift-anker (`expectedDocId`) zodat een tool nooit op het verkeerde document
-landt; het anker leeft per verbinding en een `initialize` (nieuwe MCP-sessie) wist het.
+landt. Het anker leeft per MCP-sessie (`Mcp-Session-Id`): een geslaagde `initialize` maakt een nieuwe sessie
+met een leeg anker, Rust zet de id als header en geeft hem bij latere requests door, en `createRequestHandler`
+houdt per sessie het anker bij in een tabel per app-sessie (`appMcpSessions`; een bridge-herstart behoudt
+hem, een nieuw token wist hem), met maximaal `MCP_MAX_SESSIONS`: alleen sessies zonder anker worden
+verdrongen, vol met gebonden sessies ⇒ `initialize` geweigerd; onbekende id ⇒ `404`. Elk request behalve
+`initialize` zonder header krijgt `400` en bereikt de dispatcher niet; er is geen gedeeld anker.
 `createRequestHandler` (`server.ts`) verwerkt requests strikt na elkaar en voert een request dat langer
 dan `MCP_QUEUE_DEADLINE_MS` (110 s, net onder Rusts 120 s-time-out) in de wachtrij stond niet meer uit
 (`-32001`): de client had er al een 504 voor, dus uitvoeren zou bij een retry dubbel muteren. Instellingen staan onder de bekende `ops-`-prefix (`ops-aiMode`, `ops-aiAutostart` — default
@@ -55,3 +60,11 @@ is — zie `tests/mcp/`. Nieuwe tool ⇒ contract in `contracts.ts`, schema erbi
 `toolRegistry.ts`, en een case in `tests/mcp/`; zie `docs/recepten/mcp-tool.md` voor de volledige
 route. `tests/mcp/cases-toolregistry.ts` is het mechanische vangnet dat een vergeten registratie
 (of een spookregistratie zonder broncode) mechanisch afvangt.
+
+**Externe client.** `tests/mcp/cases-externe-client.ts` toetst de bridge met de officiële SDK-client over echt HTTP.
+De HTTP-schil daar is `tests/mcp/bridgeMirror.ts`, een met de hand bijgehouden kopie van `mcp_bridge.rs`; hij
+bewijst niets over Rust zelf. Verander je de HTTP-laag in Rust (statuscodes, volgorde van de poorten, limieten,
+sessieheader), pas dan `bridgeMirror.ts` mee aan. Dezelfde controles (`tests/mcp/externalClient.ts`) draaien in
+`.github/workflows/mcp-real-app.yml` tegen de echte Rust-bridge in een Tauri-dev-build; die job draait ook de
+Rust-unit-tests van de bridge (`cargo test … mcp_bridge`), die geen andere workflow draait. Wat geleverd is en wat
+niet: `docs/mcp-verificatie.md`.

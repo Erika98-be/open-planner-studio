@@ -102,6 +102,9 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { opsSolveInput } from './legacySolveOptions';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
+import { readMppCorpusEntry, resolveMppCrawlScopes } from './mppCorpus';
+
+const crawlScopes = resolveMppCrawlScopes(process.env);
 
 const diffs: string[] = [];
 let checks = 0;
@@ -884,6 +887,7 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
     'I4/I3 fieldMap: veld niet in de aanwezige field-map-bytes ⇒ GEEN terugval op defaults (alles-of-niets)',
     fixedOffsetOf(table, TaskFieldId.OutlineLevel) === null,
   );
+  truthy('I4/I3 veldkaart aanwezig: geen terugval voor vaste kosten', fixedOffsetOf(table, TaskFieldId.FixedCost) === null);
 }
 {
   const resFieldMapBytes = buildFieldMapEntryBytes([
@@ -894,6 +898,9 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
   const resTable = createResourceFieldMap(resProps);
   truthy('I4 createResourceFieldMap: FIXED_DATA-entry correct', fixedOffsetOf(resTable, ResourceFieldId.UniqueId) === 5);
   truthy('I4 createResourceFieldMap: VAR_DATA-entry correct', varDataKeyOf(resTable, ResourceFieldId.Name) === ResourceFieldId.Name);
+  for (const field of [ResourceFieldId.StandardRate, ResourceFieldId.OvertimeRate, ResourceFieldId.CostPerUse]) {
+    truthy(`I4/I3 veldkaart aanwezig: geen terugval voor tariefveld ${field}`, fixedOffsetOf(resTable, field) === null);
+  }
 }
 {
   const asgFieldMapBytes = buildFieldMapEntryBytes([
@@ -919,6 +926,12 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
   // enige plek die een verkeerde DEFAULT-offset (bv. 94→96) kan betrappen is DEZE directe
   // eenheidstoets tegen de defaulttabel zelf, spiegelt de assertie hierboven voor OutlineLevel/Name.
   truthy('I4/I3 fieldMap: ontbrekende sleutel ⇒ defaulttabel (Type@94)', fixedOffsetOf(table, TaskFieldId.Type) === 94);
+  // #155: het importverslag gebruikt dezelfde kaart, ook als beide Props-sleutels ontbreken.
+  truthy('I4/I3 ontbrekende taakveldkaart: FixedCost@158', fixedOffsetOf(table, TaskFieldId.FixedCost) === 158);
+  const resourceTable = createResourceFieldMap(props);
+  truthy('I4/I3 ontbrekende resourceveldkaart: StandardRate@28', fixedOffsetOf(resourceTable, ResourceFieldId.StandardRate) === 28);
+  truthy('I4/I3 ontbrekende resourceveldkaart: OvertimeRate@36', fixedOffsetOf(resourceTable, ResourceFieldId.OvertimeRate) === 36);
+  truthy('I4/I3 ontbrekende resourceveldkaart: CostPerUse@84', fixedOffsetOf(resourceTable, ResourceFieldId.CostPerUse) === 84);
 }
 
 // ── C1: clampOutlineLevel — triviale aritmetiek, los van het stack-algoritme hieronder. ─────────
@@ -1697,7 +1710,7 @@ const PROPSKEY_ASSIGNMENT_FIELD_MAP = 131095;
 
   // Corpus (optioneel, publiek MPXJ-materiaal onder OPS_MPP_CRAWL — zelfde padconventie als Z4):
   // de enige twee van de 164 MPXJ-.mpp-bestanden met een statusdatum.
-  const DATA = `${process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl'}/mpxj/junit/data`;
+  const DATA = `${crawlScopes.root}/mpxj/junit/data`;
   for (const [file, want] of [['calendar-exception-precedence.mpp', '2023-05-01T17:00'], ['mpp14header.mpp', '2006-08-01T17:35']]) {
     const path = `${DATA}/${file}`;
     if (!existsSync(path)) {
@@ -4021,7 +4034,7 @@ if (corpusPresent) {
   // namen in de uitvoer, alleen tellingen. ─────────────────────────────────────────────────────────
   {
     const F4_CORPUS = process.env.OPS_MPP_CORPUS ?? '/home/nozzit/open-aec/voor claude/test bestanden voor file implementation';
-    const F4_CRAWL = process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl';
+    const F4_CRAWL = crawlScopes.root;
 
     function listMppFilesRecursiveF4(dir: string): string[] {
       const out: string[] = [];
@@ -4034,8 +4047,10 @@ if (corpusPresent) {
       return out;
     }
 
+    let filesFound = 0;
     let filesScanned = 0;
     let filesFailed = 0;
+    let legacyRejected = 0;
     let tasksScanned = 0;
     let typeFieldPresent = 0; // mspTaskTypeRaw !== null (het veld staat in dit bestand se field map)
     let fixedUnits = 0, fixedDuration = 0, fixedWork = 0; // gedecodeerd via mspTaskTypeFromRaw
@@ -4043,8 +4058,17 @@ if (corpusPresent) {
     for (const root of [F4_CORPUS, F4_CRAWL]) {
       if (!existsSync(root)) continue;
       for (const file of listMppFilesRecursiveF4(root)) {
+        filesFound++;
+        let tag = 'ongelezen bestand';
         try {
-          const result = scanZ2(new Uint8Array(readFileSync(file)));
+          const bytes = new Uint8Array(readFileSync(file));
+          tag = hashOf(bytes);
+          const entry = readMppCorpusEntry(bytes, scanZ2);
+          if (entry.kind === 'legacy') {
+            legacyRejected++;
+            continue;
+          }
+          const result = entry.value;
           filesScanned++;
           for (const raw of result.rawScans) {
             tasksScanned++;
@@ -4057,12 +4081,16 @@ if (corpusPresent) {
             }
             if (raw.effortDrivenRaw) effortDrivenCount++;
           }
-        } catch {
-          filesFailed++; // niet-.mpp14-bestanden of andere onleesbare varianten in de crawl-boom
+        } catch (err) {
+          filesFailed++;
+          checks++;
+          // F4 omvat bedrijfsdata: geen bestandsnamen of mogelijk padbevattende fouttekst.
+          diffs.push(`[F4 corpustelling ${tag}] onverwachte leesfout (${err instanceof Error ? err.name : typeof err})`);
         }
       }
     }
-    if (filesScanned === 0) {
+    truthy(`[F4 corpustelling] geen onverwachte leesfouten (${filesFailed})`, filesFailed === 0);
+    if (filesFound === 0) {
       console.log(`OK  mpp-import: F4 corpusbrede task-type/effort-driven-telling (${F4_CORPUS} / ${F4_CRAWL}) niet aanwezig — overgeslagen`);
     } else {
       truthy(`[F4 corpustelling] minstens 1 bestand gescand (kreeg ${filesScanned})`, filesScanned > 0);
@@ -4079,7 +4107,7 @@ if (corpusPresent) {
       truthy(`[F4 corpustelling] EFFORT_DRIVEN === 216 (kreeg ${effortDrivenCount})`, effortDrivenCount === 216);
       console.log(
         `OK  mpp-import: F4 corpusbrede task-type/effort-driven-telling — ${filesScanned} bestand(en) gescand ` +
-        `(${filesFailed} onleesbaar/overgeslagen), ${tasksScanned} taken totaal, ${typeFieldPresent} met TYPE-veld ` +
+        `(${legacyRejected} bewust geweigerd legacy / ${filesFailed} onverwachte leesfouten), ${tasksScanned} taken totaal, ${typeFieldPresent} met TYPE-veld ` +
         `(${fixedUnits} FIXED_UNITS / ${fixedDuration} FIXED_DURATION / ${fixedWork} FIXED_WORK), ${effortDrivenCount} EFFORT_DRIVEN`,
       );
     }
@@ -4175,7 +4203,7 @@ if (corpusPresent) {
   // nette-skip-conventie als de andere corpus-/crawl-secties in dit bestand. ─────────────────────
   {
     const Z2_CORPUS = process.env.OPS_MPP_CORPUS ?? '/home/nozzit/open-aec/voor claude/test bestanden voor file implementation';
-    const Z2_CRAWL = process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl';
+    const Z2_CRAWL = crawlScopes.root;
 
     function listMppFilesRecursiveZ2(dir: string): string[] {
       const out: string[] = [];
@@ -4673,7 +4701,7 @@ if (corpusPresent) {
   // decoder of met de aanname, en moet dat gerapporteerd worden vóórdat verder gebouwd wordt. ────
   {
     const Z3_CORPUS = process.env.OPS_MPP_CORPUS ?? '/home/nozzit/open-aec/voor claude/test bestanden voor file implementation';
-    const Z3_CRAWL = process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl';
+    const Z3_CRAWL = crawlScopes.root;
 
     function listMppFilesRecursiveZ3(dir: string): string[] {
       const out: string[] = [];
@@ -5641,7 +5669,7 @@ function z4MakeTask(id: string, scheduleStart: Date, childIds: string[] = []): T
 // `taskIdByUniqueId`, geen index-toeval). Cijfers: zie de VERPLICHTE meetstap in mppTimephased
 // .ts's moduleheader — hier alleen gepind, niet opnieuw hergeleid. ─────────────────────────────
 {
-  const SPLITTASK_PATH = (process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl')
+  const SPLITTASK_PATH = crawlScopes.root
     + '/mpxj/junit/data/mpp14splittask.mpp';
   if (!existsSync(SPLITTASK_PATH)) {
     console.log(`OK  mpp-import: Z4 mpp14splittask.mpp niet aanwezig (${SPLITTASK_PATH}) — overgeslagen`);
@@ -5918,7 +5946,7 @@ function z4MakeTask(id: string, scheduleStart: Date, childIds: string[] = []): T
 // resources/assignments) bewijzen hun eigen domein al breed; deze sectie is de taken-tegenhanger
 // ÉN — omdat ze `readMPP()` zonder enige sub-scope aanroept, het complete `ImportResult` in één
 // keer — de enige plek die de VOLLEDIGE lezer (alle domeinen samen, exact het echte open-pad) over
-// alle 49 crawl-bestanden haalt. Netjes overgeslagen zonder de map (OPS_MPP_CRAWL), zelfde
+// alle 49 crawl-bestanden haalt. Scope: OPS_MPP_CRAWL_SMOKE of OPS_MPP_CRAWL/crawl-mpp; zelfde
 // skip-OK-conventie als de rest van dit bestand.
 //
 // BEVINDING (T9, gemeten op dit corpus): 4 van de 49 bestanden (`OzBuild Workshop 02.mpp` en
@@ -5965,9 +5993,9 @@ function z4MakeTask(id: string, scheduleStart: Date, childIds: string[] = []): T
 // Bestanden zonder taken (zie de bevinding hierboven) worden hier overgeslagen (0/0 zegt niets
 // over plausibiliteit).
 {
-  const CRAWL = process.env.OPS_MPP_CRAWL ?? '/home/nozzit/open-aec/voor claude/testdata-crawl/crawl-mpp';
+  const CRAWL = crawlScopes.smoke;
   if (!existsSync(CRAWL)) {
-    console.log('OK  mpp-import: T9-crawl niet aanwezig (OPS_MPP_CRAWL) — crawlsectie overgeslagen');
+    console.log('OK  mpp-import: T9-crawl niet aanwezig (OPS_MPP_CRAWL_SMOKE of OPS_MPP_CRAWL/crawl-mpp) — crawlsectie overgeslagen');
   } else {
     function listMppFilesRecursive(dir: string): string[] {
       const out: string[] = [];
@@ -6055,6 +6083,7 @@ function z4MakeTask(id: string, scheduleStart: Date, childIds: string[] = []): T
           ratio <= SUSPECT_RATIO_BUDGET,
         );
       }
+      truthy(`[T9-crawl] aantal bestanden exact op de gemeten basislijn (${crawlFiles.length}/49)`, crawlFiles.length === 49);
       truthy(`[T9-crawl] geen leesfouten over ${crawlFiles.length} bestanden`, readFailures === 0);
       truthy(
         `[T9-crawl] taakloze bestanden exact op de gemeten basislijn (${filesWithZeroTasks}/${CRAWL_ZERO_TASK_FILES_BASELINE}, zie de bevinding hierboven)`,

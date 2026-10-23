@@ -110,8 +110,8 @@ export interface DocumentPayload {
    *  er is niets om terug te schrijven, het archief is weg. */
   xerArchiveIssue: XerArchiveIssue | null;
   /** Seed (`ifcObjectSeed(soort, id)`) → GlobalId uit het ingelezen IFC (`ImportResult.ifcGlobalIds`):
-   *  de writer geeft bestaande objecten hun GlobalId terug. Alleen `readIFC` vult hem; niet in undo
-   *  (geen projectdata die de gebruiker zet), wel door documentwissel en opslaan. */
+   *  de writer geeft bestaande objecten hun GlobalId terug. De IFC-editor kan deze identiteit
+   *  wijzigen; daarom projectdata in undo/redo, naast documentwissel en opslaan. */
   ifcGlobalIds: Readonly<Record<string, string>> | null;
 }
 
@@ -293,7 +293,7 @@ export const DOCUMENT_FIELDS = [
   field({ key: 'taskTypesVisible', get: (s) => s.taskTypesVisible, set: (s, v) => { s.taskTypesVisible = v; }, fresh: () => false, snapshot: 'none', fromPayload: (p) => p.taskTypesVisible ?? false }),
   field({ key: 'importPristine', get: (s) => s.importPristine, set: (s, v) => { s.importPristine = v; }, fresh: () => false, snapshot: 'none', fromPayload: (p) => p.importPristine ?? false }),
   field({ key: 'xerArchiveIssue', get: (s) => s.xerArchiveIssue, set: (s, v) => { s.xerArchiveIssue = v; }, fresh: () => null, snapshot: 'none', fromPayload: (p) => p.xerArchiveIssue ?? null }),
-  field({ key: 'ifcGlobalIds', get: (s) => s.ifcGlobalIds, set: (s, v) => { s.ifcGlobalIds = v; }, fresh: () => null, snapshot: 'none', fromPayload: (p) => p.ifcGlobalIds ?? null }),
+  field({ key: 'ifcGlobalIds', get: (s) => s.ifcGlobalIds, set: (s, v) => { s.ifcGlobalIds = v; }, fresh: () => null, snapshot: 'data', fromPayload: (p) => p.ifcGlobalIds ?? null }),
 ];
 
 // Compile-time volledigheidscheck: elke DocumentPayload-key MOET in DOCUMENT_FIELDS staan. Voeg je
@@ -491,7 +491,7 @@ export function payloadFromImport(parsed: ImportResult, filePath: string | null)
 }
 
 /** Zie `ImportResult.recordedTimesOrigin`: verse import (automatisch aan bij afwijkingen) versus
- *  heropening van een eigen IFC (alleen automatisch aan zolang `importPristine`). Eén definitie,
+ *  heropening van een eigen IFC (automatisch aan bij `importPristine` of opslaan in de modus). Eén definitie,
  *  gedeeld door `payloadFromImport` en `applyRecordedDatesOnLoad`. */
 export function isFreshImportOrigin(origin: RecordedTimesOrigin | undefined): boolean {
   return origin === 'xer' || origin === 'p6xml' || origin === 'mspdi' || origin === 'mpp' || origin === 'csv' || origin === 'ifc';

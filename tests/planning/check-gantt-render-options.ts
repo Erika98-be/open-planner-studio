@@ -369,10 +369,16 @@ for (const mode of traceModes) {
   if (tr.successors.length === 0) diffs.push('10z fixture: focus heeft geen opvolgers — de trace-checks zijn dan half vacuüm');
 }
 eq('11 trace: lege selectie ⇒ undefined', buildTrace('both', [], sequences, cpm), undefined);
-// Een CPM-resultaat MET fout telt als "nog niets berekend": geen driving-tinten.
+// Knownbug 105: zonder driving-informatie krijgt het hele betrokken pad dezelfde nadruk.
+// De oude sluitingen blijven het onafhankelijke orakel; alleen de nadruk verandert bewust.
 const cpmFailed = { ...(cpm as CPMResult), error: 'cyclus' } as CPMResult;
-eqDeep('12 trace bij een mislukte CPM identiek aan het orakel',
-  buildTrace('both', [idB], sequences, cpmFailed), oldTrace('both', [idB], sequences, cpmFailed));
+const oldFailedTrace = oldTrace('both', [idB], sequences, cpmFailed)!;
+eqDeep('12 trace bij een mislukte CPM behoudt het pad met gelijke nadruk',
+  buildTrace('both', [idB], sequences, cpmFailed), {
+    ...oldFailedTrace,
+    drivingPredecessors: oldFailedTrace.predecessors,
+    drivenSuccessors: oldFailedTrace.successors,
+  });
 
 // 13 — baselineOverlay.
 const baselines: Baseline[] = [{
@@ -505,6 +511,7 @@ const baseInput: GanttRenderOptionsInput = {
   localizedWeekdays: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
   weekStartDay: 'sunday',
   timeNotation: '12h',
+  dateNotation: 'mdy',
   enableQuarterHourZoom: true,
   effectiveCalById: new Map(),
   barSplitMode: 'always',
@@ -589,6 +596,7 @@ const passthrough: [string, unknown, unknown][] = [
   ['localizedWeekdays', optsOk.localizedWeekdays, baseInput.localizedWeekdays],
   ['weekStartDay', optsOk.weekStartDay, baseInput.weekStartDay],
   ['timeNotation', optsOk.timeNotation, baseInput.timeNotation],
+  ['dateNotation', optsOk.dateNotation, baseInput.dateNotation],
   ['enableQuarterHourZoom', optsOk.enableQuarterHourZoom, baseInput.enableQuarterHourZoom],
   ['effectiveCalById', optsOk.effectiveCalById, baseInput.effectiveCalById],
   ['barSplitMode', optsOk.barSplitMode, baseInput.barSplitMode],

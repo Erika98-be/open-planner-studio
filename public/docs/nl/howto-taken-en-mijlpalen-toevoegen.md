@@ -51,7 +51,7 @@ Klik met de rechtermuisknop op de taak en kies *Subtaak toevoegen*. De nieuwe ta
 De drie soorten verschillen zo:
 
 - Een *Startmijlpaal* hoort bij het begin van de dag, een *Eindmijlpaal* bij het einde van de dag. In de Gantt staat de ruit links respectievelijk rechts in de dagkolom. Dat maakt ook verschil voor de opvolger. Staat een mijlpaal op dinsdag 29 september 2026 en volgt er een taak op met een Eind-Start-relatie, dan begint die taak na een startmijlpaal op diezelfde dinsdag en na een eindmijlpaal op woensdag 30 september.
-- Een *Inspectiemoment (verplicht)* is een eindmijlpaal met het taaktype *Keuring/Inspectie* en het vinkje *Verplicht (contractueel)*.
+- Een *Inspectiemoment (verplicht)* is een eindmijlpaal met de werksoort *Keuring/Inspectie* en het vinkje *Verplicht (contractueel)*.
 
 ### Een bestaande taak tot mijlpaal maken
 
@@ -61,7 +61,8 @@ Zet je het weer uit, dan blijft het een gewone taak met duur 0: vul zelf een duu
 
 ### Andere manieren
 
-- Ctrl+M (op een Mac ⌘+M) zet een nieuwe mijlpaal onderaan de lijst, ook als er een taak geselecteerd is. Het paneel *Eigenschappen* gaat daarbij niet open.
+- Ctrl+M (op een Mac ⌘+M) maakt een gewone eindmijlpaal via dezelfde invoegroute als het lint: onder de selectie in de boomweergave, anders onderaan. De nieuwe mijlpaal wordt geselecteerd en het paneel *Eigenschappen* opent met de naam klaar om te typen.
+- Gewone mijlpalen uit het lint, Ctrl+M of het rechtermuismenu krijgen de werksoort *Overig*. Ctrl+M en het rechtermuismenu maken een eindmijlpaal. Alleen de expliciete keuze voor een inspectiemoment maakt een verplichte mijlpaal met werksoort *Keuring/Inspectie*.
 - *Mijlpaal toevoegen* in het rechtermuismenu van een taak maakt de mijlpaal een subtaak van die taak, niet een zustertaak.
 
 ### Een taak of hele tak kopiëren
@@ -72,7 +73,7 @@ Zet je het weer uit, dan blijft het een gewone taak met duur 0: vul zelf een duu
 
 De kopie heeft dezelfde naam, dezelfde datums en dezelfde voortgang. Hij komt als zustertaak van de geselecteerde taak (bij meer taken: de eerst aangeklikte), onderaan bij die zusters. Is er niets geselecteerd, dan komt hij onderaan de lijst. De gekopieerde taken zijn daarna geselecteerd, de WBS-codes (het nummer van elke taak in de boom, zoals 1.2; zie [Structuur aanpassen](docs://howto-structuur-aanpassen)) worden opnieuw bepaald en de planning is verouderd.
 
-Het klembord geldt voor de hele app, dus je kunt ook in een ander document plakken. Wat daar niet bestaat, zoals een taakkalender, een eigen taaktype, een activity code of een eigen veld, maakt de app leeg en hij meldt dat.
+Het klembord geldt voor de hele app, dus je kunt ook in een ander document plakken. Wat daar niet bestaat, zoals een taakkalender, een eigen werksoort, een activity code of een eigen veld, maakt de app leeg en hij meldt dat.
 
 ### Daarna
 
@@ -82,7 +83,7 @@ Een nieuwe taak verandert nog niets aan de andere datums. De statusbalk meldt *V
 
 **Elke nieuwe taak begint op de projectstart.** Zonder relaties wacht een taak op niets. Leg relaties, zie [Relaties leggen](docs://howto-relaties-leggen).
 
-**Filteren, groeperen of sorteren staat aan.** Dan is de getoonde volgorde niet de volgorde van de planning. Met een geselecteerde taak voegen *Taak* en *Mijlpaal ▾* de nieuwe taak onderaan toe, en verschijnt de strook *Niet beschikbaar tijdens filteren/groeperen/sorteren*. *Invoegen boven* en *Invoegen onder* worden dan geweigerd, met dezelfde strook. Met de knop *Wissen* in de strook haal je filter, groepering en sortering in één keer weg. Dat staat niet in *Ongedaan*: Ctrl+Z brengt ze niet terug.
+**Filteren, groeperen of sorteren staat aan.** Dan is de getoonde volgorde niet de volgorde van de planning. Met een geselecteerde taak voegen *Taak* en *Mijlpaal ▾* de nieuwe taak onderaan toe. Een rode melding zegt dan *De nieuwe taak staat achteraan. Tijdens filteren, groeperen of sorteren kan de app hem niet onder je selectie zetten.* *Invoegen boven* en *Invoegen onder* worden dan geweigerd, met de strook *Niet beschikbaar tijdens filteren/groeperen/sorteren*. Met de knop *Wissen* in de melding of in de strook haal je filter, groepering en sortering in één keer weg. Dat staat niet in *Ongedaan*: Ctrl+Z brengt ze niet terug.
 
 **Een subtaak onder een taak met resource-toewijzingen.** De taak wordt een samenvattingstaak, en die draagt zelf geen toewijzingen. De app verplaatst de toewijzingen naar de nieuwe subtaak en meldt dat. Kan dat niet, bijvoorbeeld omdat je *Mijlpaal toevoegen* koos en een mijlpaal geen toewijzingen mag dragen, dan voegt de app niets toe en zegt hij waarom.
 

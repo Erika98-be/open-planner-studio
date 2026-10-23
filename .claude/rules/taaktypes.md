@@ -6,6 +6,8 @@ paths:
   - "src/state/taskTypesNotice.ts"
   - "src/state/taskTypesVisibility.ts"
   - "src/state/gridTransaction.ts"
+  - "src/state/assignmentMutations.ts"
+  - "src/state/splitMutations.ts"
   - "src/state/runtime/createMcpTransactions.ts"
   - "src/state/slices/taskSlice.ts"
   - "src/state/slices/resourceSlice.ts"
@@ -27,9 +29,10 @@ FIXED_DURATION_RATE (standaard, het gedrag van vóór de etappe) | FIXED_DURATIO
 FIXED_RATE, anders `Project.defaultWorkRule`. De pure kern `src/engine/work/workTriangle.ts` werkt op de
 RESTERENDE toestand (werk = restduur × inzet; W en I opgeslagen, R afgeleid en naar boven afgerond op hele
 dagen/minuten); de brug `src/engine/work/workRuleApply.ts` (`captureTriangle` vóór de mutatie → `settle…`
-erna) is op vier plekken bedraad: `taskSlice.updateTask`/`setTaskWorkRule`,
-`resourceSlice.assignResource`/`updateAssignment`/`unassignResource`/`moveAssignment`/`removeResource`/
-`setAssignmentWork`, `gridTransaction.ts` en de MCP-tweeling in `createMcpTransactions.ts`.
+erna) is bedraad in `taskSlice.updateTask`/`setTaskWorkRule`,
+de gedeelde muteerlichamen `src/state/assignmentMutations.ts` (toewijzingen en resources; gebruikt door
+`resourceSlice` én de MCP-draft) en `src/state/splitMutations.ts` (splits), `gridTransaction.ts` en de
+MCP-tweeling in `createMcpTransactions.ts`.
 
 Een duur die uit de driehoek komt (inzet/werk/resource erbij-eraf onder FIXED_WORK/FIXED_RATE) zet
 `scheduleStale` en loopt door `settleDurationAftermath` (contour + importsplits herschalen, Z8-venster en
@@ -84,6 +87,7 @@ UI: zichtbaar wanneer de instelling **Toon werkregels en werk** (Planning → Be
 een projectstandaard of een eigen regel (`taskTypesNeedNotice`, E4 — een uit het importveld afgeleide regel
 ontsluit stil), één keer per document (`taskTypesNotice.ts`); selector `taskTypesUnlocked`
 (`src/state/taskTypesVisibility.ts`). Dan: `TaskWorkRuleField` in paneel en dialoog, de kolom **Werk
-(rest)** met slotjes in `TaskAssignmentsSection`, en de rasterkolommen `task.workRule` en
+(u)** met slotjes in de kop van `TaskAssignmentsSection` (één regel per resource; CSS `.assignment-list`
+in globals.css, kop en regels als subgrid), en de rasterkolommen `task.workRule` en
 `assignment.remainingWork` (alleen `available` wanneer ontsloten; `TaskColumnContext.taskTypesUnlocked`).
 Gidsen: `public/docs/{nl,en}/uitleg-werkregels.md` en `howto-werkregel-kiezen.md`; browserspec `tests/browser/work-rule.spec.ts`.

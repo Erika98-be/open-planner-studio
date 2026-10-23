@@ -14,18 +14,20 @@ import {
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
 import { hasConcreteWorkBlocks } from '@/services/subdayIo';
-import { hourTaskScheduleDuration } from '@/utils/taskDuration';
+import { durationSuffixesFrom, hourTaskScheduleDuration } from '@/utils/taskDuration';
+import type { DurationSuffixes } from '@/utils/durationFormat';
 import { isZeroDurationMilestone } from '@/engine/scheduler/duration';
 import type { WorkCalendar } from '@/types/calendar';
 import type { Task, TaskDurationUnit } from '@/types/task';
 
-/** De duur zoals het duurveld hem noemt, bijv. `12h` of `12h 30m`; voor de niet-exactmelding. */
-function durationText(task: Task): string {
-  if (task.time.durationUnit === 'days') return `${task.time.scheduleDuration}d`;
+/** De duur zoals het duurveld hem noemt, bijv. `12u` of `12u 30m` (nl), `12h` (en); voor de
+ *  niet-exactmelding. De afkortingen komen uit de taal (eigenaarsbesluit 2026-10-20). */
+function durationText(task: Task, suffixes: DurationSuffixes): string {
+  if (task.time.durationUnit === 'days') return `${task.time.scheduleDuration}${suffixes.day}`;
   const minutes = task.time.durationMinutes ?? 0;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  return rest === 0 ? `${hours}${suffixes.hour}` : `${hours}${suffixes.hour} ${rest}${suffixes.minute}`;
 }
 
 export function TaskDurationField({ task, calendar, onChange }: {
@@ -34,6 +36,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
   onChange: (patch: Partial<Task>) => void;
 }) {
   const { t } = useTranslation('task');
+  const { t: tCommon } = useTranslation('common');
   const enableHourPlanning = useAppStore((s) => s.ui.enableHourPlanning);
   const allowMixedDayHour = useAppStore((s) => s.ui.allowMixedDayHour);
   const seed = formatTaskDurationInput(task);
@@ -48,6 +51,10 @@ export function TaskDurationField({ task, calendar, onChange }: {
   const infoButtonRef = useRef<HTMLButtonElement>(null);
   const awaitFreshInfoHover = useRef(false);
   const infoId = useId();
+  // Telt elke doorgegeven wijziging. Na `onChange` toont het veld altijd weer de echte duur van de
+  // taak: ook als de store de wijziging weigert (bv. korter dan het gedane werk). Dan verandert
+  // `seed` niet, en zonder deze teller bleef het getypte getal staan tot een andere taak gekozen werd.
+  const [commitTick, setCommitTick] = useState(0);
   const derived = isZeroDurationMilestone(task) || task.childIds.length > 0 || !!task.isHammock;
   const hourEditBlocked = task.time.durationUnit === 'hours' && !enableHourPlanning;
   const showUnitControls = enableHourPlanning && allowMixedDayHour;
@@ -67,7 +74,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
     // Een melding hoort bij precies deze taak en kalender; na een selectie- of kalenderwissel weg.
     setMessage(null);
     setNotExact(null);
-  }, [task.id, seed, calendar]);
+  }, [task.id, seed, calendar, commitTick]);
 
   const apply = (parsed: ParsedTaskDuration) => {
     const time = { ...task.time, durationUnit: parsed.unit };
@@ -82,6 +89,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
     onChange({ time });
     setMessage(null);
     setNotExact(null);
+    setCommitTick((n) => n + 1);
   };
 
   const commitInput = () => {
@@ -117,7 +125,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
     const next = convertTaskDurationUnit(task, target, calendar);
     if (!next) {
       setMessage(null);
-      setNotExact(durationText(task));
+      setNotExact(durationText(task, durationSuffixesFrom(tCommon)));
       return;
     }
     apply(next);
@@ -174,6 +182,10 @@ export function TaskDurationField({ task, calendar, onChange }: {
         <input
           type="text"
           value={value}
+          onFocus={event => {
+            // Ctrl+S/F5 herstelt de bestaande invoerfocus, niet een nieuwe veldbewerking.
+            if (event.currentTarget.dataset.opsRefocus !== 'true') event.currentTarget.select();
+          }}
           onChange={(event) => setValue(event.target.value)}
           onBlur={commitInput}
           onKeyDown={(event) => {

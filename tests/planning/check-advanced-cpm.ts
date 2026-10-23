@@ -652,7 +652,7 @@ let sweepOk = true;
 for (const s of scen) {
   const r = s.run();
   for (const [id, t] of r.tasks) {
-    if (Math.abs((t.interferingFloat ?? NaN) - (t.totalFloat - t.freeFloat)) > 1e-9) { sweepOk = false; diffs.push(`sweep ${s.label}: ${id} intf≠tf−ff`); }
+    if (!(Math.abs((t.interferingFloat ?? NaN) - (t.totalFloat - t.freeFloat)) <= 1e-9)) { sweepOk = false; diffs.push(`sweep ${s.label}: ${id} intf≠tf−ff`); }
   }
   if (r.criticalPaths.length < 1 || JSON.stringify(r.criticalPaths[0]) !== JSON.stringify(r.criticalPath)) { sweepOk = false; diffs.push(`sweep ${s.label}: criticalPaths[0]≠criticalPath`); }
   for (const h of s.hammocks ?? []) {

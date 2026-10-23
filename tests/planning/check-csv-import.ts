@@ -12,12 +12,13 @@
 //  4. (bijvangst review) decimale komma: "2,5" dagen / "33,4" % werden stil 2 / 33.
 //
 // Draait via run.sh (esbuild-bundel). Exit 0 = alles groen — alleen de exitcode telt.
-import { readCSV } from '@/services/csv/csvReader';
+import { CsvDateImportError, readCSV } from '@/services/csv/csvReader';
 import { writeCSV } from '@/services/csv/csvWriter';
 import { parseSheetPercent } from '@/services/progressImport/sheetValues';
 import { formatLagShort, parseLagInput } from '@/utils/lagFormat';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { useAppStore } from '@/state/appStore';
+import { importFailureNotice } from '@/state/slices/fileSlice';
 import type { Task } from '@/types/task';
 import type { Sequence } from '@/types/sequence';
 import type { Project } from '@/types/project';
@@ -258,6 +259,71 @@ const lagsByLink = (r: ImportResult) => {
   const sp = readCSV('WBS,Name,Duration\n1, "Fundering, noord",5\n2, "Regel 1\nRegel 2",3\n');
   eq('5f spatie vóór een quote-veld: komma blijft in de naam', sp.tasks.map(t => t.name.trim()), ['Fundering, noord', 'Regel 1\nRegel 2']);
   eq('5g spatie vóór een quote-veld: duur daarna klopt', sp.tasks.map(t => t.time.scheduleDuration), [5, 3]);
+}
+
+// 6. (hernoeming 2026-10-17) De UI noemt de IFC-indeling nu *Werksoort* / *Work category*; een
+//    handgeschreven CSV met die kop moet dezelfde kolom vullen als `Task Type`.
+{
+  for (const head of ['Task Type', 'Werksoort', 'Work category', 'taaktype']) {
+    const r = readCSV(csvOf(['WBS', 'Name', head], [['1', 'A', 'INSTALLATION']]));
+    eq(`6 kop "${head}" ⇒ werksoort INSTALLATION`, r.tasks[0]?.taskType, 'INSTALLATION');
+  }
+}
+
+// 7. Knownbug 128: een gevulde maar onherkende datum weigert de HELE CSV, vóór taakconstructie.
+//    Vier datumkolommen, beide scheidingstekens en de bestaande NL/EN-kolomdetectie.
+{
+  for (const H of [
+    ['WBS', 'Name', 'Duration', 'Start', 'Finish', 'Actual Start', 'Actual Finish', 'Completion (%)'],
+    ['WBS', 'Naam', 'Duur', 'Startdatum', 'Einddatum', 'Werkelijke start', 'Werkelijk einde', 'Voltooiing'],
+  ]) for (const delimiter of [';', ',']) for (const index of [3, 4, 5, 6]) {
+    const column = H[index];
+    const valid = ['1', 'Geldig', '5', '2015-01-05', '2015-01-09', '', '', '0'];
+    for (const value of ['Mon 3/2/26', '2 maart 2026', 'NA', '2026/03/02']) {
+      const invalid = ['2', 'Onleesbaar', '5', '2015-01-05', '2015-01-09', '', '', '100'];
+      invalid[index] = value;
+      let result: ImportResult | undefined;
+      let error: unknown;
+      try { result = readCSV(csvOf(H, [valid, invalid], delimiter)); } catch (err) { error = err; }
+      const tag = `7 ${delimiter} ${column} ${value}`;
+      ok(`${tag}: specifieke weigering`, error instanceof CsvDateImportError);
+      eq(`${tag}: geen gedeeltelijk importresultaat na een geldige rij`, result, undefined);
+      eq(`${tag}: rij, oorspronkelijke kolomkop en celwaarde`,
+        error instanceof CsvDateImportError ? [error.row, error.column, error.value] : undefined,
+        [3, column, value]);
+      eq(`${tag}: één vertaalbare foutmelding met hersteladvies`, importFailureNotice(error, 'technisch'), {
+        severity: 'error', messageKey: 'notifications.csvInvalidDate', params: { row: 3, column, value },
+      });
+    }
+  }
+
+  // Een CSV-record is niet hetzelfde als een fysieke regel: quotes en lege records blijven intact.
+  let multilineError: unknown;
+  try {
+    readCSV('Naam;Beschrijving;Startdatum\r\nA;"regel 1\r\nregel 2";2015-01-05\r\n\r\nB;tekst;"2 maart\r\n2026"\r\n');
+  } catch (err) { multilineError = err; }
+  eq('7 meerregelige/lege records: context blijft bij het derde record en de complete cel',
+    multilineError instanceof CsvDateImportError
+      ? [multilineError.row, multilineError.column, multilineError.value] : undefined,
+    [3, 'Startdatum', '2 maart\r\n2026']);
+}
+
+// 8. Geen strengere datumparser: alle bestaande vormen en prefix-/wandklokregels blijven gelijk,
+//    óók voor actuals. Kalenderdatumvalidatie blijft bij het bestaande vastleggingskanaal.
+{
+  const H = ['WBS', 'Name', 'Duration', 'Start', 'Finish', 'Actual Start', 'Actual Finish'];
+  for (const raw of [
+    '2026-03-02', '02-03-2026', '02/03/2026', '2-3-2026',
+    '2026-03-02T00:30:00+14:00', '2026-03-02T23:30:00-12:00',
+    '2026-03-02T00:30:00Z', '02/03/2026 23:30',
+  ]) {
+    const { out, warns } = withWarnings(() => readCSV(csvOf(H, [['1', 'A', '0', raw, raw, raw, raw]])));
+    const t = out.tasks[0].time;
+    eq(`8 ${raw}: vier datumvelden behouden de brondag zonder offsetverschuiving`,
+      [t.scheduleStart, t.scheduleFinish, t.actualStart, t.actualFinish],
+      ['2026-03-02', '2026-03-02', '2026-03-02', '2026-03-02']);
+    eq(`8 ${raw}: geen onleesbaar-melding`, warns, []);
+  }
 }
 
 if (diffs.length === 0) {

@@ -232,6 +232,7 @@ export function ReportPanel() {
   const projectName = nameWithProjectCode(project.name, projectCode) || tCommon('project.untitled');
   const fileBase = documentFileBase(project.name, projectCode);
   const dateNotation = useAppStore(s => s.ui.dateNotation);
+  const timeNotation = useAppStore(s => s.ui.timeNotation);
   const weekStartDay = useAppStore(s => s.ui.weekStartDay);
   // Duur-kolom van de Gantt-afdruk: dezelfde tekst als taakraster en tooltip — Duurweergave, de
   // eigen taakeenheid en de uren per dag van de effectieve taakkalender.
@@ -704,6 +705,8 @@ export function ReportPanel() {
     projectEndDate: project.endDate,
     projectAuthor: project.author,
     dateNotation,
+    // Tijd in het statusdatumlabel, net als op het scherm (besluit eigenaar 2026-10-17).
+    timeNotation,
     // Dezelfde weekdefinitie als de Gantt op het scherm. Zonder dit veld drukt het rapport
     // ISO-weeknummers op maandag af, ook als de gebruiker "week begint op zondag" heeft staan.
     weekStartDay,
@@ -748,7 +751,7 @@ export function ReportPanel() {
     },
   }), [showCritical, showFloat, showDeps, showWeekends, showLegend, showTaskNames, showCompletion, showBaselineOverlay,
     autoFit, customZoom, paperSize, orientation, companyName, effectiveNameColumnWidth, t, locale, project.startDate,
-    project.endDate, project.author, dateNotation, weekStartDay, reportCompressNonWorkdays, timelineColumns, reportFontScale,
+    project.endDate, project.author, dateNotation, timeNotation, weekStartDay, reportCompressNonWorkdays, timelineColumns, reportFontScale,
     cpmResult, barColorSelection, fieldCtx.activityCodeTypes, fieldCtx.customFieldDefs,
     reportTaskTypeLabels, tTask, daySuffix, statusLine, statusDate, resources,
     assignments, baselineOverlay, reportRows, reportType, resourceGanttOptions.pageBreakPerResource, tasks.length,
@@ -1138,7 +1141,7 @@ export function ReportPanel() {
         console.warn('[ReportPanel] Vector-PDF-export mislukt, terugval op raster:', describeVectorFallback(err));
         pdfBytes = exportRaster();
       }
-      await writePdf(pdfBytes, `${fileBase}-${reportType === 'resourceGantt' ? 'resourcediagram' : 'planning'}.pdf`);
+      await writePdf(pdfBytes, `${fileBase}-${reportType === 'resourceGantt' ? t('fileSuffix.resourceGantt') : t('fileSuffix.gantt')}.pdf`);
       return;
     }
 
@@ -1147,7 +1150,7 @@ export function ReportPanel() {
     // gepagineerd door dezelfde paginateVectorToPdfBytes als de Gantt-tak hierboven. Bij een fout
     // valt de export terug op het BESTAANDE DOM-screenshot-pad (modern-screenshot), zodat de export
     // nooit stukloopt.
-    const suffix = tableSpec ? tableSpec.fileSuffix : reportType === 'milestones' ? 'mijlpalen' : 'afwijkingen';
+    const suffix = tableSpec ? tableSpec.fileSuffix : reportType === 'milestones' ? t('fileSuffix.milestones') : t('fileSuffix.variance');
 
     const exportTableRaster = async (): Promise<Uint8Array> => {
       const node = tableSpec ? tableReportRef.current : reportType === 'milestones' ? milestoneRef.current : varianceRef.current;
@@ -1670,10 +1673,15 @@ export function ReportPanel() {
           />
         )}
 
-        {/* Action buttons — alle rapporttypes exporteren naar PDF. */}
-        <div className="flex flex-col gap-2">
+        {/* Alleen de exportknoppen horen bij dit formulier: Enter in rapportinvoer exporteert niet.
+            Rapport › Afdruk dient hetzelfde formulier in, met de actuele paneelstate. */}
+        <form
+          id="report-pdf-export"
+          className="flex flex-col gap-2"
+          onSubmit={e => { e.preventDefault(); handleExportPDF(); }}
+        >
           <button
-            onClick={handleExportPDF}
+            type="submit"
             className="px-4 py-2 bg-accent text-accent-on rounded-lg hover:bg-accent-hover text-small leading-4 font-medium"
             style={{ boxShadow: 'var(--shadow-glow)' }}
           >
@@ -1684,7 +1692,7 @@ export function ReportPanel() {
               {scheduleErrorText(exportError, tCommon)}
             </div>
           )}
-        </div>
+        </form>
       </div>
 
       {/* Right: Live preview */}

@@ -132,7 +132,7 @@
   "barColorMode_auto": "Tehtäväkohtainen — automaattinen",
   "barColorMode_category": "Luokittain",
   "barColorFieldLabel": "Luokkakenttä",
-  "barColorMissingField": "Tätä kenttää ei ole tässä projektissa. Tehtävätyyppiä käytetään väliaikaisesti.",
+  "barColorMissingField": "Tätä kenttää ei ole tässä projektissa. Työlajia käytetään väliaikaisesti.",
   "statusLineLabel": "Tilaviiva:",
   "statusLine_none": "Ei mitään",
   "statusLine_statusDate": "Raportointipäivän viiva",

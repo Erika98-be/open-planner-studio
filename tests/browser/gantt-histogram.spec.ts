@@ -95,6 +95,28 @@ test('histogram picker wisselt echte resourceserie en hover op de plot toont bij
   // Verlaat de strook: de tooltip verdwijnt weer (echte hover, geen klikresultaat dat blijft hangen).
   await page.mouse.move(bounds!.x - 20, bounds!.y - 20);
   await expect(tooltip).toHaveCount(0);
+
+  // Knownbug 51: een urentaak begint later op dezelfde kalenderdag. De tooltip vergelijkt
+  // dagkolommen, niet de volledige ISO-tijd; zowel alle resources als één resource telt haar mee.
+  await page.evaluate(id => {
+    const s = window.__OPS__!.store.getState();
+    const task = s.tasks.find(t => t.id === id)!;
+    s.updateTask(id, { time: { ...task.time, durationUnit: 'hours', durationMinutes: 480,
+      scheduleDuration: 1, scheduleStart: '2026-09-07T07:00', scheduleFinish: '2026-09-07T16:00' } });
+  }, taskIds[0]);
+  await page.keyboard.press('F5');
+  await expect.poll(() => page.evaluate(id => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!.time.earlyStart, taskIds[0]))
+    .toMatch(/^2026-09-07T/);
+  for (const [picker, count] of [[0, 2], [2, 1]]) {
+    await clickPickerRow(page, picker);
+    const hourStart = await barPoint(page, taskIds[0], 'left');
+    await page.mouse.move(hourStart.x + 5, bounds!.y + Math.min(70, bounds!.height / 2));
+    await expect(tooltip.getByText(new RegExp(`^${count} (taken dragen bij op|tasks contribute on|taak draagt bij op|task contributes on)`))).toBeVisible();
+    await expect(tooltip.getByText('Overbelaste bijdrage A', { exact: true })).toBeVisible();
+    if (picker === 2) await expect(tooltip.getByText('Overbelaste bijdrage B', { exact: true })).toHaveCount(0);
+    await page.mouse.move(bounds!.x - 20, bounds!.y - 20);
+    await expect(tooltip).toHaveCount(0);
+  }
 });
 
 test('taakselectie beperkt resourcedock en histogram en wissen herstelt beide', async ({ page, ops: _ops }) => {

@@ -13,7 +13,8 @@
 //  2. OVERSCHRIJVEN. `export_ifc` weigert een bestaand bestand zonder expliciete `overwrite: true`.
 //     Die controle is NIET atomair (check-dan-schrijf): tussen `exists` en
 //     `writeTextFile` kan een ander proces het bestand aanmaken. Acceptabel voor deze
-//     single-user-desktopcontext; er is geen exclusief-aanmaken-primitief in plugin-fs.
+//     single-user-desktopcontext; de exclusieve aanmaak in atomicWrite beschermt alleen het
+//     eigen halffabricaat. De uiteindelijke doelnaam is daarmee niet vergrendeld.
 //  3. GEEN USER-DIALOOG. Bewust geaccepteerd: het pad komt uit de AI-args in plaats
 //     van uit een bestandskiezer — de instemming verschuift naar de opt-in van de bridge zelf. Het
 //     resultaat is altijd zichtbaar (import = een tabblad, export = een gemeld pad).
@@ -42,11 +43,13 @@ import { bindExpectedDoc, buildEnvelope, guardNonTransactional, postAwaitGuards,
 import { guardBridgeFlags } from './documentTools';
 import type { McpContext, McpToolAnnotations, McpToolDef, McpToolResult } from '../contracts';
 import { writeUserTextFileTauri } from '@/services/fileAccess/atomicWrite';
+import { compareFilePaths, type FileIdentityFs } from '@/services/fileAccess/fileIdentity';
+import { saveTargetRef } from '@/services/fileAccess';
 
 // --- fs-naad -------------------------------------------------------------------------------------
 
 /** Minimale bestandssysteem-abstractie voor de twee bestands-tools. */
-export interface McpFileFs {
+export interface McpFileFs extends FileIdentityFs {
   /** Wortel van de toegestane scope (`$HOME`). */
   homeDir(): Promise<string>;
   exists(path: string): Promise<boolean>;
@@ -64,11 +67,12 @@ async function realFs(): Promise<McpFileFs> {
       'access. Use File → Open/Export there.',
     );
   }
-  const { exists, readTextFile, readFile, mkdir } = await import('@tauri-apps/plugin-fs');
+  const { exists, stat, readTextFile, readFile, mkdir } = await import('@tauri-apps/plugin-fs');
   const { homeDir } = await import('@tauri-apps/api/path');
   return {
     homeDir: () => homeDir(),
     exists: (p) => exists(p),
+    stat: (p) => stat(p),
     readTextFile: (p) => readTextFile(p),
     readFile: (p) => readFile(p),
     writeTextFile: async (p, content) => {
@@ -193,14 +197,23 @@ const IMPORT_ANNOTATIONS: McpToolAnnotations = {
  * Review #336 punt 4 (issue #292): de app verandert een bestandstype nooit stil. Is het actieve document
  * geopend uit een IFC-bestand in een schema dat de app niet schrijft (IFC2X3 e.d., een open schemavraag
  * zonder "houden"), dan zou een export over DAT bestand het stil IFC 4.3 ADD2 maken. Dat weigert de tool,
- * ook met `overwrite: true`; de gebruiker slaat het in de app op en kiest daar. Een ander pad mag.
+ * ook met `overwrite: true`; de gebruiker slaat het in de app op en kiest daar. Een aantoonbaar
+ * ander bestand mag; een andere schrijfwijze of link is geen bewijs van verschil.
  */
-function refuseSilentSchemaChange(ctx: McpContext, home: string, path: string): McpToolResult | null {
+async function refuseSilentSchemaChange(ctx: McpContext, fs: McpFileFs, path: string): Promise<McpToolResult | null> {
   const state = ctx.app.store.getState();
-  if (!ifcSchemaBlocksSilentWrite(state.project) || !state.filePath) return null;
-  const own = checkScope(home, state.filePath);
-  const key = (p: string) => (/^[A-Za-z]:/.test(p) ? p.toLowerCase() : p);
-  if (!own.ok || key(own.path) !== key(path)) return null;
+  // De echte fs is hierboven al Tauri-only. De expliciete true houdt de injecteerbare naad
+  // headless testbaar; site-/handle-doelen zijn ook dan geen lokale paden.
+  const own = saveTargetRef(state, true);
+  if (!ifcSchemaBlocksSilentWrite(state.project) || own?.kind !== 'path') return null;
+  const identity = await compareFilePaths(fs, path, own.path);
+  if (identity === 'different') return null;
+  if (identity === 'unknown') {
+    return toolError(ctx, 'VALIDATION',
+      `Could not establish that '${path}' is a different file from the document's own file. ` +
+      'File identity metadata is unavailable or could not be read. Export to a new file name, or ask ' +
+      'the user to save the document in the app and choose its IFC schema.');
+  }
   const fileSchema = ifcSchemaQuestionFor(state.project)?.fileSchema ?? '?';
   return toolError(
     ctx,
@@ -225,9 +238,11 @@ export const fileTools: McpToolDef[] = [
       'save target: it stays "not saved" in the app — it is an export, not a "save as". Note: the path comes ' +
       'from your arguments, not from a file dialog of the user; so always mention the chosen path in your ' +
       'answer. If the document was opened from an IFC file in a schema the app cannot write (such as ' +
-      'IFC2X3), writing over that same file is refused (it would silently change its file type); the user ' +
-      'saves it in the app and chooses the schema. To another path it is written as IFC 4.3 ADD2 and the ' +
-      'response says so in `schemaNotice`.',
+      'IFC2X3), writing over that same file is refused, including case aliases and links (it would ' +
+      'silently change its file type). If file identity metadata cannot prove that an existing target ' +
+      'is different (including when the platform provides no file IDs), export is refused: choose a ' +
+      'new file name, or ask the user to save in the app and choose the schema. A confirmed different ' +
+      'or new target is written as IFC 4.3 ADD2 and the response says so in `schemaNotice`.',
     kind: 'other',
     batchable: false, // export_ifc/import_schedule zijn uitgesloten van batch
     inputSchema: {
@@ -270,8 +285,6 @@ export const fileTools: McpToolDef[] = [
         const scope = checkScope(home, raw.path);
         if (!scope.ok) return toolError(ctx, 'SCOPE', scope.reason);
         path = scope.path;
-        const refused = refuseSilentSchemaChange(ctx, home, path);
-        if (refused) return refused;
         existed = await fs.exists(path);
         if (existed && !overwrite) {
           return toolError(
@@ -288,10 +301,21 @@ export const fileTools: McpToolDef[] = [
       // Na de fs-awaits opnieuw: de gebruiker kan intussen gepauzeerd, alleen-lezen gezet, een
       // dialoog geopend of van tabblad gewisseld hebben — dan zou hier een ander document of een
       // half-bewerkte staat weggeschreven worden.
-      const lateBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx)
-        ?? refuseSilentSchemaChange(ctx, home, path);
+      const lateBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx);
       if (lateBlocked) return lateBlocked;
+      const checked = ctx.app.store.getState();
+      const refused = await refuseSilentSchemaChange(ctx, fs, path);
+      // Identiteit opvragen is ook async: pauze, dialoog en documentdrift winnen nog steeds.
+      const identityBlocked = postAwaitGuards(ctx) ?? guardNonTransactional(ctx);
+      if (identityBlocked) return identityBlocked;
       const state = ctx.app.store.getState();
+      if (state.filePath !== checked.filePath || state.fileHandle !== checked.fileHandle
+        || state.siteFileId !== checked.siteFileId
+        || projectIfcSchema(state.project) !== projectIfcSchema(checked.project)
+        || state.project.ifcSchemaUnconfirmed !== checked.project.ifcSchemaUnconfirmed) {
+        return toolError(ctx, 'VALIDATION', 'The document save target or IFC schema changed during the file identity check. Retry the export.');
+      }
+      if (refused) return refused;
       // Gedeelde state→writer-invoer (dezelfde bron als opslaan/auto-save), zodat deze route nooit
       // stil velden kan laten vallen. Een export: zonder een open schemavraag die niet bij de kop past.
       const input = buildExportIFCInput(state);

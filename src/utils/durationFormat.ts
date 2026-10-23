@@ -33,6 +33,16 @@ export interface DurationSuffixes {
 export const DEFAULT_DURATION_SUFFIXES: DurationSuffixes = { day: 'd', hour: 'h', minute: 'm' };
 
 /**
+ * De uur-afkorting voor tekst die de app later weer INLEEST (lag, klembord): de vertaalde afkorting als
+ * de parsers hem kennen (`u` in nl, `h` in en), anders `fallback` — de vorm die die plek al schreef.
+ * Eigenaarsbesluit 2026-10-20: uren staan als "10u" (nl) en "10h" (en), zonder spatie. Een afkorting
+ * als "ч" of "t" zou plakken en bewerken breken, dus die talen houden hier de oude vorm.
+ */
+export function parseableHourSuffix(suffix: string | undefined, fallback: 'u' | 'h' = 'u'): 'u' | 'h' {
+  return suffix === 'u' || suffix === 'h' ? suffix : fallback;
+}
+
+/**
  * Parse een duur-invoer naar integer MINUTEN, of `null` bij een parse-fout.
  *
  * Geldig:  "3d", "20u", "20h", "2d 4u", "2d4h", "90m", en een naakt geheel getal ("5" = 5

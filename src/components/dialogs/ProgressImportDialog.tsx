@@ -124,9 +124,10 @@ export function ProgressImportDialog() {
   // elke render opnieuw te lopen (typen in een koppelkiezer is child-state van
   // `ProgressImportLinkPicker` en kost zo geen herberekening).
   //
-  // `tasks` staat WEL in de deps: de documentwisselblokkade geldt niet voor `edit.undo`/`edit.redo`
-  // (geen `when`-guard), die `s.tasks` muteren terwijl deze dialoog open staat. Zonder `tasks` blijft
-  // het plan na Ctrl+Z/Ctrl+Y op de oude taken staan. `tasks` wordt niet TEKSTUEEL gebruikt in de
+  // `tasks` staat WEL in de deps: `edit.undo`/`edit.redo` zijn onder deze dialoog dicht
+  // (`isEditShortcutBlocked` in shortcutRegistry.ts), maar elke andere route die `s.tasks` muteert
+  // terwijl de dialoog openstaat (bv. een MCP-tool of een toekomstige sneltoets zonder poort) moet het
+  // plan meenemen. Zonder `tasks` blijft het plan dan op de oude taken staan. `tasks` wordt niet TEKSTUEEL gebruikt in de
   // closure hieronder (dat gebeurt binnen `previewProgressImport` zelf, via de store); de linter
   // kan die indirecte afhankelijkheid niet zien, vandaar de gerichte suppressie hieronder.
   const plan = useMemo(
@@ -370,18 +371,25 @@ export function ProgressImportDialog() {
                 <p className="font-medium">{t('progressImport.sectionNeedsLink')}</p>
                 {cappedNeedsLink.shown.map(row => {
                   const sheetRow = findSheetRow(rows, row.rowNumber);
+                  const sheetLabel = [sheetRow?.wbsCode, sheetRow?.name].filter(Boolean).join(' ');
+                  const sheetTaskId = sheetRow?.taskId
+                    ? t('progressImport.sheetTaskId', { id: sheetRow.taskId })
+                    : null;
                   return (
                     <div
                       key={row.rowNumber}
                       data-ops-progress-row={row.rowNumber}
                       className="flex flex-col gap-1.5 border border-border rounded-[10px] p-2.5"
                     >
-                      {/* De rijkop is WBS + naam in de primaire
-                          tekstkleur; het BLADrijnummer verschijnt alleen hier — bij een rij die nog
-                          geen taak heeft is dat het enige aanknopingspunt met het bestand. */}
-                      <span className="font-medium text-text-primary">
-                        {sheetRow?.wbsCode ?? ''} {sheetRow?.name ?? ''}
+                      {/* Zonder WBS/naam is het bron-ID de rijkop; ook zonder ID blijft het
+                          bladrijnummer een aanknopingspunt. De reden staat al vóór het koppelen. */}
+                      <span className="font-medium text-text-primary break-words">
+                        {sheetLabel || sheetTaskId || t('progressImport.sheetRowHint', { row: row.rowNumber })}
                       </span>
+                      {renderRowOutcome(row)}
+                      {sheetLabel && sheetTaskId && (
+                        <span className="text-text-secondary break-all">{sheetTaskId}</span>
+                      )}
                       <span className="text-text-secondary">
                         {t('progressImport.sheetRowHint', { row: row.rowNumber })}
                       </span>

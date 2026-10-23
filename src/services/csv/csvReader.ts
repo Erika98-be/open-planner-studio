@@ -12,6 +12,15 @@ import type { ImportResult } from '@/services/importTypes';
 import type { CustomTaskType } from '@/types/taskType';
 import { buildRecordedTime, type RecordedTime } from '@/engine/scheduler/recordedDates';
 
+/** Een gevulde datumcel die de bestaande CSV-datumparser niet herkent: de hele import weigeren.
+ *  `row` telt CSV-records inclusief de kop; lege records tellen niet mee. */
+export class CsvDateImportError extends Error {
+  constructor(readonly row: number, readonly column: string, readonly value: string) {
+    super(`CSV record ${row}, column ${JSON.stringify(column)}: unrecognised date ${JSON.stringify(value)}. Use YYYY-MM-DD, DD-MM-YYYY or DD/MM/YYYY.`);
+    this.name = 'CsvDateImportError';
+  }
+}
+
 interface ParsedRow {
   wbs: string;
   /** 'Outline Level'-kolom (1 = hoofdniveau); undefined als de kolom ontbreekt. */
@@ -20,7 +29,7 @@ interface ParsedRow {
   duration: number;
   start: string;
   finish: string;
-  /** Lege/onleesbare Start- of Finish-cel: `start`/`finish` dragen dan de vandaag-plaatshouder, die
+  /** Lege/ontbrekende Start- of Finish-cel: `start`/`finish` dragen dan de vandaag-plaatshouder, die
    *  `resolveMissingScheduleDates` vervangt (projectstart / start + duur). */
   startMissing: boolean;
   finishMissing: boolean;
@@ -131,7 +140,10 @@ function parseTaskType(s: string): TaskType {
 }
 
 /** CSV-datum: ISO of `DD-MM-YYYY`/`DD/MM/YYYY`; gedeeld met de import-datumhelper. */
-function parseDate(s: string): string {
+function parseDate(s: string, row: number, column: string): string {
+  // Alleen onherkende, gevulde cellen weigeren; geen strengere kalender-/tijdvalidatie invoeren.
+  // De bestaande terugval voor lege datums en de drie herkende vormen blijven gelijk.
+  if (s.trim() && csvDate(s) === undefined) throw new CsvDateImportError(row, column, s);
   return csvDateOrToday(s);
 }
 
@@ -234,7 +246,9 @@ function mapColumnIndex(headers: string[]): Record<string, number> {
     start: ['start', 'start date', 'begin', 'startdatum'],
     finish: ['finish', 'finish date', 'end', 'end date', 'eind', 'einddatum'],
     predecessors: ['predecessors', 'predecessor', 'voorgangers', 'depends on', 'links'],
-    taskType: ['task type', 'type', 'tasktype', 'taaktype'],
+    // `Task Type` is de exportkop (blijft); in de UI heet dit begrip nu *Werksoort* / *Work category*
+    // (eigenaarsbesluit 2026-10-17), dus die koppen herkent de lezer ook.
+    taskType: ['task type', 'type', 'tasktype', 'taaktype', 'werksoort', 'work category'],
     customTaskTypeId: ['ops custom task type id'],
     completion: ['completion', 'completion (%)', '% complete', 'percent', 'voltooiing'],
     actualStart: ['actual start', 'actualstart', 'werkelijke start'],
@@ -324,16 +338,16 @@ export function readCSV(content: string): ImportResult {
       // Duur 0 is een mijlpaal, geen reden voor de default: alleen een ONLEESBARE waarde valt terug
       // op de default. Een fractionele dag blijft bewust fractioneel (niet afronden).
       duration: numberOr(get('duration', '5'), 5),
-      start: parseDate(get('start')),
-      finish: parseDate(get('finish')),
+      start: parseDate(get('start'), i + 1, headers[colMap.start]),
+      finish: parseDate(get('finish'), i + 1, headers[colMap.finish]),
       startMissing: csvDate(get('start')) === undefined,
       finishMissing: csvDate(get('finish')) === undefined,
       predecessors: get('predecessors'),
       taskType: get('taskType', 'CONSTRUCTION'),
       customTaskTypeId: get('customTaskTypeId').trim(),
       completion,
-      actualStart: actualStartRaw ? parseDate(actualStartRaw) : undefined,
-      actualFinish: actualFinishRaw ? parseDate(actualFinishRaw) : undefined,
+      actualStart: actualStartRaw ? parseDate(actualStartRaw, i + 1, headers[colMap.actualStart]) : undefined,
+      actualFinish: actualFinishRaw ? parseDate(actualFinishRaw, i + 1, headers[colMap.actualFinish]) : undefined,
       critical: get('critical', 'No').toLowerCase() === 'yes',
       totalFloat: numberOr(get('totalFloat', '0'), 0),
       description: get('description'),

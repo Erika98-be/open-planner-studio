@@ -4,7 +4,9 @@
 // rijen). Onder de takenlijst: een resourcekiezer-lijst; onder de tijdlijn: staafjes per dag met
 // het deel boven de capaciteitslijn in rood (P6-patroon). Thema-bewust via CSS-variabelen.
 // Welke x bij kiezer en plot hoort, staat op één plek: `histogramLayout` hieronder.
+import { localizeDecimalPoint } from '@/utils/reportNumber';
 import type { ViewState } from '@/types/view';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { parseDate, formatDate, addCalendarDays } from '@/utils/dateUtils';
 import { readHistogramPalette, type HistogramPalette } from './themePalette';
 import { dateToX as axisDateToX, type GanttAxis } from './timeAxis';
@@ -16,7 +18,7 @@ export interface HistogramSeries {
   load: Record<string, number>;
   /** iso-datum → capaciteit op die dag. */
   capacity: Record<string, number>;
-  /** iso-datums waar load > capacity. */
+  /** iso-datums waar `exceedsCapacity(load, capacity)` (marge tegen rekenruis). */
   overSet: Set<string>;
 }
 
@@ -45,7 +47,8 @@ export interface HistogramRenderOptions {
    *  aanroepende hook, niet van deze renderer — die klemt hier alleen af op `[0, maxScroll]` (zie
    *  `histogramPickerMaxScroll`). Afwezig ⇒ 0. */
   pickerScrollY?: number;
-  labels: { unitsSuffix: string };
+  /** `numberLocale`: app-taal voor het decimaalteken van de as-label ("1,5" in nl); afwezig ⇒ punt. */
+  labels: { unitsSuffix: string; numberLocale?: string };
   emptyHint?: string;            // getoond wanneer er geen (herberekende) data is
   /** Geïnjecteerd histogram-palet. Afwezig ⇒ zelf gelezen via
    *  `readHistogramPalette()`; meegeven maakt de renderer headless-testbaar. */
@@ -411,7 +414,7 @@ export class HistogramRenderer {
       const capY = unitToY(capVal);
 
       if (loadVal > 0) {
-        const overCap = loadVal > capVal + 1e-9;
+        const overCap = exceedsCapacity(loadVal, capVal);
         const topY = unitToY(loadVal);
         const bx = x + barInset;
         const bw = Math.max(1, dayW - barInset * 2);
@@ -447,6 +450,6 @@ export class HistogramRenderer {
   }
 
   private formatUnits(n: number): string {
-    return Number.isInteger(n) ? String(n) : n.toFixed(1);
+    return Number.isInteger(n) ? String(n) : localizeDecimalPoint(n.toFixed(1), this.opts.labels.numberLocale);
   }
 }

@@ -79,6 +79,13 @@ export function ruleProtectsWork(rule: WorkRule): boolean {
   return rule === 'FIXED_WORK' || rule === 'FIXED_DURATION_WORK';
 }
 
+/** Blijft het (rest)werk staan bij een DUURbewerking ({@link applyDurationEdit})? De werkbeschermende
+ *  regels, behalve FIXED_DURATION_WORK mét bewaard `effortDriven: true` (MS Project: werk = R' × I).
+ *  De ene beslissing voor de bewerking zelf én voor de uitleg bij het ⚠ (besluit V10, 2026-10-19). */
+export function durationEditKeepsWork(rule: WorkRule, effortDriven?: boolean): boolean {
+  return ruleProtectsWork(rule) && !(rule === 'FIXED_DURATION_WORK' && effortDriven === true);
+}
+
 /** Beschermt de regel de duur (P6 "Fixed Duration & …")? */
 export function ruleProtectsDuration(rule: WorkRule): boolean {
   return rule === 'FIXED_DURATION_RATE' || rule === 'FIXED_DURATION_WORK';
@@ -190,8 +197,7 @@ const drivingCount = (assignments: readonly TriangleAssignment[]): number =>
 export function applyDurationEdit(state: TriangleState, newRemainingMinutes: number): TriangleResult {
   if (!isPositive(newRemainingMinutes)) return { ok: false, reason: 'invalid-duration' };
   const R = roundUpRemaining(newRemainingMinutes, state);
-  const keepWork = ruleProtectsWork(state.rule)
-    && !(state.rule === 'FIXED_DURATION_WORK' && state.effortDriven === true);
+  const keepWork = durationEditKeepsWork(state.rule, state.effortDriven);
   const assignments = state.assignments.map((a) => {
     if (!a.drivesDuration) return a;
     if (keepWork) {

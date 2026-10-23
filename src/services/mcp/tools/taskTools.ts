@@ -32,6 +32,7 @@ import {
   parseTaskFields,
   PROGRESS_FIELD_NAMES,
   TASK_FIELDS_DOC,
+  SUMMARY_DURATION_READ_ONLY,
   TASK_FIELD_NAMES,
   TASK_FIELD_SCHEMA_PROPERTIES,
   type ProgressPatch,
@@ -175,6 +176,14 @@ function parseAddTasks(args: unknown, state: AppState): ParsedAddItem[] | string
       ...(typeof raw.position === 'number' ? { position: raw.position } : {}),
       patch: res.patch,
     });
+  }
+  // Een ouder kan vóór of na zijn kinderen staan. Pas na vormvalidatie is de hele
+  // nieuwe boom bekend; weiger een expliciete ouderduur vóór de transactie.
+  const parentIds = new Set(parsed.map(item => item.parentId));
+  for (const item of parsed) {
+    if (parentIds.has(item.tempId) && item.patch.time?.scheduleDuration !== undefined) {
+      return `task '${item.tempId}': ${SUMMARY_DURATION_READ_ONLY}`;
+    }
   }
   return parsed;
 }
@@ -466,7 +475,11 @@ const updateTasks: BatchStepTool = {
     'completed) keeps the work done the same, like MS Project: remaining duration = new duration − work done ' +
     'and the percentage adjusts (10 d at 40% → 12 d ⇒ 8 d left, 33%); the result reports those tasks in ' +
     '`progressAdjusted` (completion in percent, remaining in the task\'s own unit). A duration shorter than ' +
-    'the work done is softly refused per item. Lever tip: hypothetical overrun = duration or SNET constraint ' +
+    'the work done is softly refused per item. On every duration change (started or not) the remaining ' +
+    'duration follows and the assignments follow the task type (`workRule`), like P6: under a task type where work follows ' +
+    'the duration, remaining work = units × new remaining duration, also when the stored remaining work came ' +
+    'from the file and differed; such overwritten values are listed in the envelope field ' +
+    '`remainingWorkRecomputed` (hours before/after) — report them to the user. Lever tip: hypothetical overrun = duration or SNET constraint ' +
     '(via `fields`); recorded progress = actuals with a status date (via `progress`). Note: one task id can ' +
     'appear in both `updated` and the refusals at the same time (e.g. `fields` refused but `progress` ' +
     'applied) — deliberate granularity.',

@@ -1,4 +1,5 @@
-import type { UIState, AppSlice, NotifyInput } from './types';
+import type { UIState, AppSlice, AppNotification, NotifyInput } from './types';
+import type { FeedbackDraft } from '@/services/feedback/feedbackDraft';
 import type { McpServerStatus } from '@/services/mcp/contracts';
 import { MCP_DEFAULT_PORT, peekTheme } from '@/utils/settingsStore';
 import { detectSystemPrefersDark } from '@/utils/theme';
@@ -11,6 +12,8 @@ import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
 export interface UiSlice {
   ui: UIState;
   setUI: (updates: Partial<UIState>) => void;
+  /** Bewaar (of wis met null) het feedbackconcept; sessiestate, geen undo, geen document. */
+  setFeedbackDraft: (draft: FeedbackDraft | null) => void;
   /** MCP-bridge: schrijf de serverstatus (uit/live/poort-bezet/fout) — gevoed door
    *  `server.ts` uit de `mcp://status`-events + de start-fout. */
   setAiServerStatus: (status: McpServerStatus) => void;
@@ -116,6 +119,8 @@ export function createDefaultUI(): UIState {
     showNewOrOpenProjectDialog: false,
     pendingTaskNameFocusId: null,
     showFeedbackDialog: false,
+    feedbackEmail: '',
+    feedbackDraft: null,
     showStructureDialog: false,
     traceMode: 'off',
     showResourcePanel: false,
@@ -161,11 +166,13 @@ export function createDefaultUI(): UIState {
     hourDataNotice: null,
     showTaskTypes: false,
     structureLockedNotice: 0,
+    structureLockedClearedAt: 0,
     showShortcutsDialog: false,
     showBenchmarkDialog: false,
     showStatsDialog: false,
     pendingExtensionConsent: null,
     pendingActualStartQuestion: null,
+    pendingPhaseAssignmentQuestion: null,
     pendingSiteOpen: null,
     pendingSiteSave: null,
     pendingIfcSchemaQuestion: null,
@@ -207,6 +214,9 @@ export function createDefaultUI(): UIState {
 
 export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
   ui: createDefaultUI(),
+
+  setFeedbackDraft: (draft) =>
+    set((s) => { s.ui.feedbackDraft = draft; }),
 
   setUI: (updates) =>
     set((s) => {
@@ -309,7 +319,13 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           (updates as Partial<UIState>).showPropertiesPanel = true;
         }
       }
+      const helpWasOpen = s.ui.activeRibbonTab === 'file' && s.ui.backstageSection === 'help';
       Object.assign(s.ui, updates);
+      // Wegnavigeren annuleert het sectieverzoek, ook als Help nog lazy laadt. Een verzoek dat
+      // juist naar Help opent blijft staan tot de viewer het kan afhandelen.
+      if (helpWasOpen && (s.ui.activeRibbonTab !== 'file' || s.ui.backstageSection !== 'help')) {
+        s.ui.pendingHelpSection = null;
+      }
       const max = maxGanttZoom(s.ui.enableQuarterHourZoom, s.ui.enableHourPlanning);
       if (s.view.zoom > max) s.view.zoom = max;
     }),
@@ -343,10 +359,11 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
       if (n.dedupeKey) {
         const existing = s.ui.notifications.find((x) => x.dedupeKey === n.dedupeKey);
         if (existing) {
-          existing.count += 1;
+          if (n.replaceOnDedupe !== true) existing.count += 1;
           existing.severity = n.severity;
           existing.messageKey = n.messageKey;
           existing.params = n.params;
+          existing.numberParams = n.numberParams;
           existing.detail = n.detail;
           // Optionele velden (detailregels, gidslink) alleen aanraken wanneer de nieuwe melding ze
           // werkelijk meebrengt, zodat een dedupe-update ze niet wist.
@@ -355,6 +372,7 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           // Rekenprofielen: de serialiseerbare vervolgactie volgt dezelfde regel.
           if (n.action !== undefined) existing.action = { ...n.action };
           if (n.sticky !== undefined) existing.sticky = n.sticky;
+          if (n.refusal !== undefined) existing.refusal = n.refusal;
           existing.detailKey = n.detailKey;
           existing.detailParams = n.detailParams;
           return;
@@ -367,16 +385,26 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
         id: `n${++notificationSeq}`,
         count: 1,
       });
-      // 3. Begrens op MAX_NOTIFICATIONS. Bij overschrijding verwijderen we bij VOORKEUR de oudste
-      //    `info`, en pas als die er niet is de oudste melding overall — een fout mag nooit door een
-      //    info verdrongen worden (de cyclus-/opslaafout is juist degene die moet blijven staan).
+      // 3. Begrens op MAX_NOTIFICATIONS. Volgorde van verwijderen bij overschrijding (de nieuwe
+      //    melding staat achteraan):
+      //    a. de oudste gewone info, behalve de nieuwe (verdwijnt toch vanzelf);
+      //    b. de oudste weigering (`refusal`, eigenaarsbesluit 2026-10-17): rood en blijvend, maar
+      //       hij mag een echte fout of een blijvende info NOOIT wegduwen, en een nieuwe info ook
+      //       niet opslokken (drie staande weigeringen + een info ⇒ de info verschijnt);
+      //    c. de nieuwe melding zelf, als die een gewone info is (alleen nog fouten en blijvende
+      //       info's staan er);
+      //    d. de oudste blijvende info (`sticky`, openingsmelding met gewijzigde data);
+      //    e. pas dan de oudste melding overall (alleen nog echte fouten).
       if (s.ui.notifications.length > MAX_NOTIFICATIONS) {
-        // Een blijvende info (`sticky`, openingsmelding met gewijzigde data) gaat pas weg als er
-        // geen gewone info meer is.
-        let idx = s.ui.notifications.findIndex((x) => x.severity === 'info' && !x.sticky);
-        if (idx < 0) idx = s.ui.notifications.findIndex((x) => x.severity === 'info');
-        if (idx >= 0) s.ui.notifications.splice(idx, 1);
-        else s.ui.notifications.shift();
+        const list = s.ui.notifications;
+        const newest = list.length - 1;
+        const plainInfo = (x: AppNotification) => x.severity === 'info' && !x.sticky;
+        let idx = list.findIndex((x, i) => i !== newest && plainInfo(x));
+        if (idx < 0) idx = list.findIndex((x) => x.refusal);
+        if (idx < 0 && plainInfo(list[newest])) idx = newest;
+        if (idx < 0) idx = list.findIndex((x) => x.severity === 'info');
+        if (idx >= 0) list.splice(idx, 1);
+        else list.shift();
       }
     }),
 
@@ -391,6 +419,8 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
       s.ui.activeRibbonTab = 'file';
       s.ui.backstageSection = 'help';
       s.ui.pendingHelpArticleId = articleId;
+      // Een expliciet artikel vervangt de eerdere intentie om een inhoudssectie te tonen.
+      s.ui.pendingHelpSection = null;
     }),
 
   toggleCollapse: (taskId) => {

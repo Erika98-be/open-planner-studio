@@ -1,6 +1,7 @@
 import type { CPMResult } from '@/engine/scheduler/CPMSolver';
-import { applyRecordedTimesToTasks, type RecordedDatesState } from '@/engine/scheduler/recordedDates';
-import { solveProject } from '@/engine/scheduler/solveProject';
+import type { RecordedDatesState } from '@/engine/scheduler/recordedDates';
+import { cloneTasksForSolve, solveProject } from '@/engine/scheduler/solveProject';
+import type { TaskTime } from '@/types/task';
 import { solveInputFor, solveOptionsFor } from '@/engine/scheduler/solveInput';
 import { expandSummaryRelations } from '@/engine/scheduler/expandSummaryRelations';
 import { computeReliableResourceLoad, type ResourceLoadResult } from '@/engine/scheduler/ResourceLoad';
@@ -18,6 +19,14 @@ import { clearLevelingOutput, hasLevelingOutput, writeLevelingResult } from '@/u
 import type { AppSliceFactory } from './types';
 import { isLeafTask } from '@/utils/taskHierarchy';
 
+/** TaskTime bevat alleen scalars. Vergelijk nul en -nul als dezelfde waarde, net als de
+ *  Immer-setter: kalenderberekeningen kunnen -0 leveren zonder dat de planning verandert. */
+function sameTaskTime(a: TaskTime, b: TaskTime): boolean {
+  const keys = Object.keys(a) as (keyof TaskTime)[];
+  return keys.length === Object.keys(b).length && keys.every(key =>
+    Object.prototype.hasOwnProperty.call(b, key) && (a[key] === b[key] || Object.is(a[key], b[key])));
+}
+
 export interface ScheduleSlice {
   cpmResult: CPMResult | null;
   /** Belasting/capaciteit/overallocatie per resource, herberekend bij elke `runCPM`
@@ -26,21 +35,12 @@ export interface ScheduleSlice {
   /** "Verouderd"-vlag: gezet door datum-rakende mutaties (taak-/relatie-/projectkalender-
    *  wijzigingen), gewist door `runCPM`. Voedt een subtiele "herbereken (F5)"-hint. */
   scheduleStale: boolean;
-  /** "Datums zoals opgeslagen" — wat het geopende bestand vastlegde, plus de teller
-   *  voor de melding. Niet-null ⇒ herberekening verschoof datums en de strook biedt de modus aan.
-   *  Bestaat alleen tussen het laden en de eerste bewerking/berekening. */
+  /** "Datums zoals opgeslagen" — wat het geopende bestand vastlegde, plus de teller voor de strook.
+   *  Niet-null ⇔ `datesAsRecorded` (er is geen aanbod-stand, eigenaar 2026-10-17). Bestaat alleen
+   *  tussen het laden en de eerste bewerking/berekening. */
   recordedDates: RecordedDatesState | null;
   /** Staat de modus aan: toont de app de opgeslagen datums in plaats van de herberekende? */
   datesAsRecorded: boolean;
-  /** Zet de app in "datums zoals opgeslagen": herstel wat het bestand vastlegde en reconstrueer
-   *  `cpmResult` daaruit, zonder te solven. Pusht een undo-snapshot (contract-invariant: élke
-   *  mutator van `datesAsRecorded` doet dat), maar zet bewust géén `isDirty` — de state komt hiermee
-   *  dichter bij het bestand te liggen, niet verder. No-op zonder `recordedDates`. */
-  showRecordedDates: () => void;
-  /** Aanbod afslaan: de strook verdwijnt en de gebruiker werkt normaal verder met de herberekende
-   *  planning. Géén undo-snapshot — er verandert niets aan de projectdata, alleen een aanbod
-   *  verdwijnt. */
-  dismissRecordedDates: () => void;
   runCPM: () => void;
   /** Herbereken ALLEEN de resource-belasting op de bestaande CPM-datums: pure resource-
    *  mutaties (toewijzen, capaciteit, kalender) verversen zo het histogram direct, ZONDER runCPM en
@@ -92,6 +92,19 @@ export const createScheduleSlice: AppSliceFactory<ScheduleSlice> = (runtime) => 
   },
 
   runCPM: () => {
+    // De solver en belasting lezen veel meer dan ze schrijven. Reken op gewone objecten:
+    // lezen via de draft maakt voor alle taken, relaties en kalenders Immer-proxies aan.
+    // Alleen time en de afgeleide samenvattingsstatus worden gewijzigd; de bestaande kloon
+    // beschermt de bevroren invoer én undo-snapshots. Alles blijft synchroon tot de ene commit.
+    const before = get();
+    const tasks = cloneTasksForSolve(before.tasks);
+    const result = solveProject(solveInputFor(
+      before.project, tasks, before.sequences, before.calendar, before.calendars,
+    ));
+    const resourceLoad = computeReliableResourceLoad(
+      result, before.resources, before.assignments, tasks, before.calendar, before.calendars,
+    );
+
     set((s) => {
       const refreshPreviousEventAfter = s.scheduleStale && !s.datesAsRecorded;
       let openedHistory = false;
@@ -123,15 +136,6 @@ export const createScheduleSlice: AppSliceFactory<ScheduleSlice> = (runtime) => 
         s.recordedDates = null;
       }
       s.scheduleStale = false; // F5/Bereken gedraaid — schema is (voor deze taken/relaties) vers.
-      // De reken-kern (leaf-filter → solve → terugschrijven/rollup) staat in `solveProject` en
-      // draait rechtstreeks op de Immer-draft: `s.tasks` wordt in-place gemuteerd. Dezelfde functie
-      // draait het bezettingsoverzicht op een KLOON van de taken van een stale document — één
-      // implementatie, geen divergentie. De samenvattings-
-      // relatie-propagatie (MS Project-semantiek) zit dáár, zodat elke afnemer van de kern hem krijgt.
-      // `solveInputFor` levert de volledige projectinvoer, incl. de projectstart als ondergrens
-      // (`rootFloor`) en de opgeloste conventies.
-      const result = solveProject(solveInputFor(s.project, s.tasks, s.sequences, s.calendar, s.calendars));
-
       // If circular dependency detected, store the result (with error) and bail
       if (result.error) {
         s.cpmResult = result;
@@ -145,13 +149,16 @@ export const createScheduleSlice: AppSliceFactory<ScheduleSlice> = (runtime) => 
         return;
       }
 
+      // Bewaar structurele deling: een ongewijzigde F5 houdt dezelfde taken/time-objecten.
+      // Vergelijk met de plain invoer, zodat ook deze controle geen leesproxies aanmaakt.
+      for (let i = 0; i < tasks.length; i++) {
+        const task = tasks[i];
+        if (!sameTaskTime(task.time, before.tasks[i].time)) Object.assign(s.tasks[i].time, task.time);
+        if (task.status !== before.tasks[i].status) s.tasks[i].status = task.status;
+      }
       s.cpmResult = result;
-
-      // Belasting/overallocatie herberekenen ná de CPM-pass + samenvattingstaak-rollup hierboven
-      // (de resource-belasting mapt op de zojuist bijgewerkte earlyStart/earlyFinish).
-      s.resourceLoadResult = computeReliableResourceLoad(
-        s.cpmResult, s.resources, s.assignments, s.tasks, s.calendar, s.calendars,
-      );
+      // De belasting is op dezelfde zojuist berekende datums bepaald, inclusief de rollup.
+      s.resourceLoadResult = resourceLoad;
       if (openedHistory) runtime.finishUndoable(s, { nonEdit: true });
       else if (refreshPreviousEventAfter) runtime.refreshLatestDocumentDataHistoryAfter(s);
     });
@@ -172,47 +179,6 @@ export const createScheduleSlice: AppSliceFactory<ScheduleSlice> = (runtime) => 
       error: cpm?.error ?? null,
       criticalTasks: get().tasks.filter((t) => t.time.isCritical).length,
     });
-  },
-
-  showRecordedDates: () => {
-    set((s) => {
-      const info = s.recordedDates;
-      if (!info || s.datesAsRecorded) return; // no-op ⇒ géén snapshot (transaction.ts-patroon)
-      runtime.beginUndoable(s);
-
-      // Gedeelde kern: schrijft de vastlegging in de taken en levert meteen het gereconstrueerde
-      // `CPMResult` — dezelfde functie die de laadroute (`enterRecordedDatesMode`) op een payload
-      // gebruikt.
-      s.cpmResult = applyRecordedTimesToTasks(s.tasks, info.times, s.calendar);
-      s.resourceLoadResult = computeReliableResourceLoad(
-        s.cpmResult, s.resources, s.assignments, s.tasks, s.calendar, s.calendars,
-      );
-      s.datesAsRecorded = true;
-      // De weergave is consistent met wat er getoond wordt — niet verouderd.
-      s.scheduleStale = false;
-      // Wel history sluiten, maar bewust niet dirty maken: er is niets gewijzigd t.o.v. het bestand.
-      // `nonEdit`: undo/redo van deze stap wist "ongewijzigd sinds import" niet.
-      runtime.finishUndoable(s, { nonEdit: true });
-    });
-    get().recomputeViewRows();
-  },
-
-  dismissRecordedDates: () => {
-    // Géén beginUndoable/finishMutation: dit vuurt alleen in de AANBOD-stand (recordedDates gezet,
-    // datesAsRecorded nog false) en raakt geen projectdata (tasks/cpmResult) of `datesAsRecorded`
-    // aan — alleen het aanbod zelf verdwijnt. Dat lijkt in te gaan tegen de documentcontract-
-    // invariant ("élke mutator van een 'derived'-snapshotveld pusht een snapshot"), maar die
-    // invariant bewaakt DATA-consistentie: dat een undo nooit een half-oude/half-nieuwe combinatie
-    // van velden kan opleveren. Hier is er geen combinatie om uit elkaar te
-    // laten lopen — `recordedDates` bepaalt alleen of de strook een aanbod tóónt, en elke ECHTE
-    // mutator (showRecordedDates, runCPM) pusht zijn EIGEN snapshot mét de op-dat-moment geldende
-    // waarde van dit veld erin, dus die snapshots blijven intern consistent ongeacht wat dismiss
-    // deed. Vergelijk `recomputeResourceLoad`, dat `resourceLoadResult` (rol 'none') ook zonder
-    // snapshot muteert — een zuiver afgeleid veld, geen brondata.
-    // Effect van het ontbreken van een snapshot: een latere undo die vóór deze dismiss terugspoelt
-    // laat het aanbod correct herverschijnen (het bestond toen echt), in plaats van dat "dismiss"
-    // een eigen ongedaan-te-maken stap wordt — precies de bedoeling voor een wegklikbare melding.
-    set((s) => { s.recordedDates = null; });
   },
 
   levelingInput: (options) => {

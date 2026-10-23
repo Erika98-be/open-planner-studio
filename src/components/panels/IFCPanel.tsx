@@ -30,7 +30,7 @@ export function IFCPanel() {
   const datesAsRecorded = useAppStore(s => s.datesAsRecorded);
   // Bewaarde GlobalIds uit het ingelezen bestand; zonder deze kreeg Toepassen overal hash-GlobalIds.
   const ifcGlobalIds = useAppStore(s => s.ifcGlobalIds);
-  const loadState = useAppStore(s => s.loadState);
+  const applyProjectEdit = useAppStore(s => s.applyProjectEdit);
   const notify = useAppStore(s => s.notify);  // het ene meldingenkanaal, geen alert()
 
   const generated = useMemo(() => {
@@ -58,8 +58,8 @@ export function IFCPanel() {
     void (async () => {
       try {
         const data = await readIFCWithXerReconstruction(content, buildImportLabels(tCommon));
-        // `loadState` rekent zelf door en publiceert de viewstart in dezelfde ene publicatie.
-        loadState(data, { viewStartDate: data.project.startDate });
+        // Eén documentbewerking: doorrekenen, undo en viewstart in dezelfde publicatie.
+        applyProjectEdit(data, { viewStartDate: data.project.startDate });
         setDirty(false);
         // Een onbruikbaar XER-bronarchief is weggelaten — nooit stil.
         const archiveNotice = withXerArchiveIssueNotice(undefined, [data.xerArchiveIssue]);
@@ -73,7 +73,7 @@ export function IFCPanel() {
         });
       }
     })();
-  }, [content, loadState, notify, tCommon]);
+  }, [content, applyProjectEdit, notify, tCommon]);
 
   const handleCopy = useCallback(() => {
     void navigator.clipboard.writeText(content);

@@ -12,6 +12,8 @@ import type { ReportingPeriod } from '@/engine/reports';
 import { isTableReportType } from '@/utils/reportSettings';
 import { solveOptionsFor } from '@/engine/scheduler/solveInput';
 import { SEQUENCE_TYPE_OPTIONS } from '@/types/sequence';
+import { localizeLagHourSuffix } from '@/utils/lagFormat';
+import { parseableHourSuffix } from '@/utils/durationFormat';
 import {
   type ReportContext, type LookAheadRow, type CriticalRow, type ProgressRow, type HealthCheck, type HealthItem,
   type DcmaMetric, DCMA_DAYS, type ResourceLoadingRow, type ResourceAssignmentRow, type WbsSummaryRow,
@@ -170,7 +172,7 @@ function buildLookAhead(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD,
       { label: t('tableReports.common.nearCritical'), value: String(r.counts.nearCritical), color: r.counts.nearCritical ? REPORT_COLORS.warn : undefined },
     ],
     sections: [section<LookAheadRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'look-ahead',
+    fileSuffix: t('fileSuffix.lookAhead'),
   };
 }
 
@@ -197,7 +199,7 @@ function buildCritical(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD, 
       { label: t('tableReports.health.leaves'), value: String(r.counts.leaves) },
     ],
     sections: [section<CriticalRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'kritiek',
+    fileSuffix: t('fileSuffix.critical'),
   };
 }
 
@@ -243,7 +245,7 @@ function buildProgress(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD, 
       sec('overdue', r.overdue),
       sec('critical', r.critical),
     ],
-    fileSuffix: 'voortgang',
+    fileSuffix: t('fileSuffix.progress'),
   };
 }
 
@@ -256,8 +258,8 @@ function healthDetailText(t: T, dd: DD, item: HealthItem): string {
   if (d.reason) parts.push(t(`tableReports.health.reason_${d.reason}`));
   if (d.constraintType) parts.push(d.constraintType);
   if (d.relationType) parts.push(SEQUENCE_TYPE_OPTIONS.find(o => o.value === d.relationType)?.label ?? d.relationType);
-  // De engine levert de lag taalneutraal ("+1.5d", `formatLagShort`); hier krijgt hij hetzelfde
-  // decimaalteken als `dd.num(d.float)` verderop in dezelfde cel.
+  // De engine levert de lag taalneutraal ("+1.5d", "+2u", `formatLagShort`); hier krijgt hij hetzelfde
+  // decimaalteken als `dd.num(d.float)` verderop in dezelfde cel, en de uur-afkorting van de taal.
   if (d.lag) parts.push(t('tableReports.health.detail_lag', { value: dd.lagText(d.lag) }));
   else if (d.days !== undefined) parts.push(t('tableReports.health.detail_days', { value: dd.num(d.days) }));
   if (d.float !== undefined) parts.push(t('tableReports.health.detail_float', { value: dd.num(d.float) }));
@@ -349,7 +351,7 @@ function buildHealth(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD, st
       section<HealthSummaryRow>({ key: 'summary', heading: t(`${p}.sectionSummary`), columns: summaryColumns, rows: summaryRows }),
       section<HealthDetailRow>({ key: 'details', heading: t(`${p}.sectionDetails`), columns: detailColumns, rows: detailRows, emptyText: t(`${p}.empty`) }),
     ],
-    fileSuffix: 'gezondheid',
+    fileSuffix: t('fileSuffix.health'),
   };
 }
 
@@ -407,7 +409,7 @@ function buildResourceLoading(ctx: ReportContext, o: TableReportOptions, t: T, t
       { label: t(`${p}.overloadedResources`), value: String(r.counts.overloadedResources), color: r.counts.overloadedResources ? REPORT_COLORS.error : undefined },
     ],
     sections: [section<ResourceLoadingRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'resourcebelasting',
+    fileSuffix: t('fileSuffix.resourceLoading'),
   };
 }
 
@@ -439,7 +441,7 @@ function buildResourceAssignments(ctx: ReportContext, o: TableReportOptions, t: 
       { label: t(`${p}.unassigned`), value: String(r.counts.unassignedTasks), color: r.counts.unassignedTasks ? REPORT_COLORS.warn : undefined },
     ],
     sections: [section<ResourceAssignmentRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'toewijzingen',
+    fileSuffix: t('fileSuffix.resourceAssignments'),
   };
 }
 
@@ -471,7 +473,7 @@ function buildWbsSummary(ctx: ReportContext, o: TableReportOptions, t: T, dd: DD
       { label: t(`${p}.activitiesLabel`), value: String(r.counts.activities) },
     ],
     sections: [section<WbsSummaryRow>({ key: 'rows', columns, rows: r.rows, emptyText: t(`${p}.empty`) })],
-    fileSuffix: 'wbs',
+    fileSuffix: t('fileSuffix.wbsSummary'),
   };
 }
 
@@ -482,14 +484,15 @@ export function useTableReportSpec(reportType: ReportType, options: TableReportO
   const dates = useDisplayDate();
   const { ctx, stale } = useReportContext();
   const locale = i18n.language;
+  const hourSuffix = parseableHourSuffix(tCommon('duration.suffixHour'));
   // Getallen in de app-taal (komma in nl/de/fr): dezelfde notatie als de toewijzingskolommen van het
   // resourcediagram (`formatReportNumber`), zodat de rapporten in één paneel niet uiteenlopen.
   const dd = useMemo<DD>(() => ({
     ...dates,
     num: n => formatReportNumber(n, locale),
     signed: n => formatSignedReportNumber(n, locale),
-    lagText: lag => localizeDecimalPoint(lag, locale),
-  }), [dates, locale]);
+    lagText: lag => localizeDecimalPoint(localizeLagHourSuffix(lag, hourSuffix), locale),
+  }), [dates, locale, hourSuffix]);
   // "Datums zoals opgeslagen": in de modus lezen de
   // rapporten `task.time` zoals de tabel, maar zónder de "niet vastgelegd"-poort van de kolommen —
   // een as die het bestand niet vastlegde staat er dan als leeg/0. Eén melding bovenaan elk rapport

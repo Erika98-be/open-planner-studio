@@ -15,7 +15,9 @@
     "openFailed": "Nie udało się otworzyć pliku",
     "extGuideCallbackFailed": "Krok rozszerzenia {{name}} zakończył się błędem. Przewodnik działa dalej.",
     "extHelpProjectOpenFailed": "Nie udało się otworzyć pliku projektu {{file}} z rozszerzenia {{name}}.",
+    "extImportFailed": "Importowanie za pomocą {{name}} nie powiodło się.",
     "extensionMessage": "Rozszerzenie {{name}}: {{message}}",
+    "extensionInstallFailed": "Nie udało się zainstalować rozszerzenia. Sprawdź plik i spróbuj ponownie.",
     "xerInvalidInput": "Import XER wymaga oryginalnych bajtów pliku.",
     "xerInvalidFile": "Ten plik XER jest nieprawidłowy lub nieobsługiwany.",
     "xerInvalidEncoding": "Kodowanie tekstu w tym pliku XER jest nieprawidłowe lub ucięte.",
@@ -77,10 +79,10 @@
     "xerImportEnumFallbacks_few": "{{count}} rozwiązania awaryjne enum.",
     "xerImportEnumFallbacks_many": "{{count}} rozwiązań awaryjnych enum.",
     "xerImportEnumFallbacks_other": "{{count}} rozwiązania awaryjnego enum.",
-    "xerImportMissingPlannedStarts_one": "{{count}} czynność nie miała planowanego początku i zaczyna się teraz w dacie stanu lub dacie rozpoczęcia projektu z pliku.",
-    "xerImportMissingPlannedStarts_few": "{{count}} czynności nie miały planowanego początku i zaczynają się teraz w dacie stanu lub dacie rozpoczęcia projektu z pliku.",
-    "xerImportMissingPlannedStarts_many": "{{count}} czynności nie miało planowanego początku i zaczyna się teraz w dacie stanu lub dacie rozpoczęcia projektu z pliku.",
-    "xerImportMissingPlannedStarts_other": "{{count}} czynności nie miało planowanego początku i zaczyna się teraz w dacie stanu lub dacie rozpoczęcia projektu z pliku.",
+    "xerImportMissingPlannedStarts_one": "{{count}} zadanie nie miało planowanego początku i zaczyna się teraz w dacie statusu lub w początku projektu z pliku.",
+    "xerImportMissingPlannedStarts_few": "{{count}} zadania nie miały planowanego początku i zaczynają się teraz w dacie statusu lub w początku projektu z pliku.",
+    "xerImportMissingPlannedStarts_many": "{{count}} zadań nie miało planowanego początku i zaczyna się teraz w dacie statusu lub w początku projektu z pliku.",
+    "xerImportMissingPlannedStarts_other": "{{count}} zadania nie miało planowanego początku i zaczyna się teraz w dacie statusu lub w początku projektu z pliku.",
     "xerImportUnsupportedSemantics_one": "{{count}} ustawienie planowania P6 użyło bezpiecznej wartości zastępczej.",
     "xerImportUnsupportedSemantics_few": "{{count}} ustawienia planowania P6 użyły bezpiecznych wartości zastępczych.",
     "xerImportUnsupportedSemantics_many": "{{count}} ustawień planowania P6 użyło bezpiecznych wartości zastępczych.",
@@ -89,22 +91,15 @@
     "xerImportDatesAsRecorded_few": "{{count}} zadania pokazują daty tak, jak zapisał je Primavera (bez ponownego przeliczenia).",
     "xerImportDatesAsRecorded_many": "{{count}} zadań pokazuje daty tak, jak zapisał je Primavera (bez ponownego przeliczenia).",
     "xerImportDatesAsRecorded_other": "{{count}} zadania pokazują daty tak, jak zapisał je Primavera (bez ponownego przeliczenia).",
-    "xerImportDatesAsRecordedOffer_one": "{{count}} zadanie różni się od dat zapisanych w pliku — możesz je pokazać.",
-    "xerImportDatesAsRecordedOffer_few": "{{count}} zadania różnią się od dat zapisanych w pliku — możesz je pokazać.",
-    "xerImportDatesAsRecordedOffer_many": "{{count}} zadań różni się od dat zapisanych w pliku — możesz je pokazać.",
-    "xerImportDatesAsRecordedOffer_other": "{{count}} zadania różnią się od dat zapisanych w pliku — możesz je pokazać.",
     "importDatesAsRecorded_one": "{{count}} zadanie pokazuje daty tak, jak zapisano je w pliku (bez ponownego przeliczenia).",
     "importDatesAsRecorded_few": "{{count}} zadania pokazują daty tak, jak zapisano je w pliku (bez ponownego przeliczenia).",
     "importDatesAsRecorded_many": "{{count}} zadań pokazuje daty tak, jak zapisano je w pliku (bez ponownego przeliczenia).",
     "importDatesAsRecorded_other": "{{count}} zadania pokazują daty tak, jak zapisano je w pliku (bez ponownego przeliczenia).",
-    "importDatesAsRecordedOffer_one": "{{count}} zadanie różni się od dat zapisanych w pliku — możesz je pokazać.",
-    "importDatesAsRecordedOffer_few": "{{count}} zadania różnią się od dat zapisanych w pliku — możesz je pokazać.",
-    "importDatesAsRecordedOffer_many": "{{count}} zadań różni się od dat zapisanych w pliku — możesz je pokazać.",
-    "importDatesAsRecordedOffer_other": "{{count}} zadania różnią się od dat zapisanych w pliku — możesz je pokazać.",
     "xerExportLoss": "Eksport do {{format}} powoduje utratę informacji źródłowych XER.",
     "mppLegacy": "Ten plik .mpp używa starszego formatu (Project 2007 lub starszy). Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "mppEncrypted": "Ten plik .mpp jest zabezpieczony hasłem. Wyeksportuj go w MS Project jako XML (Plik → Zapisz jako → XML) i otwórz ten plik.",
     "saveFailed": "Nie udało się zapisać",
+    "ambiguousThousands": "„{{text}}” jest niejednoznaczne: liczba dziesiętna czy tysiące? Wpisz część dziesiętną z „{{separator}}” (1{{separator}}5), a tysiące bez separatora (1500). Wartość nie została zmieniona.",
     "siteSaveConflict": "Nie zapisano: '{{name}}' został w międzyczasie zmieniony w witrynie przez kogoś innego. Twoje zmiany nadal są w aplikacji. Wybierz Zapisz jako, aby zachować je jako nowy plik.",
     "siteFileGone": "'{{name}}' nie ma już w witrynie. Plik został usunięty z listy Ostatnie.",
     "savedViaDownload": "Zapisano jako pobrany plik: '{{name}}' znajduje się teraz w folderze pobierania. To środowisko nie pozwala aplikacji zapisywać bezpośrednio w wybranej lokalizacji.",
@@ -142,6 +137,10 @@
     "exportSplitsLost_few": "{{count}} zadania z przerwami zostały wyeksportowane bez przerw: MS Project/P6 znają je tylko jako rozkład pracy.",
     "exportSplitsLost_many": "{{count}} zadań z przerwami zostało wyeksportowanych bez przerw: MS Project/P6 znają je tylko jako rozkład pracy.",
     "exportSplitsLost_other": "{{count}} zadania z przerwami zostało wyeksportowane bez przerw: MS Project/P6 znają je tylko jako rozkład pracy.",
+    "exportP6Truncated_one": "{{count}} nazwa lub kod został skrócony do długości dozwolonej w P6.",
+    "exportP6Truncated_few": "{{count}} nazwy lub kody zostały skrócone do długości dozwolonej w P6.",
+    "exportP6Truncated_many": "{{count}} nazw lub kodów zostało skróconych do długości dozwolonej w P6.",
+    "exportP6Truncated_other": "{{count}} nazwy lub kodu zostało skrócone do długości dozwolonej w P6.",
     "projectStartAnchorsClamped_one": "{{count}} zadanie przesunięto wraz ze startem projektu.",
     "projectStartAnchorsClamped_few": "{{count}} zadania przesunięto wraz ze startem projektu.",
     "projectStartAnchorsClamped_many": "{{count}} zadań przesunięto wraz ze startem projektu.",
@@ -151,13 +150,13 @@
     "mppTimephasedSteeringLost_many": "{{count}} zadań straciło powiązanie z rozkładem godzin z MS Project po tej edycji; pierwotny rozkład pozostaje zachowany w pliku.",
     "mppTimephasedSteeringLost_other": "{{count}} zadania straciło powiązanie z rozkładem godzin z MS Project po tej edycji; pierwotny rozkład pozostaje zachowany w pliku.",
     "readMore": "Dowiedz się więcej",
-    "taskTypesUnlocked": "Ten plik zawiera zapisaną pracę lub własne reguły pracy; reguła pracy i pozostała praca są wyświetlane dla tego projektu.",
-    "taskTypesUnlockedDetail": "Ten plik zawiera zapisaną pracę lub własne reguły pracy; reguła pracy i pozostała praca są wyświetlane dla tego projektu.",
-    "workRulesReadMore": "Reguły pracy – wyjaśnienie",
-    "workRuleDurationsChanged_one": "Po zmianie kalendarza reguła pracy dostosowała czas trwania {{count}} zadania (praca pozostaje, zmieniła się liczba godzin dziennie).",
-    "workRuleDurationsChanged_few": "Po zmianie kalendarza reguła pracy dostosowała czas trwania {{count}} zadań (praca pozostaje, zmieniła się liczba godzin dziennie).",
-    "workRuleDurationsChanged_many": "Po zmianie kalendarza reguła pracy dostosowała czas trwania {{count}} zadań (praca pozostaje, zmieniła się liczba godzin dziennie).",
-    "workRuleDurationsChanged_other": "Po zmianie kalendarza reguła pracy dostosowała czas trwania {{count}} zadania (praca pozostaje, zmieniła się liczba godzin dziennie).",
+    "taskTypesUnlocked": "Ten plik zawiera zapisaną pracę lub typy zadań; typ zadania i pozostała praca są widoczne dla tego projektu.",
+    "taskTypesUnlockedDetail": "Ten plik zawiera zapisaną pracę lub typy zadań; typ zadania i pozostała praca są widoczne dla tego projektu.",
+    "workRulesReadMore": "Wyjaśnienie typów zadań",
+    "workRuleDurationsChanged_one": "Po zmianie kalendarza typ zadania dostosował czas trwania w {{count}} zadaniu (praca pozostaje, zmieniła się liczba godzin dziennie).",
+    "workRuleDurationsChanged_few": "Po zmianie kalendarza typ zadania dostosował czas trwania w {{count}} zadaniach (praca pozostaje, zmieniła się liczba godzin dziennie).",
+    "workRuleDurationsChanged_many": "Po zmianie kalendarza typ zadania dostosował czas trwania w {{count}} zadaniach (praca pozostaje, zmieniła się liczba godzin dziennie).",
+    "workRuleDurationsChanged_other": "Po zmianie kalendarza typ zadania dostosował czas trwania w {{count}} zadaniu (praca pozostaje, zmieniła się liczba godzin dziennie).",
     "pasteSkippedReadOnly_one": "{{count}} komórka pominięta: jest tylko do odczytu (np. automatycznie numerowany kod WBS lub kolumna obliczana).",
     "pasteSkippedReadOnly_few": "{{count}} komórki pominięte: są tylko do odczytu (np. automatycznie numerowany kod WBS lub kolumna obliczana).",
     "pasteSkippedReadOnly_many": "{{count}} komórek pominiętych: są tylko do odczytu (np. automatycznie numerowany kod WBS lub kolumna obliczana).",
@@ -173,26 +172,20 @@
     "startSnetMany_few": "{{count}} zadania rozpoczynają się nie wcześniej niż ich nowa data (SNET).",
     "startSnetMany_many": "{{count}} zadań rozpoczyna się nie wcześniej niż ich nowa data (SNET).",
     "startSnetMany_other": "{{count}} zadania rozpoczyna się nie wcześniej niż ich nowa data (SNET).",
-    "startBlockedByConstraint": "Nowy początek zadania '{{name}}' nie został zastosowany: zadanie ma poprzednika i ograniczenie $t(task:constraintType.{{type}}) {{date}}, które wyznaczają jego początek. Zmień to ograniczenie, aby przesunąć początek.",
-    "startBlockedByConstraintNoDate": "Nowy początek zadania '{{name}}' nie został zastosowany: zadanie ma poprzednika i ograniczenie $t(task:constraintType.{{type}}), które wyznaczają jego początek. Zmień to ograniczenie, aby przesunąć początek.",
+    "startBlockedByConstraint": "Nowy początek zadania „{{name}}” nie został zastosowany: zadanie ma poprzednika i ograniczenie $t(task:constraintType.{{type}}) {{date}}, które wyznaczają jego początek. Zmień to ograniczenie, aby przesunąć początek.",
+    "startBlockedByConstraintNoDate": "Nowy początek zadania „{{name}}” nie został zastosowany: zadanie ma poprzednika i ograniczenie $t(task:constraintType.{{type}}), które wyznaczają jego początek. Zmień to ograniczenie, aby przesunąć początek.",
     "startBlockedByConstraintMany_one": "Nowy początek {{count}} zadania nie został zastosowany: ma ono poprzednika i ograniczenie inne niż Rozpocznij nie wcześniej niż (SNET). Zmień to ograniczenie, aby przesunąć początek.",
     "startBlockedByConstraintMany_few": "Nowe początki {{count}} zadań nie zostały zastosowane: mają one poprzednika i ograniczenie inne niż Rozpocznij nie wcześniej niż (SNET). Zmień te ograniczenia, aby przesunąć początki.",
     "startBlockedByConstraintMany_many": "Nowe początki {{count}} zadań nie zostały zastosowane: mają one poprzednika i ograniczenie inne niż Rozpocznij nie wcześniej niż (SNET). Zmień te ograniczenia, aby przesunąć początki.",
     "startBlockedByConstraintMany_other": "Nowe początki {{count}} zadania nie zostały zastosowane: mają one poprzednika i ograniczenie inne niż Rozpocznij nie wcześniej niż (SNET). Zmień te ograniczenia, aby przesunąć początki.",
-    "dragStartIsActual": "Zadanie '{{name}}' zostało rozpoczęte: jego początek to rzeczywiste rozpoczęcie i nie przesuwa się. Zmień je przez postęp.",
-    "dragDatesAreActual": "Zadanie '{{name}}' jest ukończone: jego początek i koniec to rzeczywiste daty i nie przesuwają się. Zmień je przez postęp.",
-    "referencesClearedOnPaste_one": "{{count}} odwołanie nie istniało w tym dokumencie i zostało wyczyszczone (kalendarz zadania, własny typ zadania, kod zadania lub pole użytkownika z dokumentu źródłowego).",
-    "referencesClearedOnPaste_few": "{{count}} odwołania nie istniały w tym dokumencie i zostały wyczyszczone (kalendarze zadań, własne typy zadań, kody zadań lub pola użytkownika z dokumentu źródłowego).",
-    "referencesClearedOnPaste_many": "{{count}} odwołań nie istniało w tym dokumencie i zostało wyczyszczonych (kalendarze zadań, własne typy zadań, kody zadań lub pola użytkownika z dokumentu źródłowego).",
-    "referencesClearedOnPaste_other": "{{count}} odwołania nie istniało w tym dokumencie i zostało wyczyszczone (kalendarze zadań, własne typy zadań, kody zadań lub pola użytkownika z dokumentu źródłowego).",
-    "milestoneRefusedAssignments_one": "„{{task}}” ma przydziały zasobów i nie może stać się kamieniem milowym. Najpierw usuń przydziały.",
-    "milestoneRefusedAssignments_few": "{{count}} zadania mają przydziały zasobów i nie mogą stać się kamieniami milowymi. Najpierw usuń przydziały.",
-    "milestoneRefusedAssignments_many": "{{count}} zadań ma przydziały zasobów i nie może stać się kamieniami milowymi. Najpierw usuń przydziały.",
-    "milestoneRefusedAssignments_other": "{{count}} zadania ma przydziały zasobów i nie może stać się kamieniami milowymi. Najpierw usuń przydziały.",
-    "milestoneRefusedSummary_one": "„{{task}}” jest zadaniem sumarycznym z podzadaniami i nie może stać się kamieniem milowym.",
-    "milestoneRefusedSummary_few": "{{count}} zadania są zadaniami sumarycznymi z podzadaniami i nie mogą stać się kamieniami milowymi.",
-    "milestoneRefusedSummary_many": "{{count}} zadań jest zadaniami sumarycznymi z podzadaniami i nie może stać się kamieniami milowymi.",
-    "milestoneRefusedSummary_other": "{{count}} zadania jest zadaniami sumarycznymi z podzadaniami i nie może stać się kamieniami milowymi.",
+    "dragStartIsActual": "Zadanie „{{name}}” zostało rozpoczęte: jego początek to rzeczywiste rozpoczęcie i nie przesuwa się. Zmień je przez postęp.",
+    "dragDatesAreActual": "Zadanie „{{name}}” jest ukończone: jego początek i koniec to rzeczywiste daty i nie przesuwają się. Zmień je przez postęp.",
+    "referencesClearedOnPaste_one": "{{count}} odwołanie nie istniało w tym dokumencie i zostało wyczyszczone (kalendarz zadania, własny rodzaj robót, kod czynności lub pole niestandardowe z dokumentu źródłowego).",
+    "referencesClearedOnPaste_few": "{{count}} odwołania nie istniały w tym dokumencie i zostały wyczyszczone (kalendarze zadań, własne rodzaje robót, kody czynności lub pola niestandardowe z dokumentu źródłowego).",
+    "referencesClearedOnPaste_many": "{{count}} odwołań nie istniało w tym dokumencie i zostało wyczyszczone (kalendarzy zadań, własnych rodzajów robót, kodów czynności lub pól niestandardowych z dokumentu źródłowego).",
+    "referencesClearedOnPaste_other": "{{count}} odwołania nie istniało w tym dokumencie i zostało wyczyszczone (kalendarz zadania, własny rodzaj robót, kod czynności lub pole niestandardowe z dokumentu źródłowego).",
+    "milestoneRefusedAssignments": "„{{task}}” ma przydziały zasobów i nie może stać się kamieniem milowym. Najpierw usuń przydziały.",
+    "milestoneRefusedSummary": "„{{task}}” jest zadaniem sumarycznym z podzadaniami i nie może stać się kamieniem milowym.",
     "assignmentsMovedToSubtask_one": "Przydział przeniesiono do podzadania „{{child}}”.",
     "assignmentsMovedToSubtask_few": "{{count}} przydziały przeniesiono do podzadania „{{child}}”.",
     "assignmentsMovedToSubtask_many": "{{count}} przydziałów przeniesiono do podzadania „{{child}}”.",
@@ -201,13 +194,15 @@
     "assignmentsMovedToSubtasks_few": "Przydziały {{count}} zadań przeniesiono do podzadań.",
     "assignmentsMovedToSubtasks_many": "Przydziały {{count}} zadań przeniesiono do podzadań.",
     "assignmentsMovedToSubtasks_other": "Przydziały {{count}} zadania przeniesiono do podzadań.",
-    "milestoneClearedOnPhase_one": "„{{phase}}” nie jest już kamieniem milowym.",
-    "milestoneClearedOnPhase_few": "{{count}} zadania nie są już kamieniami milowymi.",
-    "milestoneClearedOnPhase_many": "{{count}} zadań nie jest już kamieniami milowymi.",
-    "milestoneClearedOnPhase_other": "{{count}} zadania nie jest już kamieniem milowym.",
+    "milestoneClearedOnPhase": "„{{phase}}” nie jest już kamieniem milowym.",
     "phaseRefusedNoAssignableChild": "„{{phase}}” nie może stać się zadaniem sumarycznym: jego przydziały nie mają dokąd trafić, bo żadne z nowych podzadań nie może mieć przydziałów (kamień milowy lub zadanie sumaryczne). Nic nie zmieniono.",
     "phaseRefusedDuplicateResource": "„{{phase}}” nie może stać się zadaniem sumarycznym: przydziału {{resource}} nie można przenieść do nowego podzadania „{{child}}”, bo ma ono już {{resource}}. Nic nie zmieniono.",
+    "phaseQuestionOutdated": "Zadania lub przydziały zmieniły się, gdy pytanie było otwarte. Nic nie zostało zmienione. Spróbuj ponownie.",
     "schedulingProfileApplied": "Ten projekt liczy się jako {{profile}}. Zmień to w Plik → Info o projekcie → Profil obliczeń i opcje.",
+    "schedulingTemplateSaved": "Szablon „{{name}}” został zapisany.",
+    "schedulingTemplateLimit": "Szablon nie został zapisany: jest już maksymalna liczba szablonów ({{max}}). Najpierw usuń szablon.",
+    "schedulingTemplateStorageFailed": "Szablon nie został zapisany: pamięć aplikacji jest pełna lub niedostępna.",
+    "schedulingTemplateDeleteFailed": "Szablon nie został usunięty: pamięć aplikacji jest pełna lub niedostępna.",
     "schedulingProfileShifted_one": "Po zastosowaniu przesunięto {{count}} zadanie.",
     "schedulingProfileShifted_few": "Po zastosowaniu przesunięto {{count}} zadania.",
     "schedulingProfileShifted_many": "Po zastosowaniu przesunięto {{count}} zadań.",
@@ -227,8 +222,105 @@
     "xerArchiveReasonStructure": "Powód: struktura archiwum w IFC jest nieprawidłowa (zdublowana, przestawiona lub błędnie powiązana).",
     "statusDateSetToday": "Datę statusu ustawiono na dziś ({{date}}).",
     "durationBelowDoneWork": "„{{name}}” jest już wykonane w {{percent}}%: czas trwania krótszy niż wykonana praca jest niemożliwy. Czas trwania nie został zmieniony.",
+    "refusedTaskNames": "Nie zmieniono: {{names}}.",
+    "refusedTaskNamesMore_one": "Nie zmieniono: {{names}} i jeszcze {{count}} zadanie.",
+    "refusedTaskNamesMore_few": "Nie zmieniono: {{names}} i jeszcze {{count}} zadania.",
+    "refusedTaskNamesMore_many": "Nie zmieniono: {{names}} i jeszcze {{count}} zadań.",
+    "refusedTaskNamesMore_other": "Nie zmieniono: {{names}} i jeszcze {{count}} zadania.",
+    "notAppliedTaskNames": "Nie zastosowano przy: {{names}}.",
+    "notAppliedTaskNamesMore_one": "Nie zastosowano przy: {{names}} i jeszcze {{count}} zadanie.",
+    "notAppliedTaskNamesMore_few": "Nie zastosowano przy: {{names}} i jeszcze {{count}} zadania.",
+    "notAppliedTaskNamesMore_many": "Nie zastosowano przy: {{names}} i jeszcze {{count}} zadań.",
+    "notAppliedTaskNamesMore_other": "Nie zastosowano przy: {{names}} i jeszcze {{count}} zadania.",
+    "refusedRelationNames": "Nie utworzono: {{names}}.",
+    "refusedRelationNamesMore_one": "Nie utworzono: {{names}} i jeszcze {{count}} relacja.",
+    "refusedRelationNamesMore_few": "Nie utworzono: {{names}} i jeszcze {{count}} relacje.",
+    "refusedRelationNamesMore_many": "Nie utworzono: {{names}} i jeszcze {{count}} relacji.",
+    "refusedRelationNamesMore_other": "Nie utworzono: {{names}} i jeszcze {{count}} relacji.",
+    "remainingWorkRecomputed": "Pozostała praca „{{name}}” została przeliczona ponownie: {{before}} h → {{after}} h (wartość pochodziła z pliku). Ctrl+Z przywraca ją.",
+    "remainingWorkRecomputedMany_one": "Przeliczono ponownie pozostałą pracę {{count}} zadania (wartość pochodziła z pliku). Ctrl+Z ją przywraca.",
+    "remainingWorkRecomputedMany_few": "Przeliczono ponownie pozostałą pracę {{count}} zadań (wartości pochodziły z pliku). Ctrl+Z je przywraca.",
+    "remainingWorkRecomputedMany_many": "Przeliczono ponownie pozostałą pracę {{count}} zadań (wartości pochodziły z pliku). Ctrl+Z je przywraca.",
+    "remainingWorkRecomputedMany_other": "Przeliczono ponownie pozostałą pracę {{count}} zadania (wartości pochodziły z pliku). Ctrl+Z je przywraca.",
     "tutorialOfferLater": "Samouczki zawsze znajdziesz w Pomoc › Samouczki.",
-    "tutorialOfferUnavailable": "Nie udało się teraz zainstalować ani uruchomić samouczków. Możesz spróbować ponownie później w Pomoc › Samouczki."
+    "tutorialOfferUnavailable": "Nie udało się teraz zainstalować ani uruchomić samouczków. Możesz spróbować ponownie później w Pomoc › Samouczki.",
+    "taskAddedAtEnd": "Nowe zadanie zostało dodane na końcu. Podczas filtrowania, grupowania lub sortowania aplikacja nie może umieścić go pod zaznaczeniem.",
+    "p6xmlImportEmpty": "W tym pliku nie ma zadań, które aplikacja może odczytać.",
+    "p6xmlImportEmptyNoObjectIds": "Zadania nie mają ObjectId, więc aplikacja nie może ich połączyć. To nie jest zwykły plik Primavera P6 XML.",
+    "p6xmlImportEmptyXerColumns": "Plik używa nazw kolumn XER (jak task_code) zamiast pól P6 XML. Otwórz sam plik .xer.",
+    "p6xmlImportOpened_one": "Otwarto plik P6 XML: {{count}} dokument projektu.",
+    "p6xmlImportOpened_few": "Otwarto plik P6 XML: {{count}} dokumenty projektu.",
+    "p6xmlImportOpened_many": "Otwarto plik P6 XML: {{count}} dokumentów projektu.",
+    "p6xmlImportOpened_other": "Otwarto plik P6 XML: {{count}} dokumentu projektu.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} relacja między projektami nie została zaimportowana jako relacja.",
+    "p6xmlImportCrossProjectRelations_few": "{{count}} relacje między projektami nie zostały zaimportowane jako relacje.",
+    "p6xmlImportCrossProjectRelations_many": "{{count}} relacji między projektami nie zostało zaimportowanych jako relacje.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relacji między projektami nie została zaimportowana jako relacja.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} zadanie bez projektu nie zostało wczytane.",
+    "p6xmlImportUnassignedActivities_few": "{{count}} zadania bez projektu nie zostały wczytane.",
+    "p6xmlImportUnassignedActivities_many": "{{count}} zadań bez projektu nie zostało wczytanych.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} zadania bez projektu nie zostało wczytane.",
+    "msProjectImportLoss": "Nie wszystko z tego pliku MS Project zostało zaimportowane.",
+    "msProjectLostSubprojects_one": "{{count}} wstawiony projekt został wczytany jako zwykłe zadanie, bez połączenia z innym plikiem.",
+    "msProjectLostSubprojects_few": "{{count}} wstawione projekty zostały wczytane jako zwykłe zadania, bez połączenia z innym plikiem.",
+    "msProjectLostSubprojects_many": "{{count}} wstawionych projektów zostało wczytanych jako zwykłe zadania, bez połączenia z innym plikiem.",
+    "msProjectLostSubprojects_other": "{{count}} wstawionego projektu został wczytany jako zwykłe zadanie, bez połączenia z innym plikiem.",
+    "msProjectLostExternalTasks_one": "{{count}} zewnętrzne zadanie z innego projektu zostało wczytane jako zwykłe zadanie.",
+    "msProjectLostExternalTasks_few": "{{count}} zewnętrzne zadania z innego projektu zostały wczytane jako zwykłe zadania.",
+    "msProjectLostExternalTasks_many": "{{count}} zewnętrznych zadań z innego projektu zostało wczytanych jako zwykłe zadania.",
+    "msProjectLostExternalTasks_other": "{{count}} zewnętrznego zadania z innego projektu został wczytany jako zwykłe zadanie.",
+    "msProjectLostInactiveTasks_one": "{{count}} nieaktywne zadanie zostało wczytane jako aktywne i jest uwzględniane w obliczeniach.",
+    "msProjectLostInactiveTasks_few": "{{count}} nieaktywne zadania zostały wczytane jako aktywne i są uwzględniane w obliczeniach.",
+    "msProjectLostInactiveTasks_many": "{{count}} nieaktywnych zadań zostało wczytanych jako aktywne i są uwzględniane w obliczeniach.",
+    "msProjectLostInactiveTasks_other": "{{count}} nieaktywnego zadania zostało wczytane jako aktywne i jest uwzględniane w obliczeniach.",
+    "msProjectLostManualTasks_one": "{{count}} zadanie planowane ręcznie zostało wczytane jako zadanie planowane automatycznie.",
+    "msProjectLostManualTasks_few": "{{count}} zadania planowane ręcznie zostały wczytane jako zadania planowane automatycznie.",
+    "msProjectLostManualTasks_many": "{{count}} zadań planowanych ręcznie zostało wczytanych jako zadania planowane automatycznie.",
+    "msProjectLostManualTasks_other": "{{count}} zadania planowanego ręcznie zostało wczytane jako zadanie planowane automatycznie.",
+    "msProjectLostLevelingDelays_one": "Opóźnienie bilansowania w {{count}} zadaniu nie zostało zaimportowane.",
+    "msProjectLostLevelingDelays_few": "Opóźnienia bilansowania w {{count}} zadaniach nie zostały zaimportowane.",
+    "msProjectLostLevelingDelays_many": "Opóźnienia bilansowania w {{count}} zadaniach nie zostały zaimportowane.",
+    "msProjectLostLevelingDelays_other": "Opóźnienie bilansowania w {{count}} zadaniu nie zostało zaimportowane.",
+    "msProjectLostCriticalSlack_one": "Próg krytyczny z pliku (zapas do {{count}} dnia roboczego) nie został zaimportowany. Aplikacja używa progu 0.",
+    "msProjectLostCriticalSlack_few": "Próg krytyczny z pliku (zapas do {{count}} dni roboczych) nie został zaimportowany. Aplikacja używa progu 0.",
+    "msProjectLostCriticalSlack_many": "Próg krytyczny z pliku (zapas do {{count}} dni roboczych) nie został zaimportowany. Aplikacja używa progu 0.",
+    "msProjectLostCriticalSlack_other": "Próg krytyczny z pliku (zapas do {{count}} dnia roboczego) nie został zaimportowany. Aplikacja używa progu 0.",
+    "msProjectLostBaselines_one": "{{count}} plan bazowy nie został zaimportowany.",
+    "msProjectLostBaselines_few": "{{count}} plany bazowe nie zostały zaimportowane.",
+    "msProjectLostBaselines_many": "{{count}} planów bazowych nie zostało zaimportowanych.",
+    "msProjectLostBaselines_other": "{{count}} planu bazowego nie został zaimportowany.",
+    "msProjectLostExtraBaselines_one": "{{count}} plan bazowy (Baseline 1–10) nie został zaimportowany.",
+    "msProjectLostExtraBaselines_few": "{{count}} plany bazowe (Baseline 1–10) nie zostały zaimportowane.",
+    "msProjectLostExtraBaselines_many": "{{count}} planów bazowych (Baseline 1–10) nie zostało zaimportowanych.",
+    "msProjectLostExtraBaselines_other": "{{count}} planu bazowego (Baseline 1–10) nie został zaimportowany.",
+    "msProjectLostBaselineWorkCost_one": "Przy {{count}} zadaniu, zasobie lub przydziale praca lub koszt z Baseline 0 nie został zaimportowany.",
+    "msProjectLostBaselineWorkCost_few": "Przy {{count}} zadaniach, zasobach lub przydziałach praca lub koszt z Baseline 0 nie zostały zaimportowane.",
+    "msProjectLostBaselineWorkCost_many": "Przy {{count}} zadaniach, zasobach lub przydziałach praca lub koszt z Baseline 0 nie zostały zaimportowane.",
+    "msProjectLostBaselineWorkCost_other": "Przy {{count}} zadaniu, zasobie lub przydziale praca lub koszt z Baseline 0 nie został zaimportowany.",
+    "msProjectLostAssignmentBaselineDates_one": "Przy {{count}} przydziale plan bazowy różni się od zadania; ta różnica nie została zaimportowana.",
+    "msProjectLostAssignmentBaselineDates_few": "Przy {{count}} przydziałach plan bazowy różni się od zadania; te różnice nie zostały zaimportowane.",
+    "msProjectLostAssignmentBaselineDates_many": "Przy {{count}} przydziałach plan bazowy różni się od zadania; te różnice nie zostały zaimportowane.",
+    "msProjectLostAssignmentBaselineDates_other": "Przy {{count}} przydziale plan bazowy różni się od zadania; ta różnica nie została zaimportowana.",
+    "msProjectLostCustomFields_one": "{{count}} pole niestandardowe z wartościami (pole użytkownika lub kod konspektu) nie zostało zaimportowane.",
+    "msProjectLostCustomFields_few": "{{count}} pola niestandardowe z wartościami (pola użytkownika lub kody konspektu) nie zostały zaimportowane.",
+    "msProjectLostCustomFields_many": "{{count}} pól niestandardowych z wartościami (pól użytkownika lub kodów konspektu) nie zostało zaimportowanych.",
+    "msProjectLostCustomFields_other": "{{count}} pola niestandardowego z wartościami (pola użytkownika lub kodu konspektu) nie zostało zaimportowane.",
+    "msProjectLostNotes_one": "{{count}} notatka nie została zaimportowana.",
+    "msProjectLostNotes_few": "{{count}} notatki nie zostały zaimportowane.",
+    "msProjectLostNotes_many": "{{count}} notatek nie zostało zaimportowanych.",
+    "msProjectLostNotes_other": "{{count}} notatki nie została zaimportowana.",
+    "msProjectLostHyperlinks_one": "{{count}} hiperłącze nie zostało zaimportowane.",
+    "msProjectLostHyperlinks_few": "{{count}} hiperłącza nie zostały zaimportowane.",
+    "msProjectLostHyperlinks_many": "{{count}} hiperłączy nie zostało zaimportowanych.",
+    "msProjectLostHyperlinks_other": "{{count}} hiperłącza nie zostało zaimportowane.",
+    "msProjectLostFixedCosts_one": "Koszt stały w {{count}} zadaniu nie został zaimportowany.",
+    "msProjectLostFixedCosts_few": "Koszty stałe w {{count}} zadaniach nie zostały zaimportowane.",
+    "msProjectLostFixedCosts_many": "Koszty stałe w {{count}} zadaniach nie zostały zaimportowane.",
+    "msProjectLostFixedCosts_other": "Koszt stały w {{count}} zadaniu nie został zaimportowany.",
+    "msProjectLostResourceRates_one": "Stawka w {{count}} zasobie nie została zaimportowana.",
+    "msProjectLostResourceRates_few": "Stawki w {{count}} zasobach nie zostały zaimportowane.",
+    "msProjectLostResourceRates_many": "Stawki w {{count}} zasobach nie zostały zaimportowane.",
+    "msProjectLostResourceRates_other": "Stawka w {{count}} zasobie nie została zaimportowana."
   },
   "scheduleErrors": {
     "cycle": "Zależność cykliczna między zadaniami: {{path}}",
@@ -242,6 +334,10 @@
   "no": "Nie",
   "days": "d",
   "daysLong": "dni",
+  "dayUnitLong_one": "dzień",
+  "dayUnitLong_few": "dni",
+  "dayUnitLong_many": "dni",
+  "dayUnitLong_other": "dnia",
   "ok": "OK",
   "apply": "Zastosuj",
   "create": "Utwórz",
@@ -293,7 +389,7 @@
     "collapseAll": "Zwiń wszystko"
   },
   "settings": {
-    "title": "Ustawienia",
+    "title": "Ustawienia aplikacji",
     "appearanceTab": "Wygląd",
     "planningTab": "Planowanie",
     "advancedTab": "Zaawansowane",
@@ -338,8 +434,8 @@
     "hourPlanningSection": "Planowanie godzinowe",
     "enableHourPlanning": "Włącz planowanie godzinowe",
     "enableHourPlanningHint": "Włącza planowanie godzinowo-minutowe: skalę czasu w godzinach, zmiany z pasmami czasu pracy i paski zadań z dokładnością do godziny. Wyłączone ⇒ aplikacja pozostaje w pełni dniowa, tak jak wcześniej.",
-    "showTaskTypes": "Pokaż reguły pracy i pracę",
-    "showTaskTypesHint": "Pliki z MS Project lub Primavera P6 zawsze to pokazują. Wyłączone: czas trwania i jednostki pozostają, praca się dostosowuje.",
+    "showTaskTypes": "Używaj typów zadań",
+    "showTaskTypesHint": "Wybierz dla każdego zadania, co się zmienia, gdy zmieni się czas trwania, jednostki lub praca, jak Task Type w MS Project i Duration Type w P6. Wyłączone: czas trwania i jednostki pozostają bez zmian. Plik z typami zadań lub zapisaną pracą pokazuje je także wtedy, gdy to jest wyłączone.",
     "allowMixedDayHour": "Zezwól na mieszane planowanie dniowo-godzinowe",
     "defaultTaskDurationUnit": "Domyślna jednostka nowych zadań",
     "defaultTaskDurationUnitHint": "Określa, czy nowe zadania zaczynają się w dniach roboczych, czy godzinach pracy. Istniejące zadania się nie zmieniają.",
@@ -400,6 +496,10 @@
     "dateNotationDmy": "dd-mm-rrrr",
     "dateNotationMdy": "mm-dd-rrrr",
     "dateNotationYmd": "rrrr-mm-dd",
+    "timeNotation": "Format godziny",
+    "timeNotationHint": "Ustawia, jak godziny są pokazywane i wpisywane: w oknie kalendarza, przy zadaniach w godzinach w tabeli, na skali godzin wykresu Gantt i w komunikatach. Pliki i obliczenia nie zmieniają się (24 godziny).",
+    "timeNotation24h": "24-godzinny (13:00)",
+    "timeNotation12h": "12-godzinny (1:00 PM)",
     "fontFamilyLabel": "Czcionka",
     "fontScaleLabel": "Rozmiar tekstu",
     "fontScaleHint": "Skaluje tekst i układ interfejsu.",
@@ -515,6 +615,8 @@
     "newProject": "Nowy projekt",
     "openExistingProject": "Otwórz istniejący projekt",
     "allProjects": "Wszystkie projekty",
+    "scrollTabsStart": "Przewiń karty do początku",
+    "scrollTabsEnd": "Przewiń karty do końca",
     "active": "Aktywny",
     "tasksWord": "zadania",
     "criticalWord": "krytyczne",
@@ -526,19 +628,45 @@
   "feedback": {
     "buttonTooltip": "Wyślij opinię",
     "title": "Wyślij opinię",
-    "typeBug": "Błąd",
-    "typeFeature": "Propozycja funkcji",
+    "typeBug": "Coś nie działa",
+    "typeFeature": "Pomysł",
+    "typeGeneral": "Pytanie lub uwaga",
     "fieldTitle": "Tytuł",
+    "titlePlaceholder": "Np. Ścieżka krytyczna przeskakuje po zapisaniu",
     "fieldDescription": "Opis",
+    "descriptionPlaceholder": "Co zrobiłeś, czego się spodziewałeś i co się stało?",
     "attachScreenshot": "Dołącz zrzut ekranu",
+    "screenshotPreview": "Podgląd zrzutu ekranu",
+    "retake": "Zrób ponownie",
+    "removeScreenshot": "Usuń",
     "capturing": "Przechwytywanie zrzutu ekranu…",
     "captureFailed": "Nie udało się przechwycić zrzutu ekranu. Nadal możesz wysłać opinię bez zrzutu ekranu.",
-    "submit": "Wyślij do GitHub",
+    "submit": "Wyślij",
+    "sending": "Wysyłanie…",
+    "fieldEmail": "Adres e-mail (opcjonalnie, do odpowiedzi)",
+    "emailInvalid": "Ten adres e-mail jest nieprawidłowy. Popraw go albo zostaw pole puste.",
+    "titleRequired": "Wpisz tytuł.",
+    "tooShort": "Wpisz w tytule i opisie razem co najmniej 10 znaków.",
+    "privacy": "Twoja wiadomość i zrzut ekranu trafiają do Open Feedback Studio od OpenAEC i mogą pojawić się jako publiczne issue na GitHub. Nie wpisuj nic, czego nie chcesz udostępniać.",
+    "sentWith": "Dołączono: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "Dziękujemy, Twoja wiadomość została wysłana.",
+    "alreadyIn": "Ta wiadomość jest już u nas. Chcesz coś dodać? Zmień wtedy tekst i wyślij ponownie.",
+    "sentScreenshotDropped": "Zrzut ekranu był za duży i nie został dołączony.",
+    "viewOnGithub": "Zobacz na GitHub",
+    "errorValidation": "Wiadomość nie została przyjęta. Sprawdź tekst (nie tylko linki) i adres e-mail, i spróbuj ponownie.",
+    "errorRateLimited": "Wysłano w krótkim czasie dużo wiadomości. Spróbuj ponownie za godzinę.",
+    "errorFailed": "Wysyłanie się nie powiodło. Sprawdź połączenie z internetem i spróbuj ponownie albo otwórz wiadomość na GitHub.",
+    "errorUncertain": "Nie wiemy na pewno, czy Twoja wiadomość dotarła. Poczekaj minutę i wyślij ją ponownie; jeśli już tam jest, zobaczymy to automatycznie.",
+    "fallbackGithub": "Otwórz na GitHub",
     "cancel": "Anuluj",
+    "clearDraft": "Wyczyść",
+    "clearDraftTitle": "Wyczyść wszystkie pola i zrzut ekranu",
     "close": "Zamknij",
+    "saveAndClose": "Zapisz i zamknij",
     "tools": {
       "arrow": "Strzałka",
       "rectangle": "Prostokąt",
+      "mask": "Zakryj",
       "pen": "Pióro",
       "text": "Tekst",
       "color": "Kolor",
@@ -555,6 +683,7 @@
     "openGithub": "OK, przejdź do GitHub",
     "annotate": "Zaznacz",
     "editorDone": "Gotowe",
+    "annotationSaveFailed": "Twoje zmiany nie mogły zostać zapisane. Spróbuj ponownie. Twój zrzut ekranu nie został zmieniony i nie zostanie wysłany z tego edytora.",
     "rotateFeedback": "Wyślij opinię",
     "rotateBug": "Zgłoś błąd",
     "rotateFeature": "Zaproponuj nową funkcję"
@@ -826,7 +955,7 @@
       "projectEndUnchanged": "Data zakończenia projektu: bez zmian ({{date}})",
       "projectEndChanged": "Data zakończenia projektu: {{before}} → {{after}}",
       "remainingConflicts": "Pozostałe konflikty",
-      "remainingConflictsHint": "Te zadania nie mieszczą się w swoim zapasie — często dlatego, że zasób nie pracuje w te dni lub ma zbyt małą zdolność.",
+      "remainingConflictsHint": "Dla tych zadań nadal występują konflikty zasobów. Zobacz szczegóły poniżej.",
       "intrinsicOverrun": "{{resource}}: szczyt {{peak}} jedn./dzień, zdolność to {{capacity}} — nie da się tego rozwiązać przesunięciem.",
       "noChanges": "Żadne zadania nie wymagają przesunięcia — harmonogram jest już wolny od konfliktów.",
       "notCalculated": "Kliknij Oblicz, aby utworzyć propozycję bilansowania.",
@@ -913,7 +1042,7 @@
       "cancel": "Anuluj"
     },
     "regen": {
-      "hint": "Święta obejmują {{from}}–{{to}}; projekt trwa do {{year}}. Wygenerować ponownie?",
+      "hint": "Święta obejmują {{from}}–{{to}}. Wygenerować ponownie do {{year}} włącznie?",
       "button": "Generuj ponownie"
     },
     "countryName": {
@@ -948,7 +1077,7 @@
       "decreaseBreakDuration": "Zmniejsz czas przerwy o 15 minut",
       "start": "Początek przerwy",
       "duration": "Czas przerwy (minuty)",
-      "hint": "Przedziały pracy są wyliczane automatycznie. Czas 0 usuwa przerwę.",
+      "hint": "Ustaw początek przerwy i jej czas trwania; domyślny dzień roboczy i pasma są wyliczane automatycznie. Ustaw czas trwania na 0 dla ciągłego dnia roboczego.",
       "errors": {
         "invalidDuration": "Czas musi być całkowitą liczbą minut nie mniejszą niż 0.",
         "outsideWorkingDay": "Przerwa musi mieścić się w dniu pracy.",
@@ -972,9 +1101,13 @@
       "copyToAll": "Kopiuj do wszystkich dni roboczych",
       "noBands": "Niepracujący",
       "nextDay": "następny dzień",
+      "bandStart": "Początek pasma",
+      "bandEnd": "Koniec pasma",
       "shiftPreset": "Zmiana",
       "breakHint": "Przerwa między dwoma pasmami to pauza — dostosuj godziny według potrzeb."
-    }
+    },
+    "defaultConstructionName": "Kalendarz budowlany NL",
+    "defaultStandardName": "Kalendarz standardowy"
   },
   "view": {
     "structureLockedHint": "Niedostępne podczas filtrowania/grupowania/sortowania",
@@ -1091,10 +1224,6 @@
     "enable": "Włącz planowanie godzinowe"
   },
   "recordedDates": {
-    "offer_one": "Ponowne przeliczenie przesunęło {{count}} z {{total}} zadań względem dat w pliku.",
-    "offer_few": "Ponowne przeliczenie przesunęło {{count}} z {{total}} zadań względem dat w pliku.",
-    "offer_many": "Ponowne przeliczenie przesunęło {{count}} z {{total}} zadań względem dat w pliku.",
-    "offer_other": "Ponowne przeliczenie przesunęło {{count}} z {{total}} zadań względem dat w pliku.",
     "activeCount_one": "Widzisz harmonogram tak, jak zapisał go Primavera; ponowne przeliczenie przesunęłoby {{count}} zadanie.",
     "activeCount_few": "Widzisz harmonogram tak, jak zapisał go Primavera; ponowne przeliczenie przesunęłoby {{count}} zadania.",
     "activeCount_many": "Widzisz harmonogram tak, jak zapisał go Primavera; ponowne przeliczenie przesunęłoby {{count}} zadań.",
@@ -1103,10 +1232,8 @@
     "activeCountNeutral_few": "Widzisz daty takie, jak zostały zapisane w pliku; ponowne przeliczenie przesunęłoby {{count}} zadania.",
     "activeCountNeutral_many": "Widzisz daty takie, jak zostały zapisane w pliku; ponowne przeliczenie przesunęłoby {{count}} zadań.",
     "activeCountNeutral_other": "Widzisz daty takie, jak zostały zapisane w pliku; ponowne przeliczenie przesunęłoby {{count}} zadania.",
-    "show": "Pokaż zapisane daty",
     "active": "Widzisz daty takie, jak zostały zapisane w pliku. Nie wykonano ponownego przeliczenia.",
     "recalculate": "Przelicz",
-    "markDeviates": "Odbiega",
     "markPartlyUnrecorded": "Częściowo niezapisane",
     "notRecorded": "Niezapisane"
   },
@@ -1233,7 +1360,7 @@
     "warnPast": "Nowa data rozpoczęcia jest w przeszłości.",
     "noTasks": "Ten projekt nie ma jeszcze zadań; przesuną się tylko daty projektu.",
     "invalidDate": "Wybierz prawidłową datę.",
-    "invalidCurrentStart": "Projekt nie ma prawidłowej daty rozpoczęcia; ustaw ją najpierw w Informacjach o projekcie.",
+    "invalidCurrentStart": "Projekt nie ma prawidłowego początku; ustaw go najpierw w Info o projekcie.",
     "apply": "Przesuń",
     "calcError": "Nie udało się obliczyć harmonogramu: {{error}}"
   },
@@ -1309,7 +1436,7 @@
   "progressImport": {
     "title": "Aktualizuj postęp z arkusza",
     "chooseFile": "Wybierz plik…",
-    "intro": "Wybierz zwrócony arkusz CSV. Aplikacja odczytuje tylko ukończenie, rzeczywiste rozpoczęcie i rzeczywiste zakończenie — reszta harmonogramu pozostaje bez zmian.",
+    "intro": "Wybierz zwrócony arkusz CSV lub XLSX. Aplikacja odczytuje tylko ukończenie, rzeczywiste rozpoczęcie i rzeczywiste zakończenie — reszta harmonogramu pozostaje bez zmian.",
     "summaryApplied": "Zastosowano: {{applied}}",
     "summaryNoop": "Bez zmian: {{noop}}",
     "summaryNeedsLink": "Czeka na powiązanie: {{needsLink}}",
@@ -1375,7 +1502,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "Kamień milowy trzyma się zaplanowanej granicy kalendarza",
-      "help": "Kamień milowy bez czasu trwania pozostaje na granicy kalendarza zaplanowanej w pliku: początek dnia pozostaje kamieniem początkowym, koniec pasma może wypaść na zakończeniu poprzednika."
+      "help": "Kamień milowy bez czasu trwania zostaje na granicy kalendarza planowanej w pliku: początek dnia zostaje kamieniem milowym startu, a koniec pasma może wypaść na zakończeniu poprzednika."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Planowany początek jako dodatkowa dolna granica",
@@ -1383,11 +1510,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Kamień końcowy jako okno granicy",
-      "help": "Kamień końcowy może leżeć na dwóch sąsiednich granicach kalendarza: najwcześniejsze rozpoczęcie na początku pasma, najwcześniejsze zakończenie na końcu poprzedniego pasma."
+      "help": "Kamień milowy zakończenia może leżeć na dwóch sąsiednich granicach kalendarza: najwcześniejsze rozpoczęcie na początku pasma, najwcześniejsze zakończenie na końcu poprzedniego pasma."
     },
     "p6PreserveActualInstants": {
       "label": "Przejmij daty rzeczywiste dokładnie",
-      "help": "Zarejestrowane rzeczywiste daty rozpoczęcia i zakończenia nie są przesuwane do pasma czasu pracy."
+      "help": "Zarejestrowane rzeczywiste rozpoczęcie i rzeczywiste zakończenie nie są przesuwane na brzeg pasma."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Zadanie w toku: najwcześniejsze rozpoczęcie = początek pozostałej pracy",
@@ -1395,7 +1522,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Dokładny moment ograniczenia na kamieniu milowym",
-      "help": "Ograniczenie daty i godziny na kamieniu milowym bez czasu trwania jest dokładnym punktem, także na początku pasma pracy."
+      "help": "Ograniczenie daty i godziny na kamieniu milowym bez czasu trwania jest dokładnym punktem, także na początku pasma."
     },
     "resumeFromActualElapsed": {
       "label": "Pozostała praca wznawia się po upływie czasu",
@@ -1407,23 +1534,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "Następnik zaczyna na granicy zakończenia",
-      "help": "Przy relacji zakończenia-rozpoczęcia bez opóźnienia na wspólnej granicy pasma następnik zaczyna się w chwili zakończenia poprzednika (tylko relacje oznaczone tak w pliku). Przy obliczaniu wstecz następnik pokazuje swój najpóźniejszy start po prostu jako początek pasma pracy."
+      "help": "Przy relacji zakończenie-rozpoczęcie bez opóźnienia następnik zaczyna się w pliku dokładnie na zakończeniu poprzednika, na końcu pasma. Wtedy zaczyna się na tym zakończeniu, a nie na początku kolejnego pasma. Plik tego nie oznacza: aplikacja sama rozpoznaje taką relację przy otwieraniu pliku .xer. Relacja, którą sam tworzysz, nie jest tym objęta. Przy obliczaniu wstecz następnik pokazuje swoje najpóźniejsze rozpoczęcie po prostu jako początek pasma."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Opóźnienie wstecz od granicy zakończenia",
-      "help": "Gdy obliczenie wstecz odejmuje opóźnienie w czasie pracy od granicy zakończenia i trafia dokładnie na początek pasma, ląduje na poprzedniej granicy zakończenia. Przy relacji zakończenie-zakończenie bez opóźnienia najpóźniejsze zakończenie na końcu pasma również pozostaje na tej granicy zakończenia."
+      "help": "Gdy obliczenie wstecz odejmuje od granicy zakończenia opóźnienie w godzinach pracy i trafia dokładnie na początek pasma, ląduje na poprzedniej granicy zakończenia. Także przy relacji zakończenie-zakończenie bez opóźnienia najpóźniejsze zakończenie na końcu pasma pozostaje na tej granicy zakończenia."
     },
     "p6CompletedDataDateWindow": {
       "label": "Zakończone zadanie w oknie daty stanu",
-      "help": "Zakończone zadanie otrzymuje wczesne daty w oknie daty stanu, a jego koniec liczy się do końca projektu (tylko zadania pochodzące z P6)."
+      "help": "Zakończone zadanie dostaje wczesne daty w oknie daty statusu, a jego zakończenie liczy się do końca projektu."
     },
     "p6CompletedLoeActualFinish": {
       "label": "Zakończone LOE przez rzeczywiste zakończenie",
-      "help": "Zakończone działanie level-of-effort z jednym wejściem początek-początek podąża trasą przez swoje rzeczywiste zakończenie (tylko zadania pochodzące z P6)."
+      "help": "Zakończone zadanie level-of-effort z samym wejściem rozpoczęcie-rozpoczęcie podąża trasą przez swoje rzeczywiste zakończenie."
     },
     "p6OpenLoeTargetSpan": {
       "label": "Nierozpoczęte LOE przyjmuje okno docelowe",
-      "help": "Działanie level-of-effort, które jeszcze się nie rozpoczęło, przyjmuje swoje okno docelowe jako czas trwania (tylko zadania pochodzące z P6)."
+      "help": "Zadanie level-of-effort, które jeszcze się nie rozpoczęło, przyjmuje swoje okno docelowe jako czas trwania."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Zakończony poprzednik nie wstrzymuje po dacie stanu",
@@ -1439,7 +1566,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Zadanie zakończone poza kolejnością czeka na poprzedników",
-      "help": "Zakończone zadanie, którego poprzednik jeszcze się nie zakończył, dostaje swoje zerowe okno po tym poprzedniku zamiast w dacie stanu (Retained Logic)."
+      "help": "Zakończone zadanie, którego poprzednik nie jest jeszcze zakończony, dostaje swoje zerowe okno po tym poprzedniku, a nie w dacie statusu (P6: Retained Logic). Działa tylko wtedy, gdy włączone są także „Zakończone zadanie w oknie daty stanu” i „Zadanie w toku: najwcześniejsze rozpoczęcie = początek pozostałej pracy”."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Zakończone zadanie z postępem fizycznym na dacie stanu",
@@ -1459,19 +1586,19 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "Najpóźniejsze zakończenie w kalendarzu zadania",
-      "help": "Jeśli najpóźniejsze zakończenie wyznaczone przez następnika wypada poza czasem pracy zadania, staje się końcem poprzedniego okresu pracy w kalendarzu zadania."
+      "help": "Jeśli najpóźniejsze zakończenie narzucone przez następnika wypada poza godzinami pracy zadania, staje się końcem poprzedniego pasma w kalendarzu zadania."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override pomija rozpoczętego następnika także wstecz",
       "help": "Przy Progress Override powiązanie z już rozpoczętym następnikiem nie wpływa na najpóźniejsze terminy ani zapas swobodny niezakończonego poprzednika."
     },
     "p6FinishNotBeforeFinishFinishBound": {
-      "label": "Najwcześniejsze zakończenie nie przed granicą zakończeniem-zakończeniem",
-      "help": "Przy powiązaniu zakończeniu-zakończeniu najwcześniejsze zakończenie następnika nigdy nie wypada w czasie zegarowym przed granicą wyznaczoną przez poprzednika. Jeśli ta granica przypada w czasie wolnym następnika, zakończeniem staje się początek następnego okresu pracy."
+      "label": "Najwcześniejsze zakończenie nie przed granicą zakończenie-zakończenie",
+      "help": "Przy relacji zakończenie-zakończenie najwcześniejsze zakończenie następnika nigdy nie wypada w czasie zegarowym przed granicą, którą wyznacza poprzednik. Jeśli ta granica przypada w czasie wolnym od pracy następnika, zakończeniem staje się początek następnego pasma."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "Zadania ALAP tak późno, jak pozwalają następniki",
-      "help": "Nierozpoczęte zadanie z ograniczeniem „najpóźniej jak to możliwe” kończy się co do minuty wtedy, gdy potrzebują go następniki, najpierw następniki, tak aby łańcuch był ciągły. Jego własny planowany początek się nie liczy; zadanie bez poprzednika nie zaczyna się wtedy przed datą stanu. Dotyczy tylko kalendarza godzinowego."
+      "help": "Nierozpoczęte zadanie z ograniczeniem „jak najpóźniej” kończy się co do minuty, w której potrzebują go następniki, najpierw następniki, tak aby łańcuch się domknął. Jego własne planowane rozpoczęcie się nie liczy; zadanie bez poprzednika nie zaczyna się wtedy wcześniej niż w dacie statusu."
     }
   },
   "profiles": {
@@ -1486,13 +1613,22 @@
   "schedulingProfile": {
     "title": "Profil obliczeń i opcje",
     "profile": "Profil obliczeń",
+    "newProfile": "Nowy profil",
+    "newProfileTitle": "Nowy profil obliczeń",
+    "newProfileIntro": "Nowy profil dostaje wszystkie konwencje „{{name}}”, także odchylenia. Potem możesz każdą konwencję sam włączyć lub wyłączyć. Dopiero po kliknięciu „Zastosuj” projekt będzie liczony z nowym profilem.",
+    "newProfileName": "Nazwa nowego profilu",
+    "newProfileCreate": "Utwórz",
+    "bareBaseHint": "„{{name}}” to czysta baza, bez odchyleń tego projektu. Jeśli chcesz je zachować, wybierz „{{modified}}”.",
     "conventionsTitle": "Konwencje tego profilu",
+    "builtInReadOnly": "{{name}} to wbudowany profil. Konwencje są tu pokazane tylko do wglądu i nie można ich zmienić. Chcesz inne konwencje? Wybierz {{button}}.",
+    "builtInDeviations": "Ten projekt pochodzi ze starszego pliku. Pomarańczowe konwencje odbiegają od bazy {{name}} i tak są liczone. Chcesz je zmienić? Wybierz {{button}}.",
     "optionsTitle": "Opcje obliczeń tego projektu",
     "customName": "Nazwa tego własnego profilu",
     "saveAsTemplate": "Zapisz jako szablon",
     "updateTemplate": "Aktualizuj szablon z tego projektu",
     "applyTemplate": "Aktualizuj z szablonu",
     "deleteTemplate": "Usuń szablon",
+    "deleteTemplateConfirm": "Usunąć szablon „{{name}}”? Projekty z tym profilem zachowają własną kopię.",
     "templateDeviates": "Ten profil różni się od szablonu „{{name}}”.",
     "themes": {
       "completedWork": "Postęp i ukończona praca",
@@ -1503,12 +1639,13 @@
       "msproject": "Postęp jak w Microsoft Project",
       "ownProfilesOnly": "Tylko dla własnych profili"
     },
-    "ownProfilesOnlyNote": "Te konwencje są wyłączone w każdym wbudowanym profilu, także w Primavera P6. Włączenie którejś tworzy własny profil.",
+    "ownProfilesOnlyNote": "Te konwencje są wyłączone w każdym wbudowanym profilu, także w Primavera P6. Włączyć je może tylko własny profil: wybierz do tego Nowy profil.",
     "deviatingCount": "zmienione: {{n}}",
     "baseValue": "bazowo: {{value}}",
     "on": "wł.",
     "off": "wył.",
     "resetToBase": "przywróć bazę",
+    "storeChangedUnderDraft": "Profil obliczeń projektu zmienił się w międzyczasie, na przykład przez „Cofnij”. Poniżej jest nadal Twój własny wybór. Przyciskiem {{apply}} przywracasz ten wybór w projekcie.",
     "showHelp": "Objaśnienie: „{{name}}”",
     "sourceOptions": {
       "title": "Ustawienia z pliku źródłowego",
@@ -1517,6 +1654,27 @@
       "useProjectEndDateForFloat": "Licz zapas do daty zakończenia projektu",
       "p6CompletedLateFromRemainingWindow": "Ukończone zadanie: późne terminy od daty stanu",
       "needsConvention": "Działa tylko razem z konwencją „{{convention}}”, która jest teraz wyłączona."
+    },
+    "requires": {
+      "xerOrigin": "tylko zadania z .xer",
+      "hourPlanning": "tylko planowanie godzinowe",
+      "hourPlanningTitle": "Działa tylko przy planowaniu godzinowym: kalendarz z pasmami, zadanie w godzinach albo kalendarz opóźnień ustawiony na 24 godziny."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (domyślnie: {{standard}})",
+      "intro": "Te opcje obliczeń różnią się od domyślnych ustawień {{name}}. Często jest to celowe, na przykład dlatego że pochodzą z otwartego pliku.",
+      "introNeutral": "Te opcje obliczeń różnią się od domyślnych ustawień {{name}}. Może to być celowy wybór.",
+      "useDefaults": "Użyj domyślnych ustawień {{name}}",
+      "totalFloatAtMost": "zapas całkowity ≤ {{amount}}",
+      "hours_one": "{{count}} godzina",
+      "hours_few": "{{count}} godziny",
+      "hours_many": "{{count}} godzin",
+      "hours_other": "{{count}} godziny",
+      "days_one": "{{count}} dzień roboczy",
+      "days_few": "{{count}} dni robocze",
+      "days_many": "{{count}} dni roboczych",
+      "days_other": "{{count}} dnia roboczego",
+      "tfAuto": "Automatycznie"
     }
   },
   "dialogHelp": {
@@ -1574,5 +1732,81 @@
     "saveHint": "Projekt zostanie zapisany w witrynie jako nowy plik IFC. Potem polecenie Zapisz (Ctrl+S) zapisuje tam nową wersję.",
     "saveToSite": "Zapisz w witrynie",
     "toThisPc": "Na tym komputerze…"
+  },
+  "formatNotice": {
+    "title": "Otwarto {{format}}",
+    "readMore": "Czytaj więcej",
+    "dontShowAgain": "Nie pokazuj ponownie dla {{format}}",
+    "close": "Rozumiem",
+    "settingsSection": "Pokaż wyjaśnienie po otwarciu",
+    "formats": {
+      "xer": {
+        "name": "Plik Primavera (.xer)",
+        "kept": "Aplikacja przejęła WBS i zadania wraz z relacjami, kalendarzami, zasobami, postępem, kodami czynności i polami niestandardowymi. Projekt bazowy staje się planem bazowym projektu, który się do niego odwołuje.",
+        "limited": "Relacja między dwoma projektami nie staje się relacją w Twoim harmonogramie. Jeśli obliczenie odbiega, najpierw widzisz daty tak, jak je zapisała Primavera.",
+        "save": "Zapisanie tworzy nowy plik IFC, z oryginalnym plikiem .xer w środku. Zapis z powrotem do .xer nie jest możliwy: Twój plik .xer nigdy się nie zmienia."
+      },
+      "mpp": {
+        "name": "Plik MS Project (.mpp)",
+        "kept": "Aplikacja przejęła zadania ze strukturą, czasem trwania i ograniczeniami, a także relacje, kalendarze, zasoby, przydziały i postęp.",
+        "limited": "Plany bazowe, koszty i stawki, notatki oraz pola niestandardowe MS Project nie są przenoszone. Jeśli obliczenie odbiega, najpierw widzisz daty tak, jak je zapisał MS Project.",
+        "save": "Zapisanie tworzy nowy plik IFC: Twój plik .mpp nigdy się nie zmienia. Zapis z powrotem do .mpp nie jest możliwy. Eksport do MS Project XML jest możliwy."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "Aplikacja przejęła zadania ze strukturą, a także relacje, ograniczenia, kalendarze, zasoby, przydziały, postęp, datę statusu i plan bazowy 0.",
+        "limited": "Notatki, kody czynności i pola niestandardowe nie są uwzględniane. Projekt oblicza według profilu Open Planner Studio, a nie jak Microsoft Project.",
+        "save": "Zapis tworzy nowy plik IFC: twój plik XML się nie zmienia. Zapisać z powrotem możesz przez Eksport › MS Project XML."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "Aplikacja przejęła WBS, zadania, relacje, ograniczenia, kalendarze, zasoby, przydziały, postęp oraz datę statusu. Projekt z planem bazowym staje się planem bazowym projektu, do którego należy.",
+        "limited": "Terminy ostateczne, kody czynności, pola niestandardowe i notatki nie są uwzględniane. Projekt oblicza według profilu Open Planner Studio, a nie jak Primavera P6.",
+        "save": "Zapis tworzy nowy plik IFC: twój plik XML się nie zmienia. Zapisać z powrotem możesz przez Eksport › Primavera P6 XML."
+      },
+      "csv": {
+        "name": "Plik CSV",
+        "kept": "Aplikacja odczytała po jednym zadaniu w wierszu: nazwę, kod WBS, czas trwania, daty, poprzedników i postęp.",
+        "limited": "Plik CSV nie zawiera zasobów, kalendarzy, ograniczeń, terminów ostatecznych ani planów bazowych. Projekt nazywa się CSV Import.",
+        "save": "Zapis tworzy nowy plik IFC: twój plik CSV się nie zmienia. Zapisać z powrotem możesz przez Eksport › CSV (rozdzielany średnikiem)."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "W jakim schemacie IFC zapisać?",
+    "body": "Ten plik został zapisany jako {{schema}}. Aplikacja domyślnie zapisuje jako IFC 4.3 ADD2, schemat IfcOpenShell i Bonsai. Chcesz zachować ten plik jako {{schema}}? Możesz to później zmienić w „Informacje o projekcie“.",
+    "bodyUnwritable": "Ten plik został zapisany jako {{schema}}. Aplikacja nie potrafi zapisać tego schematu. Wybierz schemat, w którym aplikacja zapisze plik. Możesz to później zmienić w „Informacje o projekcie“.",
+    "keep": "Zachowaj {{schema}}",
+    "toDefault": "Zapisz jako IFC 4.3 ADD2"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "Zadanie staje się zadaniem sumarycznym",
+    "intro_one": "„{{phase}}“ dostaje podzadanie „{{child}}“ i staje się zadaniem sumarycznym.",
+    "intro_few": "„{{phase}}“ dostaje {{count}} podzadania i staje się zadaniem sumarycznym.",
+    "intro_many": "„{{phase}}“ dostaje {{count}} podzadań i staje się zadaniem sumarycznym.",
+    "intro_other": "„{{phase}}“ dostaje {{count}} podzadania i staje się zadaniem sumarycznym.",
+    "introMany_one": "Ta czynność zamienia {{count}} zadanie w zadanie sumaryczne.",
+    "introMany_few": "Ta czynność zamienia {{count}} zadania w zadania sumaryczne.",
+    "introMany_many": "Ta czynność zamienia {{count}} zadań w zadania sumaryczne.",
+    "introMany_other": "Ta czynność zamienia {{count}} zadania w zadania sumaryczne.",
+    "noOwnAssignments": "Zadanie sumaryczne nie ma własnych przydziałów.",
+    "question_one": "Co chcesz zrobić z przydziałem: {{resources}}?",
+    "question_few": "Co chcesz zrobić z przydziałami: {{resources}}?",
+    "question_many": "Co chcesz zrobić z przydziałami: {{resources}}?",
+    "question_other": "Co chcesz zrobić z przydziałami: {{resources}}?",
+    "questionMany": "Co chcesz zrobić z ich przydziałami?",
+    "row": "„{{phase}}“: {{resources}}",
+    "remove_one": "Usuń przydział",
+    "remove_few": "Usuń przydziały",
+    "remove_many": "Usuń przydziały",
+    "remove_other": "Usuń przydziały",
+    "moveTo": "Przenieś do „{{child}}“",
+    "moveToSubtasks": "Przenieś do podzadań",
+    "blockedDuplicate": "Nie można przenieść: „{{child}}“ ma już {{resources}}.",
+    "blockedNoChild": "Nie można przenieść: „{{phase}}“ nie dostaje podzadania, które może nieść przydział, tylko kamienie milowe lub zadania sumaryczne.",
+    "actualWorkLost_one": "W przydziale dla {{resource}} jest już {{hours}} godzina pracy rzeczywistej. Usunięcie odrzuci tę pracę.",
+    "actualWorkLost_few": "W przydziale dla {{resource}} jest już {{hours}} godziny pracy rzeczywistej. Usunięcie odrzuci tę pracę.",
+    "actualWorkLost_many": "W przydziale dla {{resource}} jest już {{hours}} godzin pracy rzeczywistej. Usunięcie odrzuci tę pracę.",
+    "actualWorkLost_other": "W przydziale dla {{resource}} jest już {{hours}} godziny pracy rzeczywistej. Usunięcie odrzuci tę pracę."
   }
 }

@@ -192,20 +192,22 @@ export function parseExternalLagInput(input: string): ExternalLag | null {
   const value = Number.parseFloat(match[1].replace(',', '.'));
   if (!Number.isFinite(value) || Math.abs(value) > MAX_LAG_ABS) return null;
   const suffix = match[2] ?? 'd';
-  const storedValue = Math.round(suffix === 'u' || suffix === 'h' ? value * 60 : value);
+  // Daginvoer gebruikt dezelfde symmetrische afronding als interne relaties.
+  const storedValue = suffix === 'u' || suffix === 'h'
+    ? Math.round(value * 60)
+    : (Math.sign(value) * Math.round(Math.abs(value)) || 0);
   if (!Number.isSafeInteger(storedValue) || Math.abs(storedValue) > MAX_LAG_ABS) return null;
   return suffix === 'u' || suffix === 'h' ? { lagMinutes: storedValue } : { lagDays: storedValue };
 }
 
 /** De lag van een externe relatie is óf minuten óf dagen, nooit beide: minuten winnen zodra ze
- *  gezet zijn (ook 0), anders de dagen (standaard 0). Let op: `canonicalLag` hieronder, voor de
- *  WEERGAVE, behandelt 0 minuten juist als afwezig en rondt af. */
+ *  gezet zijn (ook 0), anders de dagen (standaard 0). De weergave hieronder volgt dezelfde voorrang. */
 export function exclusiveExternalLag(lag: ExternalLagFields): ExternalLag {
   return lag.lagMinutes !== undefined ? { lagMinutes: lag.lagMinutes } : { lagDays: lag.lagDays ?? 0 };
 }
 
 function canonicalLag(lag: ExternalLagFields): ExternalLag {
-  if (isFiniteNumber(lag.lagMinutes) && lag.lagMinutes !== 0) {
+  if (isFiniteNumber(lag.lagMinutes)) {
     return { lagMinutes: Math.round(lag.lagMinutes) };
   }
   if (isFiniteNumber(lag.lagDays)) {
@@ -214,11 +216,12 @@ function canonicalLag(lag: ExternalLagFields): ExternalLag {
   return { lagDays: 0 };
 }
 
-export function formatExternalLagShort(lag: ExternalLagFields): string {
+/** Korte lagtekst van een externe relatie; `hourSuffix` volgt de app-taal ("+2u" nl, "+2h" en). */
+export function formatExternalLagShort(lag: ExternalLagFields, hourSuffix: 'u' | 'h' = 'u'): string {
   const canonical = canonicalLag(lag);
   if (canonical.lagMinutes !== undefined) {
     const hours = canonical.lagMinutes / 60;
-    return hours === 0 ? '' : `${hours > 0 ? '+' : ''}${trimNumber(hours, 2)}u`;
+    return hours === 0 ? '' : `${hours > 0 ? '+' : ''}${trimNumber(hours, 2)}${hourSuffix}`;
   }
   const days = canonical.lagDays ?? 0;
   return days === 0 ? '' : `${days > 0 ? '+' : ''}${days}d`;
@@ -311,7 +314,11 @@ function payloadJson(payload: ExternalRelationClipboardV1): string {
   return JSON.stringify(orderedPayload(payload));
 }
 
-export function formatExternalRelationClipboard(ownerTaskId: string, link: ExternalLink): string {
+export function formatExternalRelationClipboard(
+  ownerTaskId: string,
+  link: ExternalLink,
+  hourSuffix: 'u' | 'h' = 'u',
+): string {
   const origin: ExternalRelationOrigin = { ownerTaskId, direction: link.direction, linkId: link.id };
   const lag = canonicalLag(link);
   const payload: ExternalRelationClipboardV1 = {
@@ -324,13 +331,13 @@ export function formatExternalRelationClipboard(ownerTaskId: string, link: Exter
     anchorDate: link.anchorDate,
     sourceMissing: link.sourceMissing,
   };
-  const visible = `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(lag)}`;
+  const visible = `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(lag, hourSuffix)}`;
   return `${visible}${TOKEN_MARKER}${encodeBase64Url(payloadJson(payload))}${TOKEN_END}`;
 }
 
 /** Zichtbare helft van de canonieke clipboardvorm, voor celchips en editortekst. */
-export function formatExternalRelationVisible(link: ExternalLink): string {
-  return `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(canonicalLag(link))}`;
+export function formatExternalRelationVisible(link: ExternalLink, hourSuffix: 'u' | 'h' = 'u'): string {
+  return `${canonicalExternalSourceLabel(link.sourceRef)} ${link.relType}${formatExternalLagShort(canonicalLag(link), hourSuffix)}`;
 }
 
 function validString(value: unknown, maxLength: number, allowEmpty = false): value is string {

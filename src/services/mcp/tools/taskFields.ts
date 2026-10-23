@@ -90,6 +90,9 @@ export interface TaskFieldContext {
   durationCalendar: (calendarId: string | null | undefined) => { hoursPerDay: number; hasWorkBlocks: boolean };
 }
 
+export const SUMMARY_DURATION_READ_ONLY =
+  'a summary task duration is derived from its subtasks; change the leaf task durations instead';
+
 const DURATION_TYPES: DurationType[] = ['WORKTIME', 'ELAPSEDTIME'];
 const CONSTRAINT_TYPES: ConstraintType[] = ['ASAP', 'ALAP', 'SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO'];
 const MILESTONE_KINDS: MilestoneKind[] = ['START', 'FINISH'];
@@ -293,6 +296,7 @@ export function parseTaskFields(raw: unknown, ctx: TaskFieldContext): TaskFieldR
     top.description = raw.description;
   }
   if ('duration' in raw) {
+    if (ctx.hasChildren) return { ok: false, reason: SUMMARY_DURATION_READ_ONLY };
     const d = raw.duration;
     if (typeof d !== 'number' || !Number.isFinite(d) || d < 0) {
       return { ok: false, reason: '`duration` must be a finite number ≥ 0 in the unit of `durationUnit`' };
@@ -539,7 +543,7 @@ export const TASK_FIELD_SCHEMA_PROPERTIES: Record<string, unknown> = {
     description:
       'Native task duration in the unit of `durationUnit` (default days for backward compatibility). In days ' +
       'a fraction is allowed (2.5); the bridge does not round it, but a WORKTIME day task does occupy whole ' +
-      'working days in its dates (2.5 ⇒ 3). Milestone ⇒ must be 0.',
+      'working days in its dates (2.5 ⇒ 3). Milestone ⇒ must be 0. Summary task ⇒ derived and read-only; omit duration.',
   },
   durationUnit: {
     type: 'string',
@@ -547,10 +551,15 @@ export const TASK_FIELD_SCHEMA_PROPERTIES: Record<string, unknown> = {
     description: 'Persistent task unit. Always give it together with `duration`; hours requires concrete work blocks.',
   },
   durationType: { type: 'string', enum: ['WORKTIME', 'ELAPSEDTIME'], description: 'WORKTIME = working days (default), ELAPSEDTIME = elapsed time.' },
-  taskType: { type: 'string', enum: TASK_TYPES },
+  taskType: {
+    type: 'string',
+    enum: TASK_TYPES,
+    description: 'Work category of the task (shown in the app as "Work category"; IFC `PredefinedType`). Not the ' +
+      'scheduling task type: that is `workRule`.',
+  },
   customTaskType: {
     type: 'object',
-    description: 'OPS custom type with a stable id and project snapshot name; sets taskType to USERDEFINED. An existing id cannot change its name.',
+    description: 'Custom work category (shown in the app as "Custom work category"): OPS custom type with a stable id and project snapshot name; sets taskType to USERDEFINED. An existing id cannot change its name.',
     properties: { id: { type: 'string' }, name: { type: 'string' } },
     required: ['id', 'name'], additionalProperties: false,
   },
@@ -582,7 +591,7 @@ export const TASK_FIELD_SCHEMA_PROPERTIES: Record<string, unknown> = {
     type: ['string', 'null'],
     enum: [...WORK_RULES, null],
     description:
-      'Work rule (task type) of the task: which corner of work = remaining duration × units stays fixed when ' +
+      'Task type (`workRule`; shown in the app as "Task type") of the task: which corner of work = remaining duration × units stays fixed when ' +
       'another changes. FIXED_DURATION_RATE (default, MSP "Fixed Duration", not effort-driven): duration and ' +
       'units stay, the work follows. FIXED_DURATION_WORK (P6 "Fixed Duration & Units"): duration and work ' +
       'stay, the units follow. FIXED_WORK (MSP "Fixed Work", P6 "Fixed Units"): the work stays; more units ' +
@@ -597,7 +606,8 @@ export const TASK_FIELD_SCHEMA_PROPERTIES: Record<string, unknown> = {
 export const TASK_FIELDS_DOC =
   `Allowed fields: ${TASK_FIELD_NAMES.join(', ')}. Any other key is REFUSED with a reason (never silently ` +
   'ignored) and leaves the whole item unchanged. `duration` follows `durationUnit` (`days` or `hours`; ' +
-  'without a unit the backward-compatible day rule stays). Give both together to change the unit ' +
+  'without a unit the backward-compatible day rule stays). A summary task duration is derived from its subtasks ' +
+  'and cannot be set; omit duration on new parents that have children in the same add_tasks call. Give both together to change the unit ' +
   'deliberately; the `time` branch itself, `status`, `parentId` and `resourceIds` are deliberately not ' +
   'settable here (use `progress`, planner_move_task and planner_manage_assignments respectively). `workRule` ' +
   'sets the task type (work = remaining duration × units; see the field description) — remaining work per ' +

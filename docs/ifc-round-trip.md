@@ -238,6 +238,14 @@ vroeger (de klokuren). v2026.9.0 leest de blokken van een nieuw bestand al niet 
 `HoursPerDay` in plaats van 8. Toetsen: `check-ifc-urenperdag-blokken.ts`, `check-ifc-urenperdag-corpus.ts`
 (met `OPS_XER_CORPUS`) en §10 van `check-ifc-calendar-identity.ts`.
 
+Een dagkalender met werktijd 00:00–24:00 schrijft één periode '00:00:00'–'24:00:00'. De reader ziet die
+periode zelf als afwijkend (een hele dag, `canonicalizeBands`) en promoveerde de kalender zonder markering
+naar een uurkalender met 24 uur per dag; de bewaarde `HoursPerDay` verloor het van de promotie. Daarom
+krijgt zo'n dagkalender `IsHourCalendar = .F.` (`scalarPeriodReadsAsHour` in `ifcWriter.ts`), net als een
+dagkalender met gematerialiseerde blokken. Dezelfde toets geldt voor een periode over middernacht. Andere
+dagkalenders krijgen geen markering. Een bestand van vóór deze regel leest nog als uurkalender. Toets:
+`check-ifc-dagkalender-hele-dag.ts`.
+
 Het verborgen dagengetal van een urentaak volgt `hoursPerDay` niet (eigenaarsbesluit 2026-10-15, optie 2:
 "een dag is de echte werktijd"). `scheduleDuration` is daar werkminuten ÷ de werktijd per dag van de
 taakkalender, bij een uurkalender de modale dagsom van de blokken (`hourTaskScheduleDuration` in
@@ -377,6 +385,21 @@ IfcWorkPlan.StartTime. Valt die later dan de vroegste ingelezen taakstart, dan g
 - De twee kubusbestanden van BlenderBIM (StartTime vóór de eerste taak): projectstart 2022-09-12 en
   2022-09-14 uit StartTime (59794aa55: 2022-10-01, en als einde de tekst `.NOTDEFINE`). De 9 taken zijn
   na doorrekenen gelijk.
+
+**Planomvang tegenover projectinvoer.** `IfcWorkPlan.StartTime`/`FinishTime` en de gelijknamige
+slots van het live `IfcWorkSchedule` delen de vroegste getoonde taakstart en het laatste getoonde
+taakeinde (`shownStart`/`shownFinish` uit `taskDates`, inclusief samenvattingen). Die helpers bepalen
+wanneer een werkelijke datum vaststaat en wanneer early of invoer geldt; de writer rekent niet opnieuw.
+Vóór de getoonde datumkeuze én min/max gebruikt een tijdelijke taakkopie dezelfde formatter als
+`IfcTaskTime`: een kale datum wordt bij een urentaak `00:00`, bij een dagtaak het bestaande
+`07:00`-anker. De headers nemen die
+STEP-waarden rechtstreeks over. Ook de vergelijking van werkelijke en berekende fase-starts ziet
+dan genormaliseerde tijden, zodat de eerste save en herhaalde rondgangen dezelfde tijden dragen.
+Zonder taakdatum valt elke as terug op de projectinvoer. Zonder enige start krijgt het verplichte
+`StartTime` het schrijfmoment; een ontbrekend `FinishTime` blijft `$`. De expliciete projectinvoer
+blijft altijd apart in `OPS_ProjectSettings.ProjectStartDate`/`ProjectEndDate`, ook leeg.
+Regressie voor knownbug 109: `check-ifc-projectdatum-tijd.ts` §7 (elk projectschema, drie rondgangen,
+broninvoer blijft staan) en `check-recorded-dates.ts` §7D (twee rondgangen in de opgeslagen-datummodus).
 
 **Projectstart en -einde met tijd.** Na een XER-import hebben projectstart en -einde een tijd, zoals
 `2012-12-17T07:00`. De writer schrijft `ProjectStartDate`/`ProjectEndDate` dan als IFCDATETIME met

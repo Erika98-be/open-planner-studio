@@ -37,10 +37,12 @@
 // gezet — exact de route die `applyLeveling`→`runCPM` straks echt neemt. Zo bevat de preview óók
 // niet-geresourcete FS-opvolgers die pas via de forward pass meeschuiven.
 import type { Task, TaskSplitGap } from '@/types/task';
+import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import type { Sequence } from '@/types/sequence';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type { WorkCalendar } from '@/types/calendar';
 import { CalendarEngine } from './CalendarEngine';
+import { LevelingQueue } from './levelingQueue';
 import { resolveCalendar } from './resolveCalendar';
 import { CPMSolver, type CPMResult, type CPMOptions } from './CPMSolver';
 import { assignmentDayUnits, contourLookup, maxUnitsOn, enumerateWorkDays } from './ResourceLoad';
@@ -149,6 +151,12 @@ export interface LevelingShift {
   delta: number;
 }
 
+export interface LevelingIntrinsicOverrun {
+  resourceId: string;
+  peak: number;
+  capacity: number;
+}
+
 export interface LevelingResult {
   /** taskId → toegepaste levelingDelay (werkdagen), alleen taken die daadwerkelijk een eigen delay
    *  krijgen. Vastgepinde/niet-geresourcete opvolgers staan hier NIET in (die schuiven via de CPM-
@@ -158,6 +166,8 @@ export interface LevelingResult {
   unresolved: Record<string, string[]>;
   /** taskId → reden van het onopgeloste conflict (parallel aan `unresolved`). */
   unresolvedReasons: Record<string, LevelingReason>;
+  /** Details uit dezelfde dagvraag/capaciteitscheck als INTRINSIC_OVERRUN; geen UI-herberekening. */
+  intrinsicOverruns?: Record<string, LevelingIntrinsicOverrun>;
   /** taskId → start-verschuiving voor de preview-tabel (elke taak wiens start wijzigt). */
   shifts: Record<string, LevelingShift>;
   projectEndBefore: string;
@@ -168,10 +178,6 @@ export interface LevelingResult {
    *  `allowSplits` blijft dit altijd `{}`. */
   gaps: Record<string, TaskSplitGap[]>;
 }
-
-// Float-tolerantie: dag-granulaire eenheden zijn honderdsten (largestRemainderRound); een
-// kleine epsilon voorkomt dat 1.0000000001 > 1.0 een fantoomconflict oplevert.
-const EPS = 1e-9;
 
 // Harde bovengrens voor de kandidaat-scan wanneer er een poolitem-grootboek MET
 // horizon is meegegeven (`ledger.horizonIso`) — die kan de scan voorbij de gewone, taak-eigen
@@ -608,6 +614,7 @@ export function levelResources(
   const delays: Record<string, number> = {};
   const unresolved: Record<string, string[]> = {};
   const unresolvedReasons: Record<string, LevelingReason> = {};
+  const intrinsicOverruns: Record<string, LevelingIntrinsicOverrun> = {};
   // TaskId → de volledige, te schrijven `splitGaps`-waarde (bestaande
   // importsplits + eventuele nieuwe leveling-gaten). Alleen gezet voor taken die daadwerkelijk via
   // `findSlot`s scatter-tak geplaatst zijn — zonder `allowSplits` blijft dit `{}`.
@@ -619,13 +626,10 @@ export function levelResources(
   // (1) Keuze: vroeger `sortedActive.find(...)` per plaatsing — O(A²). Nu een heap met de
   //     sorteerrang van de GEREEDSTAANDE taken (alle voorgangers geplaatst): het minimum is exact de
   //     taak die `find` zou kiezen.
-  // (2) PF: vroeger een volledige CPM-solve per plaatsing (~97% van de looptijd; 4000 taken/800
-  //     toegewezen = 68 s). De PF van `pick` verandert alleen als een taak STROOMOPWAARTS van `pick`
-  //     sinds de vorige solve een vertraging of nieuwe gaten kreeg. We houden de vroege starts van de
-  //     laatste solve vast en rekenen alleen opnieuw als `pick` stroomafwaarts ligt van zo'n wijziging.
-  //     Twee dingen laten een vroege start ook van NIET-voorgangers afhangen: ALAP (schuift met de
-  //     vrije speling, die van de late datums en het projecteinde afhangt) en hammock/LOE (de finish
-  //     volgt de opvolgers). Staat er zo'n taak in het netwerk, dan geldt elke wijziging als globaal.
+  // (2) PF: één solver houdt de voorwaartse datums bij. Een delay/nieuw gat markeert alleen de
+  //     gewijzigde taak; een topologische wachtrij propageert de wijziging tot de gevraagde taak.
+  //     ALAP/hammock en voltooid gemelde taken zonder werkelijk einde houden de volledige solve:
+  //     hun uiteindelijke start kan ná de voorwaartse pass nog veranderen.
   //     Uitkomst identiek aan de oude route (`check-leveler-differential.ts`).
   const rankOf = new Map(sortedActive.map((id, i) => [id, i]));
   const succsOf = new Map<string, string[]>();
@@ -633,79 +637,47 @@ export function levelResources(
   for (const [succ, preds] of predsOf) {
     for (const pred of preds) (succsOf.get(pred) ?? succsOf.set(pred, []).get(pred)!).push(succ);
   }
-  const readyHeap: number[] = [];
-  const heapPush = (rank: number) => {
-    readyHeap.push(rank);
-    let i = readyHeap.length - 1;
-    while (i > 0) {
-      const parent = (i - 1) >> 1;
-      if (readyHeap[parent] <= readyHeap[i]) break;
-      [readyHeap[parent], readyHeap[i]] = [readyHeap[i], readyHeap[parent]];
-      i = parent;
-    }
-  };
-  const heapPop = (): number | undefined => {
-    if (readyHeap.length === 0) return undefined;
-    const top = readyHeap[0];
-    const last = readyHeap.pop()!;
-    if (readyHeap.length > 0) {
-      readyHeap[0] = last;
-      let i = 0;
-      for (;;) {
-        const l = 2 * i + 1, r = l + 1;
-        let m = i;
-        if (l < readyHeap.length && readyHeap[l] < readyHeap[m]) m = l;
-        if (r < readyHeap.length && readyHeap[r] < readyHeap[m]) m = r;
-        if (m === i) break;
-        [readyHeap[m], readyHeap[i]] = [readyHeap[i], readyHeap[m]];
-        i = m;
-      }
-    }
-    return top;
-  };
+  const readyHeap = new LevelingQueue();
   for (const id of sortedActive) {
     const count = predsOf.get(id)!.filter(p => !placed.has(p)).length;
     pending.set(id, count);
-    if (count === 0) heapPush(rankOf.get(id)!);
+    if (count === 0) readyHeap.push(rankOf.get(id)!);
   }
   const markPlaced = (id: string) => {
     for (const succ of succsOf.get(id) ?? []) {
       const left = pending.get(succ);
       if (left === undefined) continue;          // niet-actieve opvolger
       pending.set(succ, left - 1);
-      if (left - 1 === 0 && !placed.has(succ)) heapPush(rankOf.get(succ)!);
+      if (left - 1 === 0 && !placed.has(succ)) readyHeap.push(rankOf.get(succ)!);
     }
   };
 
   const globalDeps = workTasks.some(t => t.isHammock
-    || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP');
-  let pfEarlyStart: Map<string, string> | null = LEVELER_TEST_HOOKS.incremental
-    ? new Map([...baseline.tasks].map(([id, r]) => [id, r.earlyStart]))
-    : null;
-  const stale = new Set<string>();
+    || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP'
+    || (t.time.completion >= 1 && !t.time.actualFinish));
+  let forward: ReturnType<CPMSolver['createLevelingForwardPass']> = null;
+  let pfEarlyStart = new Map([...baseline.tasks].map(([id, r]) => [id, r.earlyStart]));
   let globallyStale = false;
   const markChanged = (id: string) => {
-    if (globalDeps) { globallyStale = true; return; }
-    const stack = [id];
-    while (stack.length > 0) {
-      const x = stack.pop()!;
-      if (stale.has(x)) continue;
-      stale.add(x);
-      for (const succ of succsOf.get(x) ?? []) stack.push(succ);
-    }
+    if (forward) forward.markChanged(id);
+    else globallyStale = true;
   };
   const pfFor = (id: string): Date => {
     if (!LEVELER_TEST_HOOKS.incremental) {
       return computePF(id, workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions);
     }
-    if (!pfEarlyStart || globallyStale || stale.has(id)) {
+    // Zonder gewijzigde plaatsing volstaat de baseline: geen extra pass voor plannen zonder
+    // capaciteitsdruk (of zonder actieve taken). Bouw de sessie pas bij de eerste gewijzigde PF.
+    if (!forward && !globalDeps && globallyStale) {
+      forward = new CPMSolver(workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions).createLevelingForwardPass();
+      if (forward) globallyStale = false;
+    }
+    if (forward) {
+      return parseDate(forward.earlyStart(id) ?? workById.get(id)!.time.earlyStart);
+    }
+    if (globallyStale) {
       const solver = new CPMSolver(workTasks, sequences, projectCalendar, resourceCalendars, cpmOptions);
-      // Zonder ALAP/hammock is de vroege start van een actieve taak volledig bepaald door de
-      // voorwaartse pass; de achterwaartse pass en de speling-analyse zijn dan overbodig.
-      pfEarlyStart = globalDeps
-        ? new Map([...solver.solve().tasks].map(([taskId, r]) => [taskId, r.earlyStart]))
-        : solver.solveEarlyStarts() ?? new Map();
-      stale.clear();
+      pfEarlyStart = new Map([...solver.solve().tasks].map(([taskId, r]) => [taskId, r.earlyStart]));
       globallyStale = false;
     }
     const es = pfEarlyStart.get(id);
@@ -718,7 +690,7 @@ export function levelResources(
     // Kies de hoogst gesorteerde nog-niet-geplaatste taak waarvan alle voorgangers geplaatst zijn.
     let pick: string | undefined;
     if (LEVELER_TEST_HOOKS.incremental) {
-      for (let rank = heapPop(); rank !== undefined; rank = heapPop()) {
+      for (let rank = readyHeap.pop(); rank !== undefined; rank = readyHeap.pop()) {
         const id = sortedActive[rank];
         if (!placed.has(id)) { pick = id; break; }
       }
@@ -806,6 +778,10 @@ export function levelResources(
     if (slotUnresolved.length > 0) {
       unresolved[pick] = slotUnresolved;
       if (slotReason) unresolvedReasons[pick] = slotReason;
+      if (slotReason === 'INTRINSIC_OVERRUN') {
+        const detail = intrinsicOverrunFor(demandByTask.get(pick)!);
+        if (detail) intrinsicOverruns[pick] = detail;
+      }
     }
     const newDelay = delay > 0 ? delay : undefined;
     if (workById.get(pick)!.levelingDelay !== newDelay) markChanged(pick);
@@ -843,6 +819,7 @@ export function levelResources(
     delays,
     unresolved,
     unresolvedReasons,
+    ...(Object.keys(intrinsicOverruns).length > 0 ? { intrinsicOverruns } : {}),
     shifts,
     projectEndBefore: cpmResult.projectEnd,
     projectEndAfter,
@@ -973,8 +950,8 @@ export function levelResources(
         // botsen, ook niet als een ANDERE (bv. vastgepinde) taak die dag overboekt; anders een
         // fantoomconflict van DEZE taak (`check-leveler-seam.ts` geval 3).
         if (arr[i] <= 0) continue;
-        if (bookedOn(resId, occ[i]) + arr[i] > capacityOf(resId, occ[i]) + EPS) conflicts.push(occ[i]);
-        else if (poolItem !== null && arr[i] > ledger!.residualOn(poolItem, occ[i]) + EPS) conflicts.push(occ[i]);
+        if (exceedsCapacity(bookedOn(resId, occ[i]) + arr[i], capacityOf(resId, occ[i]))) conflicts.push(occ[i]);
+        else if (poolItem !== null && exceedsCapacity(arr[i], ledger!.residualOn(poolItem, occ[i]))) conflicts.push(occ[i]);
       }
     }
     return {
@@ -982,6 +959,15 @@ export function levelResources(
       unresolved: [...new Set(conflicts)].sort(),
       reason: reasonFor(byRes, calendarFeasibleSeen, ceilingSet, ceilingUnreachable, horizonExhausted),
     };
+  }
+
+  function intrinsicOverrunFor(byRes: Map<string, number[]>): LevelingIntrinsicOverrun | undefined {
+    for (const [resourceId, arr] of byRes) {
+      const peak = arr.length > 0 ? maxOf(arr) : 0;
+      const capacity = maxCapacityOf(resourceId);
+      if (exceedsCapacity(peak, capacity)) return { resourceId, peak, capacity };
+    }
+    return undefined;
   }
 
   /** Reden waarom er geen slot bestaat. Volgorde: intrinsiek
@@ -1006,10 +992,7 @@ export function levelResources(
     ceilingUnreachable: boolean,
     horizonExhausted: boolean,
   ): LevelingReason {
-    for (const [resId, arr] of byRes) {
-      const peak = arr.length > 0 ? maxOf(arr) : 0;
-      if (peak > maxCapacityOf(resId) + EPS) return 'INTRINSIC_OVERRUN';
-    }
+    if (intrinsicOverrunFor(byRes)) return 'INTRINSIC_OVERRUN';
     if (ceilingUnreachable) return 'CEILING_UNREACHABLE';
     if (!calendarFeasibleSeen) return 'CALENDAR_MISMATCH';
     if (poolBlockedOnly) return 'RESIDUAL_FULL';
@@ -1045,8 +1028,8 @@ export function levelResources(
       const poolItem = ledger ? ledger.poolItemOf(resId) : null;
       for (let i = 0; i < arr.length && i < occ.length; i++) {
         if (arr[i] <= 0) continue;
-        if (bookedOn(resId, occ[i]) + arr[i] > capacityOf(resId, occ[i]) + EPS) { poolBlockedOnly = false; return false; }
-        if (poolItem !== null && arr[i] > ledger!.residualOn(poolItem, occ[i]) + EPS) return false;
+        if (exceedsCapacity(bookedOn(resId, occ[i]) + arr[i], capacityOf(resId, occ[i]))) { poolBlockedOnly = false; return false; }
+        if (poolItem !== null && exceedsCapacity(arr[i], ledger!.residualOn(poolItem, occ[i]))) return false;
       }
     }
     return true;
@@ -1083,9 +1066,9 @@ export function levelResources(
       if (i >= arr.length) continue; // geen vraag op deze curve-index voor deze resource
       const amt = arr[i];
       if (amt <= 0) continue;
-      if (bookedOn(resId, iso) + amt > capacityOf(resId, iso) + EPS) return false;
+      if (exceedsCapacity(bookedOn(resId, iso) + amt, capacityOf(resId, iso))) return false;
       const poolItem = ledger ? ledger.poolItemOf(resId) : null;
-      if (poolItem !== null && amt > ledger!.residualOn(poolItem, iso) + EPS) return false;
+      if (poolItem !== null && exceedsCapacity(amt, ledger!.residualOn(poolItem, iso))) return false;
     }
     return true;
   }
