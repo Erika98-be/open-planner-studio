@@ -3,7 +3,7 @@ import './domStub';
 import { createAppStoreContext } from '@/state/appStore';
 import { createTaskDialogSave, draftWithActualFinish } from '@/state/taskDialogSave';
 import { planProgressEntry } from '@/engine/progressEntry';
-import { isActualPastStatusDate } from '@/engine/taskMutationRules';
+import { isActualPastStatusDate, normalizeActualDate } from '@/engine/taskMutationRules';
 import { cpmResultFromRecorded } from '@/engine/scheduler/recordedDates';
 import { progress } from '@/state/mcpValidation';
 import { makeBands } from '@/utils/effectiveWorkTime';
@@ -101,6 +101,16 @@ for (const c of cases) for (const route of ['dialoog', 'paneel', 'raster', 'plak
   const missed = cpmResultFromRecorded({ [f.id]: { start: '2026-06-03T08:00', finish: '2026-06-04T16:00' } },
     [task], f.calendar, [f.calendar]);
   eq('148 vastgelegde finish na deadline gemist', missed.missedDeadlineTaskIds, [f.id]);
+}
+// F1 normaliseert alleen op de statuswerkdag; algemene invoernormalisatie hoort bij F2.
+{
+  const f = fixture('2026-06-10');
+  eq('vóór statusdag blijft datumvorm staan', normalizeActualDate(f.task(), 'actualFinish',
+    '2026-06-04', '2026-06-10', f.calendar), '2026-06-04');
+  eq('zonder statusdag blijft datumvorm staan', normalizeActualDate(f.task(), 'actualFinish',
+    '2026-06-04', undefined, f.calendar), '2026-06-04');
+  eq('paneel accepteert ouder feit', f.S().setActualFinish(f.id, '2026-06-04'), true);
+  eq('paneel bewaart ouder feit', f.task().time.actualFinish, '2026-06-04');
 }
 // Een gecombineerde MCP-invoer toetst het opgegeven einde vóór completion < 100 het wist.
 for (const [actualFinish, applied] of [
