@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, seedProject, state, test } from './fixtures/ops';
 
-test('document-plus kiest eerst nieuw of bestaand; annuleren verandert geen document', async ({ page, ops: _ops }) => {
+test('document-plus kiest eerst nieuw of bestaand; annuleren verandert geen document', async ({ page, ops }) => {
   const before = await state(page);
   await page.locator('[data-ops-tabstrip] .ops-tabstrip-add').click();
   await expect(page.locator('[data-ops-new-or-open-project-dialog]')).toBeVisible();
@@ -15,6 +17,26 @@ test('document-plus kiest eerst nieuw of bestaand; annuleren verandert geen docu
   await expect(page.locator('[data-ops-project-dialog="new"]')).toBeVisible();
   expect((await state(page)).documentIds).toEqual(before.documentIds);
   await page.locator('[data-ops-project-cancel]').click();
+
+  // Dezelfde route: een bestaand bestand openen mag bij weigering geen document veranderen.
+  const planning = readFileSync(resolve('public/examples/10-villa-wassenaar.ifc'), 'utf8');
+  const combined = planning.replace('DATA;', "DATA;\n#900001=IFCWALL('0YvctVUKr0kugbFTf53O9L',$,'Muur',$,$,$,$,$,.NOTDEFINED.);");
+  ops.acceptError(/Failed to open file:.*building model objects/);
+  const open = async (text: string) => {
+    const chooser = page.waitForEvent('filechooser');
+    await page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ }).click();
+    await (await chooser).setFiles({ name: 'planning.ifc', mimeType: 'application/octet-stream', buffer: Buffer.from(text) });
+  };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await open(combined);
+    const toast = page.locator('.ops-toast', { hasText: 'This IFC file contains building model objects.' });
+    await expect(toast).toBeVisible();
+    expect((await state(page)).documentIds).toEqual(before.documentIds);
+    expect((await state(page)).tasks).toEqual(before.tasks);
+    await toast.locator('[data-ops-toast-close]').click();
+  }
+  await open(planning);
+  await expect.poll(() => state(page).then(s => s.tasks.length)).toBeGreaterThan(0);
 });
 
 test('Taak toevoegen selecteert, onthult en richt de nieuwe taak zonder zoomwijziging', async ({ page, ops: _ops }) => {

@@ -173,16 +173,6 @@ en noem het in je rapport of PR-tekst.
     op dezelfde browser, dan krijgt B de herstelvraag van A, en schrijft Ctrl+S na herstel naar het bestand van A
     met de rechten van B. Voorstel: de host levert een gebruikers-id en de tool sleutelt zijn opslag daarop.
     Gemeld door de review van #312. — S
-110. **Een samengevoegd 4D-bestand (bouwmodel plus planning) openen en weer opslaan wist het bouwmodel.** De
-    writer schrijft alleen wat de app zelf kent; vreemde entiteiten zoals `IFCWALL`, `IFCBUILDING` en
-    `IFCSITE` gaan niet mee (`ifcWriter.ts`). Nagemeten: `examples/10-villa-wassenaar.ifc` met ifcpatch
-    `MergeProjects` (IfcOpenShell 0.9.0) samengevoegd met een model met 3 muren, daarna `readIFC` →
-    `writeIFC`: 0 muren, 0 gebouwen, 0 terreinen; de 47 taken en 40 relaties blijven. Zo ook met de
-    lezer en writer van main. De schemavraag maakt dit niet erger, maar *IFC4 houden* op een
-    IFC4-bouwmodel kan doen denken dat het bestand heel blijft. De gids `howto-ifc-schema-kiezen`
-    waarschuwt daarom: samenvoegen als laatste stap. Voorstel: bij openen melden dat opslaan de
-    modelinhoud niet bewaart, of vreemde entiteiten letterlijk meenemen. Gevonden bij de review van
-    #336. — B
 112. **Na IfcOpenShell `MergeProjects` wordt een werkende uitzondering van een kalender een feestdag.** Het
     pset `OPS_Calendar` bewaart de werkende uitzonderingen als STEP-nummers (`WorkingExceptionIds`,
     `ifcWriter.ts` `writeCalendarGenerationMeta`). MergeProjects nummert alle regels opnieuw, dus die nummers

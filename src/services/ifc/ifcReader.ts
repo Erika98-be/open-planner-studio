@@ -18,6 +18,7 @@ import { generateId } from '@/utils/id';
 import { formatInstant, localTodayIso } from '@/utils/dateUtils';
 import { ifcGuid, ifcGuid128, ifcObjectSeed } from './ifcWriter';
 import { IfcParseError } from './ifcErrors';
+import { IFC_BUILDING_MODEL_TYPES } from './ifcBuildingModelTypes';
 import { workCalendarSlots, workControlSlots } from './ifcWorkControlSlots';
 import { cleanIfcSchemaName, ifcSchemaUnconfirmedOnRead } from './ifcSchemaQuestion';
 import type { ImportLabels, ImportResult, RecordedSourceFormat, XerArchiveIssue, XerArchiveIssueCode } from '@/services/importTypes';
@@ -166,6 +167,13 @@ export function readIFC(
   // Eerst de integriteitspoort: liever een expliciete fout dan een stil half project.
   assertIfcIntegrity(content);
   const entities = parseSTEP(content);
+  // Knownbug 110: deze lezer/writer bewaart uitsluitend planning. Weiger vóór een ImportResult
+  // bestaat, zodat ook MCP, core, auto-save en herstel geen uitgekleed 4D-bestand kunnen koppelen.
+  // Kijk naar geparseerde entiteittypen, nooit naar tekst in een naam, pset of commentaar.
+  if (entities.some(entity => IFC_BUILDING_MODEL_TYPES.has(entity.type))) {
+    throw new IfcParseError('building-model', labels.ifcBuildingModelUnsupported ??
+      'This IFC file contains building model objects. Opening is blocked because saving would discard them. Edit the separate planning file and merge it with the building model afterwards.');
+  }
   // Vóór elke lezing van een string: STEP-codering (`\X2\…\X0\`, `\\` e.d.) terug naar tekst. Oude
   // eigen bestanden schreven letterlijk en blijven byte-voor-byte gelezen zoals voorheen.
   if (stringsAreStepEncoded(entities)) decodeEntityStrings(entities);
