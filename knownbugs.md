@@ -268,6 +268,13 @@ en noem het in je rapport of PR-tekst.
     koppen in die talen, en de Help-artikelen die ze citeren mee. — B
 
 
+204. **MCP-foutmelding noemt nog het tabblad *AI*.** `src/services/mcp/server.ts:530` (te veel MCP-sessies)
+   zegt "generate a new token in Open Planner Studio (AI tab)". Het tabblad heet sinds 2026-10-23 *MCP*.
+   Bewust niet aangepast in de PR AI → MCP: dit is tekst die de MCP-client leest. Voorstel: "(MCP tab)". — B
+205. **Termbase kent nog het begrip *AI-assistent*.** `i18n/termbase/concepts.json` (`ai-assistant`, ook in
+   `read-only`) en de doeltalen. De UI zegt nu *MCP-client*. Voorstel: het begrip omzetten via de
+   vertaalstraat (`concepts-merge`, `apply-terms`) vóór de volgende release. — B
+
 ## Tests
 
 79. **`check-task-grid-performance` (relationIndex-mediaan ≤ 500 ms) zit lokaal op het randje.** Los gedraaid
