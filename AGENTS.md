@@ -264,6 +264,9 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
 
 ## Conventions
 
+- **`main` is always releasable.** The weekly release job ships whatever is on `main` (owner decision 1,
+  conversation 2026-10-22). There is no next, nightly or dev branch and no update channel. Land big work in
+  small PRs to `main`; keep unfinished user-visible work behind a feature flag until it is complete.
 - **Feature flags:** add a temporary entry to `src/utils/featureFlags.ts` with an id, typed i18n
   name/description keys and `writesNewIfcData`; read it through `isFeatureEnabled(ui.featureFlags, id)`.
   Flags default to off. Keep `writesNewIfcData: true` (no checkbox, always off) until the IFC
@@ -293,10 +296,11 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   commits or bumping. Outstanding website work does not block the next app release; retry it the next
   Saturday alongside that release. Also resume open release PRs and untagged versions on main without another bump,
   only when their candidate version is numerically newer than the previous release; otherwise stop.
-  record workflow IDs, wiki commit and website PR in the release PR.
-  UI translations, wiki publication and the two website release blocks
-  are included; guide translations beyond nl/en run only on the owner's separate request.
-  The proposed schedule and literal job prompt live in `.claude/skills/release/scheduled-job.md`.
+  Record workflow IDs, wiki commit and website PR in the release PR. Every release includes the UI
+  translations for all locales, wiki publication and the two website blocks (the highlights in
+  `#whats-new` and the new entry under `#releases`); guide translations beyond nl/en run only on the
+  owner's separate request. The job repairs a red CI itself (owner decision 8; route in the `ci-release` rule).
+  The schedule and literal job prompt live in `.claude/skills/release/scheduled-job.md`.
   Release text in `docs/release-notes/v<version>.md`; `docs/CHANGELOG.md` only at release.
 - The user term is "resourcebibliotheek"; code/IFC still say `companyId`/`companyName`.
 - Screen evidence in a PR: `artifacts/<topic>/`, PNG ≤ ~150 KB, a handful; local QA screenshots in `qa/`.
