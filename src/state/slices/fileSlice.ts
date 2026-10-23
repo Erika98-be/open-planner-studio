@@ -1,3 +1,4 @@
+import { normalizeTaskDates } from '../migrations/minuteModel';
 import { minuteModelTransition, minuteModelNotice, normalizeRecordedTimes, recordMinuteModelTransition } from '../minuteModelTransition';
 import { captureRecordedDates } from '@/engine/scheduler/recordedDates';
 import { claimTaskTypesNotice, notifyTaskTypesUnlocked, notifyTaskTypesUnlockedClaimed, TASK_TYPES_DETAIL_LINE } from '../taskTypesNotice';
@@ -1429,7 +1430,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           // ankers al ververst zijn. Deze verversing verandert taakdatums en draait meteen
           // `runCPM` — een gewone, zichtbare datamutatie dus, en die hoort ongedaan te kunnen.
           runtime.beginUndoable(s);
-          s.tasks = result.tasks;
+          s.tasks = result.tasks.map(task => normalizeTaskDates(task, s));
           runtime.finishMutation(s, { stale: true });
           applied = true;
         });
@@ -1532,7 +1533,7 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         set((s) => {
           if (s.activeDocumentId !== targetDocumentId) return;
           runtime.beginUndoable(s);
-          s.tasks = tasks;
+          s.tasks = tasks.map(task => normalizeTaskDates(task, s));
           runtime.finishMutation(s, { stale: true });
           applied = true;
         });

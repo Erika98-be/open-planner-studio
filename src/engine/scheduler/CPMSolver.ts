@@ -1098,7 +1098,10 @@ export class CPMSolver {
    * date-only-geankerde mijlpalen. */
   private ownAnchor(eng: CalendarEngine, scheduleStart: string, task: Task): Date {
     const raw = this.parseIn(eng, scheduleStart);
-    if (isZeroDurationMilestone(task) && eng.isHourMode && scheduleStart.includes('T')) return raw;
+    // D4: een genormaliseerd daganker op een vrije dag is geen ingevoerd uuranker.
+    // Uurkalenders en urentaken behouden hun bestaande vrijheid voor puntmarkeringen.
+    if (isZeroDurationMilestone(task) && eng.isHourMode && scheduleStart.includes('T')
+      && (eng.hasOwnWorkBlocks || taskDurationUnit(task) === 'hours' || eng.isWorkDay(raw))) return raw;
     if (this.isExactBandEnd(eng, raw)) return raw;
     return this.snapOnOrAfter(eng, raw);
   }

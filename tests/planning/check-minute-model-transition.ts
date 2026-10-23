@@ -1,6 +1,7 @@
 import { makeMcpContext } from '../mcp/harness';
 import { resolveEffectiveLagDays } from '@/engine/scheduler/CPMSolver';
 import { getTool } from '@/services/mcp/toolRegistry';
+import type { DistributionProposal } from '@/services/library/distribute';
 import type { McpToolResult } from '@/services/mcp/contracts';
 import { capturePayload, hydratePayload } from '@/state/documentContract';
 import { freshPayload } from '@/state/documentContract';
@@ -123,6 +124,73 @@ for (const id of ['ops', 'p6', 'msproject'] as const) {
   eq('activeren en berekenen rondt vlag af', app.getState().minuteModelPending, false);
   app.getState().undo();
   eq('undo na activeren houdt modus en vlag', [app.getState().datesAsRecorded, app.getState().minuteModelPending], [true, true]);
+}
+
+// Eerst bewerken en daarna Bereken: de bewerking en de overgang houden hun eigen undo-grens.
+{
+  const app = createAppStoreContext().store;
+  app.setState(s => hydratePayload(s, raw));
+  const b = app.getState().tasks.find(t => t.name === 'B')!;
+  app.getState().updateTask(b.id, { name: 'B bewerkt vóór Bereken' });
+  app.getState().runCPM();
+  eq('bewerking vóór omzetting geeft twee events', app.getState().historyEvents.length, 2);
+  app.getState().undo();
+  const afterUndo = app.getState().tasks.find(t => t.id === b.id)!;
+  eq('eerste undo houdt de bewerking in de opgeslagen modus', [afterUndo.name, afterUndo.time.earlyStart,
+    app.getState().datesAsRecorded, app.getState().minuteModelPending], ['B bewerkt vóór Bereken', '2026-03-16T07:00', true, true]);
+  app.getState().undo();
+  eq('tweede undo geeft de toestand vóór de bewerking', app.getState().tasks.find(t => t.id === b.id)!.name, 'B');
+}
+
+// Een planningstransactie voegt de omzetting aan haar eigen event toe.
+{
+  const context = createAppStoreContext();
+  const app = context.store;
+  app.setState(s => hydratePayload(s, raw));
+  const b = raw.tasks.find(t => t.name === 'B')!;
+  const transaction = createMcpTransactions(context);
+  eq('MCP met open omzetting slaagt', transaction.run(() => transaction.draft.updateTaskFields(b.id, { priority: 2 })).ok, true);
+  eq('MCP en omzetting delen één event', app.getState().historyEvents.length, 1);
+  eq('MCP met open omzetting meldt één verschuiving', app.getState().ui.notifications.filter(n => n.messageKey === 'notifications.minuteModelConverted').length, 1);
+  eq('MCP met open omzetting rondt de vlag af', app.getState().minuteModelPending, false);
+  app.getState().undo();
+  eq('MCP undo zet invoer en open omzetting samen terug', [app.getState().tasks.find(t => t.id === b.id)!.priority,
+    app.getState().tasks.find(t => t.id === b.id)!.time.earlyStart, app.getState().minuteModelPending],
+    [b.priority, '2026-03-16T07:00', true]);
+}
+
+// Verdeling loopt door dezelfde route voor het actieve en het slapende document.
+{
+  const app = createAppStoreContext().store;
+  app.setState(s => hydratePayload(s, raw));
+  const sleepingId = app.getState().activeDocumentId;
+  const activeId = app.getState().newDocument();
+  app.setState(s => hydratePayload(s, raw));
+  const b = raw.tasks.find(t => t.name === 'B')!;
+  const proposal: DistributionProposal = {
+    libraryItemId: 'minutenproef', blocked: null, hasShortfall: false,
+    fixedLoadByDay: {}, residualByDay: {}, bookingByDay: {}, afterLoadByDay: {}, afterIncomplete: false,
+    docs: [activeId, sleepingId].map(docId => ({
+      docId, title: docId, participated: true, cannotMove: false,
+      delays: { [b.id]: 1 }, gaps: {}, projectEndBefore: '2026-03-20', projectEndAfter: '2026-03-13',
+      endShiftWorkdays: 0, shortfalls: [],
+    })),
+  };
+  const applied = app.getState().applyDistribution(proposal, { [activeId]: [b.id], [sleepingId]: [b.id] });
+  eq('verdeling met open omzetting slaagt', applied.ok, true);
+  eq('verdeling schrijft één event per document', app.getState().historyEvents.length, 2);
+  eq('verdeling rondt actieve en slapende vlag af', [app.getState().minuteModelPending,
+    app.getState().documents.find(d => d.id === sleepingId)!.payload!.minuteModelPending], [false, false]);
+  eq('verdeling meldt beide omzettingen', app.getState().ui.notifications.filter(n => n.messageKey === 'notifications.minuteModelConverted').length, 2);
+  if (applied.ok) {
+    const undone = app.getState().undoDistribution(applied.record);
+    eq('verdeling terugdraaien raakt beide documenten', undone.undoneDocIds.slice().sort(), [activeId, sleepingId].sort());
+    const active = app.getState(), sleeping = active.documents.find(d => d.id === sleepingId)!.payload!;
+    eq('verdeling terugdraaien herstelt actieve datum en vertraging samen', [active.tasks.find(t => t.id === b.id)!.time.earlyStart,
+      active.tasks.find(t => t.id === b.id)!.levelingDelay ?? 0, active.minuteModelPending], ['2026-03-16T07:00', 0, true]);
+    eq('verdeling terugdraaien herstelt slapende datum en vertraging samen', [sleeping.tasks.find(t => t.id === b.id)!.time.earlyStart,
+      sleeping.tasks.find(t => t.id === b.id)!.levelingDelay ?? 0, sleeping.minuteModelPending], ['2026-03-16T07:00', 0, true]);
+  }
 }
 
 // B7 en I11: een halve werkdag blijft een halve werkdag, ook bij een dagvoorganger.
