@@ -170,7 +170,7 @@ const SEQUENCE_TYPE_BY_P6: Partial<Record<string, SequenceType>> = {
 
 function p6HoursToDays(hours: number, hoursPerDay: number): number {
   if (hoursPerDay <= 0) hoursPerDay = 8;
-  return Math.round(hours / hoursPerDay);
+  return hours / hoursPerDay;
 }
 
 /**
@@ -614,7 +614,6 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   };
   if (projectCalEl) noteFileHoursPerDay(calendar, projectCalEl);
   const projectCalObjId = projectCalEl ? getElementInt(projectCalEl, 'ObjectId', -1) : -1;
-  const hoursPerDay = calendar.hoursPerDay;
 
   // Bibliotheekkalenders (taak- en resourcekalenders): elke andere <Calendar> met Type=Resource
   // (zo schrijft de eigen writer ze), plus elke andere kalender waar een activiteit of resource van
@@ -786,7 +785,6 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   const actObjIdToId = new Map<number, string>();
   const leafTasks: Task[] = [];
   const customTaskTypes = new Map<string, CustomTaskType>();
-  const taskHourById = new Map<string, boolean>(); // taak-id → uur-modus (voor lag-eenheid)
 
   // UDF-waarden per activiteit. Echte P6 (en de writer sinds 2026-10) zet ze IN de activiteit
   // (`<UDF><TypeObjectId/><TextValue/></UDF>`); oudere OPS-exports schreven losse `<UDFValue>`-
@@ -826,7 +824,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
   // PlannedDuration is in P6 altijd een hoeveelheid uren en zegt dus niet of OPS die taak als
   // werkdagen of als exacte werkuren moet behandelen. Alleen onze exact benoemde Activity-Text-UDF
   // is expliciet (`durationUnitUdfIds`, bovenaan); zonder definitie blijven vreemde/legacy bestanden
-  // op de bestaande kalenderprecisie-regel.
+  // altijd op de urenmaat (T15).
   const explicitUnitByActivityObjectId = new Map<number, 'days' | 'hours'>();
   for (const entry of udfEntries) {
     if (!durationUnitUdfIds.has(entry.typeObjId)) continue;
@@ -911,7 +909,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     // Uur- vs dag-modus voor deze taak.
     const effCalId = effCalIdOf(calObjId);
     const explicitUnit = explicitUnitByActivityObjectId.get(objId);
-    const isHour = explicitUnit ? explicitUnit === 'hours' : hourModeCalIds.has(effCalId);
+    const isHour = explicitUnit !== 'days';
     // Datumprecisie volgt de KALENDER, niet de duureenheid — zoals mspdiReader en de IFC-lezer: een
     // dagtaak op een urenkalender blijft een dagtaak (eenheid uit de OPS-marker), maar haar datums
     // (ook de actuals) houden hun echte tijd.
@@ -929,7 +927,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (sourceFinish === undefined) missingDates.finish.add(id);
 
     {
-      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);
+      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, hourDates);
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);
@@ -969,7 +967,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const remainingTime = !isHour && remainingRaw ? p6HoursToDays(parseFloat(remainingRaw), effHpd) : undefined;
 
     // Duur: uur ⇒ minuten (`uren × 60`) als bron van waarheid, dagengetal via
-    // `hourTaskScheduleDuration`; dag ⇒ `Math.round(uren/hpd)` met de opgeslagen `HoursPerDay`.
+    // `hourTaskScheduleDuration`; bestaande dagenmarkering ⇒ uren/hpd zonder afronding.
     const durationMinutes = isHour ? Math.round(plannedDuration * 60) : undefined;
     const durationDays = isHour
       ? hourTaskScheduleDuration(durationMinutes!, effCal)
@@ -1051,7 +1049,6 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     };
 
     leafTasks.push(task);
-    taskHourById.set(id, isHour);
 
     // Add to parent's children
     if (parentId) {
@@ -1104,16 +1101,15 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     const p6Type = getElementText(relEl, 'Type');
     const lagHours = getElementFloat(relEl, 'Lag');
 
-    // Een uur-opvolger ⇒ lag minuut-precies (`uren × 60`, geen dag-afronding); anders het dag-pad.
-    const lagHourMode = taskHourById.get(succId) ?? false;
+    // P6 bewaart lag in uren; de opvolgereenheid verandert die lengte niet (I5).
     const seq: Sequence = {
       id: generateId('seq'),
       predecessorId: predId,
       successorId: succId,
       type: SEQUENCE_TYPE_BY_P6[p6Type] ?? 'FINISH_START',
-      lagDays: lagHourMode ? 0 : p6HoursToDays(lagHours, hoursPerDay),
+      lagDays: 0,
+      lagMinutes: Math.round(lagHours * 60),
     };
-    if (lagHourMode) seq.lagMinutes = Math.round(lagHours * 60);
     sequences.push(seq);
   }
 

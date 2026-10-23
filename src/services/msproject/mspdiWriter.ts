@@ -597,7 +597,13 @@ export function writeMSPDI(
       for (const seq of taskSeqs) {
         const predUid = taskUidMap.get(seq.predecessorId);
         if (predUid === undefined) continue;
-        const { linkLag, lagFormat } = lagFields(seq, calendar.hoursPerDay);
+        // Standaard telt de lag in de voorgangerkalender; een expliciete lagkalender gaat voor.
+        const lagCalendar = project.schedulingOptions?.lagCalendar;
+        const lagCal = lagCalendar === 'projectDefault' ? calendar
+          : lagCalendar === 'successor' ? effCal ?? calendar
+          : effCalByTask.get(seq.predecessorId) ?? calendar;
+        const lagHpd = lagCalendar === '24hour' ? 24 : effHoursPerDay(lagCal);
+        const { linkLag, lagFormat } = lagFields(seq, lagHpd);
         lines.push(`${indent(3)}<PredecessorLink>`);
         lines.push(`${indent(4)}<PredecessorUID>${predUid}</PredecessorUID>`);
         lines.push(`${indent(4)}<Type>${MSP_LINK_TYPE_CODE[seq.type]}</Type>`);
