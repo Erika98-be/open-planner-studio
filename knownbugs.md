@@ -223,17 +223,6 @@ en noem het in je rapport of PR-tekst.
     van 36, maar niet vastgesteld als dezelfde oorzaak. De bedoeling en runtimegevolgen zijn niet
     onderzocht. — S
 
-202. **Een Tauri-snapshot met een I/O-leesfout telt niet mee als mislukt herstel.** Brononderzoek,
-    niet uitgevoerd: `recoveryStore.ts`, `loadTauri`, logt een fout uit `readSnapshotTauri` en slaat
-    de manifestregel over. Als minstens één andere snapshot leesbaar is, retourneert hij alleen
-    die documenten; de I/O-uitval wordt niet in `LoadedRecovery` doorgegeven. `useRecoveryRestore`
-    telt alleen parsefouten van de wel geladen documenten (`failed`) en de door `restoreDocuments`
-    overgeslagen documenten. Na de keuze Herstellen en gezond herstel kan daardoor `clearRecovery()`
-    volgen, dat de hele ondersteunde herstelset probeert op te ruimen, ook een nog aanwezige maar
-    onleesbare snapshot. Dit betreft
-    falend lezen van de snapshottekst; een losse `stat`-fout geeft alleen `mtime: null`. Voorwaarde
-    en mogelijk opruimpad zijn statisch afgeleid; runtimegedrag en concreet dataverlies zijn niet
-    vastgesteld. — S
 203. **De updater gaat na een afgewezen recovery-flush door naar installatie.** Brononderzoek,
     niet uitgevoerd: `updaterService.ts`, `downloadAndInstall`, vangt een rejection van
     `flushRecoveryNow()` op en logt die, zonder de updateroute af te breken. Daarna probeert hij
