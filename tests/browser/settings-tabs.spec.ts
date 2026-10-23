@@ -82,25 +82,24 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
   await expect(container.getByText(PROJECT_SECTION_TEXT, { exact: true })).toHaveCount(0);
 }
 
-/** Het productregister blijft leeg. Alleen deze pagina krijgt twee tijdelijke testfuncties. */
+/** Alleen de IFC-blokkade krijgt een fixture; de demo komt uit het echte productregister. */
 async function seedFeatureFlags(page: Page): Promise<void> {
   const flags: FeatureFlag[] = [
-    { id: 'browser-example', nameKey: 'settings.experimentalSection', descriptionKey: 'settings.versionHint', writesNewIfcData: false },
     { id: 'browser-ifc', nameKey: 'settings.version', writesNewIfcData: true },
   ];
   await page.evaluate(async fixtures => {
     const registryPath = '/src/utils/featureFlags.ts';
     const { FEATURE_FLAGS } = await import(/* @vite-ignore */ registryPath);
-    FEATURE_FLAGS.splice(0, FEATURE_FLAGS.length, ...fixtures);
+    FEATURE_FLAGS.push(...fixtures);
   }, flags);
 }
 
-/** Lees via dezelfde functie als een toekomstige feature, zonder de geteste actie te vervangen. */
-async function enabledExample(page: Page): Promise<boolean> {
+/** Lees via dezelfde functie als de titelbalk, zonder de geteste actie te vervangen. */
+async function enabledDemo(page: Page): Promise<boolean> {
   return page.evaluate(async () => {
     const registryPath = '/src/utils/featureFlags.ts';
     const { isFeatureEnabled } = await import(/* @vite-ignore */ registryPath);
-    return isFeatureEnabled(window.__OPS__!.store.getState().ui.featureFlags, 'browser-example');
+    return isFeatureEnabled(window.__OPS__!.store.getState().ui.featureFlags, 'demo-topbar-animation');
   });
 }
 
@@ -116,6 +115,11 @@ async function reloadSettingsApp(page: Page): Promise<void> {
 
 test('de drie instellingen-ingangen delen tabs en verborgen, bewaarde experimentele schakelaars', async ({ page, ops: _ops }) => {
   test.setTimeout(60_000);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const titleBar = page.locator('.title-bar');
+  const animation = titleBar.locator('[data-ops-topbar-animation]');
+  expect(await enabledDemo(page)).toBe(false);
+  await expect(animation).toHaveCount(0);
   await page.evaluate(async () => {
     const localePath = '/src/i18n/config.ts';
     const { setLocale } = await import(/* @vite-ignore */ localePath);
@@ -172,9 +176,23 @@ test('de drie instellingen-ingangen delen tabs en verborgen, bewaarde experiment
   await version.click({ clickCount: 12 });
   await expect(experimental).toHaveCount(0);
 
-  // Precies 0,5 s is toegestaan; vóór 5 s blijft het blok verborgen.
+  // VERVOLG #549: focusverlies na 2 s breekt de reeks af. Focus en activering keren
+  // al na 100 ms terug: alleen onBlur kan resetten, niet de pauzegrens van 500 ms.
   await page.clock.runFor(501);
   await version.click();
+  for (let i = 0; i < 4; i++) {
+    await page.clock.runFor(500);
+    await version.click();
+  }
+  const beforeBlur = await page.evaluate(() => performance.now());
+  await page.keyboard.press('Tab');
+  await expect(version).not.toBeFocused();
+  await page.clock.runFor(100);
+  await page.keyboard.press('Shift+Tab');
+  await expect(version).toBeFocused();
+  await version.click();
+  expect(await page.evaluate(() => performance.now()) - beforeBlur).toBe(100);
+  // Precies 0,5 s is toegestaan. Vanaf de terugkeer zijn opnieuw volle 5 s nodig.
   for (let i = 0; i < 9; i++) {
     await page.clock.runFor(500);
     await version.click();
@@ -183,44 +201,83 @@ test('de drie instellingen-ingangen delen tabs en verborgen, bewaarde experiment
   await page.clock.runFor(500);
   await version.click();
   await expect(experimental).toBeVisible();
-  await expect(experimental).toContainText(/There are no experimental features at the moment\.|Er zijn nu geen experimentele functies\./);
-  await expect(experimental.getByRole('checkbox')).toHaveCount(0);
+  await expect(experimental).toContainText('Demo: animatie in de bovenbalk');
+  await expect(experimental.getByRole('checkbox')).toHaveCount(1);
   expect(await page.evaluate(() => localStorage.getItem('ops-experimentalSettingsVisible'))).toBe('true');
   await page.clock.resume();
 
-  // Hetzelfde ontgrendelde blok staat in de tandwiel-popup, nu met testflags.
+  // Hetzelfde ontgrendelde blok staat in de tandwiel-popup, met de echte demo en de IFC-fixture.
   await backstage.locator('[data-ops-backstage-back]').click();
   await seedFeatureFlags(page);
-  expect(await enabledExample(page)).toBe(false);
+  expect(await enabledDemo(page)).toBe(false);
   await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
   const gearExperimental = gearDialog.locator('[data-ops-experimental-settings]');
-  const example = gearExperimental.locator('[data-ops-feature-flag="browser-example"]');
+  const demo = gearExperimental.locator('[data-ops-feature-flag="demo-topbar-animation"]');
   await expect(gearExperimental).toBeVisible();
-  await expect(example).not.toBeChecked();
+  await expect(demo).not.toBeChecked();
   await expect(gearExperimental.getByRole('checkbox')).toHaveCount(1);
   await expect(gearExperimental.locator('[data-ops-feature-flag="browser-ifc"]')).toHaveCount(0);
-  await example.check();
-  expect(await enabledExample(page)).toBe(true);
+  await demo.check();
+  expect(await enabledDemo(page)).toBe(true);
+  await expect(animation).toBeVisible();
+  await expect(animation).toHaveAttribute('aria-hidden', 'true');
+  await expect(animation).toHaveCSS('pointer-events', 'none');
+  await expect(titleBar).toHaveAttribute('data-tauri-drag-region', 'true');
+  await expect(titleBar).toHaveCSS('-webkit-app-region', 'drag');
+  await expect.poll(() => animation.evaluate(el => getComputedStyle(el, '::before').animationName))
+    .toBe('title-bar-demo-sweep');
 
   // Echte themakeuze: het nieuwe blok past in zowel Light als Dark, met de bestaande kleurrollen.
   for (const theme of ['light', 'dark']) {
     await gearDialog.getByRole('button', { name: TAB_LABELS[0] }).click();
     await gearDialog.locator(`[data-ops-theme-card="${theme}"]`).click();
     await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
-    await expect(example).toBeChecked();
+    await expect(demo).toBeChecked();
+    await expect(animation).toBeVisible();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect.poll(() => animation.evaluate(el => getComputedStyle(el, '::before').animationName))
+      .toBe('none');
     await gearExperimental.scrollIntoViewIfNeeded();
     expect(await gearDialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     await page.screenshot({ path: `test-results/experimental-settings-${theme}.png` });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await expect.poll(() => animation.evaluate(el => getComputedStyle(el, '::before').animationName))
+      .toBe('title-bar-demo-sweep');
   }
+
+  // Beide RTL-talen spiegelen de glans. Ook dan blijft de echte titelbalkknop bereikbaar.
+  for (const locale of ['ar', 'fa']) {
+    await page.evaluate(async language => {
+      const localePath = '/src/i18n/config.ts';
+      const { setLocale } = await import(/* @vite-ignore */ localePath);
+      await setLocale(language);
+    }, locale);
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(animation).toHaveCSS('--demo-sweep-end', '-300%');
+    await gearDialog.locator('.modal-close-btn').click();
+    await expect(gearDialog).toBeHidden();
+    await titleBar.locator('.quick-access-btn').last().click();
+    await expect(gearDialog).toBeVisible();
+    await gearDialog.locator('.settings-tab').nth(2).click();
+    await expect(demo).toBeChecked();
+  }
+  await page.evaluate(async () => {
+    const localePath = '/src/i18n/config.ts';
+    const { setLocale } = await import(/* @vite-ignore */ localePath);
+    await setLocale('nl');
+  });
+  await expect(animation).toHaveCSS('--demo-sweep-end', '300%');
 
   // Verbergen bewaart de keuzes en verbergt ook na een echte reload.
   await gearExperimental.getByRole('button', { name: /^(Hide|Verbergen)$/ }).click();
   await expect(gearExperimental).toHaveCount(0);
-  expect(await enabledExample(page)).toBe(true);
+  expect(await enabledDemo(page)).toBe(true);
+  await expect(animation).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('ops-experimentalSettingsVisible'))).toBe('false');
   await reloadSettingsApp(page);
-  await expect.poll(() => enabledExample(page)).toBe(true);
+  await expect.poll(() => enabledDemo(page)).toBe(true);
+  await expect(animation).toBeVisible();
   await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
   await expect(gearExperimental).toHaveCount(0);
@@ -243,7 +300,7 @@ test('de drie instellingen-ingangen delen tabs en verborgen, bewaarde experiment
   await page.keyboard.down('Enter');
   await page.keyboard.up('Enter');
   await expect(gearExperimental).toBeVisible();
-  await expect(example).toBeChecked();
+  await expect(demo).toBeChecked();
   await page.clock.resume();
   await gearDialog.locator('.modal-close-btn').click();
 
@@ -251,17 +308,29 @@ test('de drie instellingen-ingangen delen tabs en verborgen, bewaarde experiment
   await page.locator('.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
   await page.locator('.ribbon-content').getByRole('button', { name: /^(App settings|App-instellingen)$/, exact: true }).click();
   await ribbonDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
-  await expect(ribbonDialog.locator('[data-ops-feature-flag="browser-example"]')).toBeChecked();
+  await expect(ribbonDialog.locator('[data-ops-feature-flag="demo-topbar-animation"]')).toBeChecked();
   await ribbonDialog.locator('.modal-close-btn').click();
   await page.locator('.ribbon-tab--file').click();
   await backstage.locator('.backstage-nav-item').filter({ hasText: /^(App settings|App-instellingen)$/ }).click();
   await backstage.getByRole('button', { name: TAB_LABELS[2] }).click();
-  await expect(backstage.locator('[data-ops-feature-flag="browser-example"]')).toBeChecked();
+  await expect(backstage.locator('[data-ops-feature-flag="demo-topbar-animation"]')).toBeChecked();
 
   // Ook de ontgrendelde zichtbaarheid zelf overleeft herladen; geen tweede gebaar nodig.
   await reloadSettingsApp(page);
-  await expect.poll(() => enabledExample(page)).toBe(true);
+  await expect.poll(() => enabledDemo(page)).toBe(true);
+  await expect(animation).toBeVisible();
   await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
   await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
-  await expect(example).toBeChecked();
+  await expect(demo).toBeChecked();
+
+  // Echt uitvinken verwijdert de laag direct en bewaart ook die keuze na herladen.
+  await demo.uncheck();
+  expect(await enabledDemo(page)).toBe(false);
+  await expect(animation).toHaveCount(0);
+  await reloadSettingsApp(page);
+  await expect.poll(() => enabledDemo(page)).toBe(false);
+  await expect(animation).toHaveCount(0);
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
+  await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
+  await expect(demo).not.toBeChecked();
 });
