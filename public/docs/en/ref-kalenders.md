@@ -34,7 +34,7 @@ By default a project has the calendar *Bouwkalender NL* (construction mode on) o
 
 ### Working times
 
-This block is there when *Enable hour planning* is on (*App settings*, tab *Planning*), and always for a calendar with work blocks. Here you set working times and shifts per weekday. A calendar without work blocks only gets blocks with hour planning on: through a preset or *Set per weekday…*. See [Setting working times](docs://howto-werktijden-instellen).
+This block is available for every calendar. Here you set working times and shifts per weekday. A calendar without work blocks only gets blocks with hour planning on: through a preset or *Set per weekday…*. See [Setting working times](docs://howto-werktijden-instellen).
 
 - **Presets** — buttons that set the working times in one go: *Day shift* (Mon–Fri 08:00 to 16:00, an ordinary day calendar), *2 shifts* (Mon–Fri 06:00 to 22:00, 16 hours), *3 shifts* (Mon–Fri 06:00 to 06:00 next day, 24 hours), *Night shift* (Mon–Fri 22:00 to 06:00, 8 hours) and *24/7* (all days 00:00 to 24:00). Behind the built-in buttons are your own presets, with a cross to delete them.
 - **Save as preset…** — saves the current working times as your own preset, on this device, so you can reuse them in any project. You give a name (*Name for your own preset*) and click *Save* or *Cancel*.

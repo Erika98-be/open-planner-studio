@@ -39,7 +39,6 @@ import { useFullscreenSync } from '@/hooks/useFullscreenSync';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useAppStore } from '@/state/appStore';
 import { UI_FONT_STACKS } from '@/utils/uiFont';
-import { HourDataNotice } from '@/components/layout/HourDataNotice';
 import { StructureLockedNotice } from '@/components/layout/StructureLockedNotice';
 import { DependencyModeNotice } from '@/components/layout/DependencyModeNotice';
 import { SplitModeNotice } from '@/components/layout/SplitModeNotice';
@@ -315,7 +314,6 @@ function AppContent() {
       <div className="contents" inert={questionPending} data-ops-background-controls="notices">
         {/* Uur-data-melding: niet-blokkerende strook onder het lint wanneer een geladen
             bestand urenplanning bevat terwijl de hoofdschakelaar uit staat. */}
-        <HourDataNotice />
 
         {/* Structuur-vergrendeld-melding: verschijnt wanneer in-/uitspringen geweigerd
             wordt omdat er gefilterd/gegroepeerd/gesorteerd wordt. */}

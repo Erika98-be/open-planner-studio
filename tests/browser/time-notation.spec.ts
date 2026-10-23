@@ -68,7 +68,7 @@ async function ganttHourLabels(page: Page, zoom = 1000): Promise<string[]> {
   await expect(page.locator('[data-task-grid-surface-id="full-task-grid"]')).toHaveCount(0);
   await page.evaluate((z) => {
     const s = window.__OPS__!.store.getState();
-    s.setUI({ enableHourPlanning: true });
+    s.setUI({ });
     window.__OPS__!.store.getState().setZoom(z);
     window.__OPS__!.store.getState().setViewStartDate('2026-01-06');
   }, zoom);

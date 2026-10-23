@@ -595,7 +595,7 @@ export const createProjectSlice: AppSliceFactory<ProjectSlice> = (runtime) => (s
     get().applyLoadedProject(loaded, {
       recompute: true,
       fit: false,
-      hourDataNotice: false,
+
       viewStartDate: opts?.viewStartDate,
     });
   },

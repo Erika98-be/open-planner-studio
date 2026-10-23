@@ -144,7 +144,6 @@ export interface GanttRenderOptions {
   /** Stand van "Taakbalken bij onderbrekingen". Default 'selection'. */
   barSplitMode?: BarSplitMode;
   /** Hoofdschakelaar Urenplanning. UIT ⇒ duurkolom in dagen (`Nd`). */
-  enableHourPlanning?: boolean;
   /** Duurweergave-instelling voor de duurkolom (auto/dagen/uren). */
   durationDisplay?: DurationDisplay;
   /** Vertaalde eenheid-afkortingen voor de duurkolom-WEERGAVE. Afwezig ⇒ NL d/u/m. */
@@ -429,7 +428,7 @@ export class GanttRenderer {
       task,
       cal,
       this.opts.durationDisplay ?? 'auto',
-      this.opts.enableHourPlanning ?? false,
+
       this.opts.durationSuffixes,
     );
   }
@@ -1017,7 +1016,7 @@ export class GanttRenderer {
     const enableQH = enableQuarterHourZoom ?? false;
     // De kopstrook volgt dezelfde tierkeuze als de uurinteractie, zodat “kwartieren tonen bij ver
     // inzoomen” ook de uren/kwartieren in de schermtijdlijn tekent, niet alleen de snapping.
-    const { major, mid, minor } = pickTiers(view.zoom, enableQH, this.opts.enableHourPlanning ?? false);
+    const { major, mid, minor } = pickTiers(view.zoom, enableQH);
 
     // Visible date range, via de as-index (`this.axis.dayIndexOf`/`dateAtIndex`) i.p.v. de
     // kalenderdag-aanname `scrollX/zoom` — die gaat ervan uit dat 1 kalenderdag = 1 zoom-kolom,

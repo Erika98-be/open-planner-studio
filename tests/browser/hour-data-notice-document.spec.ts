@@ -14,7 +14,6 @@ const HOUR_MSPDI = `<?xml version="1.0" encoding="UTF-8"?>
 const notice = (page: Page) => page.locator('[data-ops-hour-data-notice]');
 
 test('urenstrook hoort bij het document met uur-data, niet bij een nieuw project', async ({ page, ops: _ops }) => {
-  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ enableHourPlanning: false }));
   const chooser = page.waitForEvent('filechooser');
   await page.locator('button.ribbon-btn').filter({ hasText: /^(Open|Openen)$/ }).click();
   await (await chooser).setFiles({ name: 'urenplan.xml', mimeType: 'application/xml', buffer: Buffer.from(HOUR_MSPDI) });

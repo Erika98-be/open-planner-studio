@@ -181,7 +181,6 @@
       "calendar": "Vyberte kalendář ze seznamu.",
       "calendarNotFound": "Zvolený kalendář neexistuje.",
       "calendarHours": "Kalendář tohoto úkolu nemá pracovní hodiny za den.",
-      "hourPlanningDisabled": "Plánování v hodinách je vypnuto v „Nastavení“ aplikace.",
       "durationConversionNotExact": "Tuto dobu trvání nelze přesně převést na druhou jednotku.",
       "milestoneRequired": "Toto pole platí jen pro milníky.",
       "milestoneUnavailable": "Souhrnný úkol s dílčími úkoly nemůže být milník.",
@@ -337,9 +336,6 @@
     "days": "Dny",
     "hours": "Hodiny",
     "invalid": "Zadejte celé číslo dnů nebo hodin, například 2d nebo 12h.",
-    "enableHourPlanningFirst": "Zapněte plánování v hodinách, abyste mohli upravit tento hodinový úkol.",
-    "enableHourPlanning": "Zapnout plánování v hodinách",
-    "requiresWorkBlocks": "Tento kalendář nemá platné pracovní hodiny. Zkontrolujte pracovní dny a pracovní hodiny.",
     "conversionNotExact": "{{value}} v tomto kalendáři nevychází na celé dny. Jednotka se nezměnila.",
     "unitInfo": "Zvolená jednotka patří k tomuto úkolu. Dny se počítají jako pracovní dny; hodiny se počítají jako pracovní hodiny v rámci kalendáře. Jiný kalendář nezmění jednotku ani zadanou dobu trvání, ale může změnit datum dokončení."
   },

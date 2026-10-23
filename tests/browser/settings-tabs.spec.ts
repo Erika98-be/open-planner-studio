@@ -32,7 +32,6 @@ const SECTION_HEADINGS: RegExp[][] = [
   ],
   [
     /^(Construction mode|Bouwmodus)$/,
-    /^(Hour planning|Urenplanning)$/,
     /^(Week starts on|Week begint op)$/,
     /^(Calculation|Berekenen)$/,
   ],
@@ -65,6 +64,20 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
     // Scopen op directe kinderen: de theme-kaartjes (Weergave → Thema) hebben zelf ook een <h4>
     // per kleurstaal, die géén sectiekop is en dus niet mag meetellen.
     if (i === 0) {
+      const duration = container.getByRole('button', { name: /^(Duration display|Duurweergave)$/, exact: true });
+      const page = container.page();
+      await page.evaluate(() => window.__OPS__!.store.getState().setProject({
+        schedulingProfile: { baseId: 'ops', id: 'ops', name: '', overrides: {} },
+      }));
+      await expect(duration).toBeDisabled();
+      await expect(container.getByText(/^(In the OPS profile, each task shows its own unit\.|In het OPS-profiel toont elke taak zijn eigen maat\.)$/)).toBeVisible();
+      await page.evaluate(() => window.__OPS__!.store.getState().setProject({
+        schedulingProfile: { baseId: 'p6', id: 'p6', name: '', overrides: {} },
+      }));
+      await expect(duration).toBeEnabled();
+      await duration.click();
+      await page.getByRole('option', { name: /^(Always hours|Altijd uren)$/, exact: true }).click();
+      await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().ui.durationDisplay)).toBe('hours');
       await expect(container.getByText(
         /^(Alleen voor urentaken: balken opsplitsen rond pauzes en niet-werktijd\. Echte taakonderbrekingen blijven altijd zichtbaar\.|For hour tasks only: split bars around breaks and non-working time\. Actual task interruptions remain visible regardless of this setting\.)$/,
       )).toBeVisible();

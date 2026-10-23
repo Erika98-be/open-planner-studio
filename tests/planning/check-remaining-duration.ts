@@ -40,7 +40,6 @@ const byWeekday = { 1: band, 2: band, 3: band, 4: band, 5: band, 6: [], 7: [] };
 /** Vers uurproject (8 u/dag), statusdatum ma 10:00, urentaak U (5 u) en dagtaak D (5 d). */
 function setup(hoursPerDay = 8): { u: string; d: string } {
   S().newProject();
-  S().setUI({ enableHourPlanning: true });
   const end = 8 * 60 + hoursPerDay * 60;
   const b = [{ start: 8 * 60, end }];
   S().setCalendar({

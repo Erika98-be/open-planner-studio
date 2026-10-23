@@ -14,7 +14,6 @@ import { projectIfcSchema, type IfcSchemaId } from '@/types/project';
 import { computeGenerateSpan, type HolidayGenParams } from '@/engine/calendar/generateCalendarHolidays';
 import type { HolidayCountry } from '@/engine/calendar/holidays';
 import { WIZARD_PRESETS, SHIFT_PRESET_LABEL, shiftPresetPatch, type ShiftPresetKey } from '@/utils/shiftPresets';
-import { hasConcreteWorkBlocks } from '@/services/subdayIo';
 
 /** Wizard-generatorstatus: `HolidayGenParams` uitgebreid met de wizard-only pseudo-keuze
  *  `'custom'` ("Aangepast…") — die opent na aanmaken de kalenderdialoog i.p.v.
@@ -122,9 +121,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
     const isNew = mode === 'wizard';
     const { t: tMenu } = useTranslation('menu');
     const { t: tCommon } = useTranslation('common');
-    const { t: tTask } = useTranslation('task');
     const project = useAppStore(s => s.project);
-    const projectCalendar = useAppStore(s => s.calendar);
     const activeDocumentId = useAppStore(s => s.activeDocumentId);
     const activeRibbonTab = useAppStore(s => s.ui.activeRibbonTab);
     const createNewProject = useAppStore(s => s.createNewProject);
@@ -179,11 +176,8 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
     const [creatingCompany, setCreatingCompany] = useState(false);
     const [pendingNewCompany, setPendingNewCompany] = useState(false);
     const [newCompanyName, setNewCompanyName] = useState('');
-    // Ploeg-preset: default 'day' = dag-kalender. Alleen zichtbaar met
-    // Urenplanning aan; een niet-default preset materialiseert workTime + shift op de nieuwe kalender.
-    const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
+    // Een ploegpreset materialiseert workTime + shift op de nieuwe kalender.
     const [shiftPreset, setShiftPreset] = useState<ShiftPresetKey>('day');
-    const canDefaultToHours = isNew ? shiftPreset !== 'day' : hasConcreteWorkBlocks(projectCalendar);
     // Net als companyTouched — de rekenprofiel-tak committeert ALLEEN als de gebruiker
     // het blok in deze mount daadwerkelijk bewerkte.
     const [calcTouched, setCalcTouched] = useState(false);
@@ -338,7 +332,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
           : buildGeneratedCalendar(calState as HolidayGenParams, calSpan, calendarName);
         // Ploeg-preset materialiseren: default 'day' laat de kalender een dag-kalender (geen
         // workTime); een niet-default preset zet workTime + shift + scalar-fallback op nieuwe entries.
-        if (enableHourPlanning && shiftPreset !== 'day') {
+        if (shiftPreset !== 'day') {
           const patch = shiftPresetPatch(shiftPreset);
           calendar.workTime = patch.workTime;
           calendar.shift = patch.shift;
@@ -351,7 +345,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
           name, description, author, company, startDate, endDate,
           calendar,
           phaseNames: templatePhases(template),
-          defaultTaskDurationUnit: enableHourPlanning && canDefaultToHours ? defaultTaskDurationUnit : 'days',
+          defaultTaskDurationUnit: defaultTaskDurationUnit,
           // Rekenprofiel uit de keuzelijst hoort bij de aanmaak zelf (geen losse undo-stap erna).
           schedulingProfile: scheduling.profile,
           schedulingOptions: scheduling.options,
@@ -564,7 +558,7 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
           </div>
         </div>
 
-        {enableHourPlanning && (
+        <>
           <div className="flex flex-col gap-1">
             <label className="text-text-secondary font-medium">
               {tCommon('settings.defaultTaskDurationUnit')}
@@ -575,14 +569,14 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
               onChange={value => setDefaultTaskDurationUnit(value as 'days' | 'hours')}
               options={[
                 { value: 'days', label: tCommon('duration.days') },
-                { value: 'hours', label: tCommon('duration.hours'), disabled: !canDefaultToHours },
+                { value: 'hours', label: tCommon('duration.hours') },
               ]}
             />
             <p className="scrollzoom-hint">
-              {canDefaultToHours ? tCommon('settings.defaultTaskDurationUnitHint') : tTask('duration.requiresWorkBlocks')}
+              {tCommon('settings.defaultTaskDurationUnitHint')}
             </p>
           </div>
-        )}
+          </>
 
         {/* Issue #292: het schema in de kop bij opslaan. Alleen bij bewerken; Toepassen zet het (één
             undo-stap via applyProjectInfo/setProject, document gewijzigd) en telt als antwoord op de
@@ -611,15 +605,15 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
                 onChange={v => setTemplate(v as TemplateKey)} options={templateOptions} />
             </div>
 
-            {/* Ploeg-preset — alleen met Urenplanning aan; default 'Dagdienst' = dag-kalender. */}
-            {enableHourPlanning && (
+            {/* Ploegpreset voor de nieuwe kalender. */}
+            <>
               <div className="flex flex-col gap-1">
                 <label className="text-text-secondary font-medium">{tCommon('calendar.worktime.shiftPreset')}</label>
                 <Select aria-label={tCommon('calendar.worktime.shiftPreset')} value={shiftPreset}
                   onChange={v => setShiftPreset(v as ShiftPresetKey)}
                   options={WIZARD_PRESETS.map(k => ({ value: k, label: tCommon(SHIFT_PRESET_LABEL[k]) }))} />
               </div>
-            )}
+          </>
 
             {/* Feestdagen-generator: land/regio, bouwvak (default GEEN — bewust)
                 + compacte preview. "Aangepast…" (extra optie in de land-select) verbergt de

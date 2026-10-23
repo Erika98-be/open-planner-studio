@@ -1,4 +1,4 @@
-// Tutorial 4 — Plannen in uren (`tut-4-uren`): urenplanning aanzetten, de stort en twee kraaninzetten in uren.
+// Tutorial 4 — Plannen in uren (`tut-4-uren`): de stort en twee kraaninzetten in uren.
 import { l, type Action, type Check, type L, type Snap, type TutorialScript } from './dsl';
 import { T, taskIs } from './project';
 
@@ -25,20 +25,6 @@ export const TUTORIAL_4: TutorialScript = {
       id: 'startpunt',
       do: [],
       expect: [notStale, ...END_AND_PATH, { see: { cell: { task: T.pour, column: l('Duur', 'Duration') } }, text: '1d' }],
-    },
-    {
-      id: 'urenplanning',
-      do: [
-        { ribbon: 'instellingen:projectSettings', label: l('App-instellingen', 'App settings') },
-        { waitFor: dialog },
-        { click: { button: l('Planning', 'Planning'), within: dialog } },
-        { click: { text: l('Urenplanning inschakelen', 'Enable hour planning'), within: dialog } },
-        { check: { visible: { text: l('Gemengde dag/uur-planning toestaan', 'Allow mixed day/hour planning'), within: dialog } } },
-        { check: { state: s => (s.ui.enableHourPlanning ? [] : ['urenplanning staat uit']) } },
-        { shot: { name: 'tut-4-urenplanning', of: dialog, pad: 0 } },
-        { click: { button: l('Sluiten', 'Close'), within: dialog } },
-      ],
-      expect: [{ gone: dialog }, { state: s => (s.ui.enableHourPlanning ? [] : ['urenplanning staat uit']) }],
     },
     {
       id: 'stort',

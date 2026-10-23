@@ -5,7 +5,7 @@ import { blocksOf, mspdiWithBlocks, openMspdiAndCalendarDialog } from './fixture
 test('kalenderdialoog bewaart gewone enkelregelige velden bij Enter zonder te sluiten', async ({ page, ops: _ops }) => {
   await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
-    s.setUI({ showCalendarDialog: true, enableHourPlanning: true, weekStartDay: 'sunday' });
+    s.setUI({ showCalendarDialog: true, weekStartDay: 'sunday' });
   });
 
   const dialog = page.locator('[data-ops-calendar-dialog]');
@@ -35,7 +35,7 @@ test('kalenderdialoog bewaart gewone enkelregelige velden bij Enter zonder te sl
 test('kalenderdialoog rangschikt beide zichtbare weekdagrijen volgens de eerste weekdag', async ({ page, ops: _ops }) => {
   await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
-    s.setUI({ showCalendarDialog: true, enableHourPlanning: true, weekStartDay: 'sunday' });
+    s.setUI({ showCalendarDialog: true, weekStartDay: 'sunday' });
   });
 
   const dialog = page.locator('[data-ops-calendar-dialog]');
@@ -95,7 +95,7 @@ test('kalenderdialoog rangschikt beide zichtbare weekdagrijen volgens de eerste 
 test('scalar HH:MM-bediening leidt netto uren af, stapt per kwartier en blokkeert ongeldige tijden', async ({ page, ops: _ops }) => {
   await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
-    s.setUI({ showCalendarDialog: true, enableHourPlanning: true });
+    s.setUI({ showCalendarDialog: true, });
   });
 
   const dialog = page.locator('[data-ops-calendar-dialog]');
@@ -229,7 +229,7 @@ test('scalar HH:MM-bediening leidt netto uren af, stapt per kwartier en blokkeer
 test('netto-uren blijft in beide urenplanningstanden een afgeleide output', async ({ page, ops: _ops }) => {
   await page.evaluate(() => {
     const s = window.__OPS__!.store.getState();
-    s.setUI({ showCalendarDialog: true, enableHourPlanning: false });
+    s.setUI({ showCalendarDialog: true, });
   });
   const dialog = page.locator('[data-ops-calendar-dialog]');
   const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
@@ -238,7 +238,6 @@ test('netto-uren blijft in beide urenplanningstanden een afgeleide output', asyn
   await expect(dialog.getByText('Standard workday', { exact: true })).toBeVisible();
   await expect(dialog.locator('input[type="number"][value="8"]')).toHaveCount(0);
 
-  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ enableHourPlanning: true }));
   await expect(netHours).toHaveText('8h');
   await expect(netHours.locator('input')).toHaveCount(0);
   await expect(dialog.locator('input[type="number"][value="8"]')).toHaveCount(0);
@@ -248,7 +247,7 @@ test('netto-uren blijft in beide urenplanningstanden een afgeleide output', asyn
 test('netto-uren toont een streepje als een eenvoudige kalender geen werkdag heeft', async ({ page, ops: _ops }) => {
   // De solver weigert een kalender zonder werkdagen (`noWorkingDays`); het veld toont dan geen getal, ook
   // niet de opgeslagen 8. Echte klikken op de dagknoppen; `__OPS__` opent alleen het venster en leest.
-  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, enableHourPlanning: false }));
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, }));
   const dialog = page.locator('[data-ops-calendar-dialog]');
   const netHours = dialog.locator('[data-ops-simple-break-net-hours]');
   await expect(netHours).toHaveText('8h');
@@ -318,7 +317,6 @@ test('resourcekalender blokkeert lokaal ongeldige scalar-tijden zonder het model
 test('kalenderdialoog: kalender met werkblokken toont bij urenplanning uit het blok Werktijden',
   async ({ page, ops: _ops }) => {
     const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
-    expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.enableHourPlanning)).toBe(false);
     await expect(dialog.locator('[data-ops-worktime-section]')).toBeVisible();
     await expect(dialog.locator('[data-ops-worktime-editor]')).toBeVisible();
     await expect.poll(() => blocksOf(dialog, 1)).toEqual(['08:00', '12:00', '13:00', '17:00']);
@@ -334,7 +332,7 @@ test('kalenderdialoog: kalender met werkblokken toont bij urenplanning uit het b
   });
 
 test('kalenderdialoog: een eenvoudige kalender houdt bij urenplanning uit de gewone velden', async ({ page, ops: _ops }) => {
-  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, enableHourPlanning: false }));
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({ showCalendarDialog: true, }));
   const dialog = page.locator('[data-ops-calendar-dialog]');
   await expect(dialog).toBeVisible();
   expect(await page.evaluate(() => window.__OPS__!.store.getState().calendar.workTime)).toBeUndefined();
@@ -395,7 +393,6 @@ test('kalenderdialoog: gewijzigde blokken bij urenplanning uit blijven na opslaa
   await openButton.click();
   await (await chooser).setFiles({ name: 'blokken-heropend.ifc', mimeType: 'application/x-step', buffer: ifc });
   await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().filePath)).toBe('blokken-heropend.ifc');
-  expect(await page.evaluate(() => window.__OPS__!.store.getState().ui.enableHourPlanning)).toBe(false);
   await page.evaluate(() => window.__OPS__!.store.getState().runCPM());
   await expect.poll(() => blocksState(page)).toEqual(changed);
 
@@ -414,7 +411,6 @@ for (const hourPlanning of [false, true]) {
   test(`kalenderdialoog: werkdag uit en weer aan past de blokken mee aan (urenplanning ${hourPlanning ? 'aan' : 'uit'})`,
     async ({ page, ops: _ops }) => {
       const dialog = await openMspdiAndCalendarDialog(page, mspdiWithBlocks([['08:00', '12:00'], ['13:00', '17:00']]));
-      if (hourPlanning) await page.evaluate(() => window.__OPS__!.store.getState().setUI({ enableHourPlanning: true }));
       const friday = () => page.evaluate(() => {
         const s = window.__OPS__!.store.getState();
         return {

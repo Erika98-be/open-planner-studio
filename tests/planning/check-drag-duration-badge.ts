@@ -270,10 +270,10 @@ const wOf = (label: string) => label.length * CHAR_W + PAD_X * 2;
   });
   const effectiveCalById = new Map<string, WorkCalendar>([[hourTask.id, hourCal]]);
 
-  for (const enableHourPlanning of [false, true]) {
-    const opts = baseOpts(rowsOf(hourTask.id), 300, 0, { effectiveCalById, enableHourPlanning });
-    const b = badge(opts, { taskId: hourTask.id, edge: 'right' }, `uurtaak(hp=${enableHourPlanning})`);
-    eq(`uurtaak(hp=${enableHourPlanning}): label in uren`, b.text.text, '5h');
+  for (const zoom of [100, 1000]) {
+    const opts = baseOpts(rowsOf(hourTask.id), zoom, 0, { effectiveCalById });
+    const b = badge(opts, { taskId: hourTask.id, edge: 'right' }, `uurtaak(zoom=${zoom})`);
+    eq(`uurtaak(zoom=${zoom}): label in uren`, b.text.text, '5h');
   }
 }
 

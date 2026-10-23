@@ -3,7 +3,7 @@ import { barPoint, expect, state, test } from './fixtures/ops';
 async function seedHourTask(page: import('@playwright/test').Page, start = '2026-09-07T07:00', finish = '2026-09-07T16:00'): Promise<string> {
   const id = await page.evaluate(({ taskStart, taskFinish }) => {
     const state = window.__OPS__!.store.getState();
-    state.setUI({ enableHourPlanning: true, allowMixedDayHour: true, compressNonWorkdays: false });
+    state.setUI({ allowMixedDayHour: true, compressNonWorkdays: false });
     state.setCalendar({
       ...state.calendar,
       workDays: [1, 2, 3, 4, 5],
@@ -141,7 +141,7 @@ test('bestaande urentaak behoudt zijn werkminuten wanneer urenplanning uit staat
   const id = await seedHourTask(page);
   await page.evaluate(() => {
     const state = window.__OPS__!.store.getState();
-    state.setUI({ enableHourPlanning: false });
+    state.setUI({ });
     // De dagmodus begrenst 1000px/dag naar 400px/dag; volg die bestaande viewportregel in plaats
     // van een punt uit een niet meer zichtbare balk als dragstart te gebruiken.
     state.setScroll(14 * 400 + 80, 0);

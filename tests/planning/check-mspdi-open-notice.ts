@@ -88,7 +88,7 @@ async function open(name: string, text: string): Promise<OpenedImport> {
   const parsed = await parseOpenedFile({ name, text });
   S().newProject();
   useAppStore.setState(st => { st.ui.notifications = []; });
-  S().applyOpenedImport(parsed, { filePath: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
+  S().applyOpenedImport(parsed, { filePath: null, recompute: true, fit: false, linkedOpen: true });
   return parsed;
 }
 const resultsOf = (parsed: OpenedImport) => isMultiDocumentImport(parsed) ? parsed.results : [parsed];

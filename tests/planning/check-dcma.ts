@@ -261,7 +261,7 @@ const summary = (m: DcmaMetric) => (m.result === 'na' ? [m.result, m.naReason] :
     '%E',
   ].join('\r\n'));
   S().newProject();
-  S().applyOpenedImport(readXER(bytes) as ImportResult, { filePath: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true });
+  S().applyOpenedImport(readXER(bytes) as ImportResult, { filePath: null, recompute: true, fit: false, linkedOpen: true });
   const fund = () => S().tasks.find(t => t.name === 'Fundering')!;
   eq('s5: laden opent de modus; Fundering toont P6-speling, niet kritiek', [S().datesAsRecorded, fund().time.totalFloat, fund().time.isCritical], [true, 15, false]);
   eq('s5: in de modus is punt 12 n.v.t. (niet berekend)', summary(metric(dcmaOf(ctxFromStore()), 'criticalPathTest')), ['na', 'notCalculated']);

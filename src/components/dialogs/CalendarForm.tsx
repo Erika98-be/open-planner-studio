@@ -72,7 +72,7 @@ export function CalendarForm({
   const { t: tMenu, i18n } = useTranslation('menu');
   const { t: tCommon } = useTranslation('common');
   const netHoursId = useId();
-  const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
+
   const weekStartDay = useAppStore(s => s.ui.weekStartDay);
   const timeNotation = useAppStore(s => s.ui.timeNotation);
 
@@ -101,7 +101,7 @@ export function CalendarForm({
   // een eenvoudige kalender werkblokken kan KRIJGEN (presets, "Per weekdag instellen…").
   // Besluit eigenaar 2026-10-13 (optie 2), vervangt de alleen-lezen-stand uit #334.
   const hourMode = isHourModeCalendar(draft);
-  const showWorkTimeSection = enableHourPlanning || hourMode;
+  const showWorkTimeSection = true;
   const scalarBreakError = calendarScalarBreakIssue(draft);
   // Oude scalar-kalenders hebben nog geen velden, maar hun zichtbare waarden moeten het bestaande
   // gedrag verklaren: 07:00–16:00 / 8 uur toont daarom de afgeleide 12:00 / 60 min, terwijl

@@ -34,7 +34,7 @@ Standaard heeft een project de kalender *Bouwkalender NL* (Bouwmodus aan) of *St
 
 ### Werktijden
 
-Dit blok staat er als *Urenplanning inschakelen* aan staat (*App-instellingen*, tabblad *Planning*), en altijd bij een kalender met werkblokken. Hier stel je werktijden en ploegen per weekdag in. Een kalender zonder werkblokken krijgt alleen blokken met urenplanning aan: via een preset of *Per weekdag instellen…*. Zie [Werktijden instellen](docs://howto-werktijden-instellen).
+Dit blok staat bij elke kalender. Hier stel je werktijden en ploegen per weekdag in. Een kalender zonder werkblokken krijgt alleen blokken met urenplanning aan: via een preset of *Per weekdag instellen…*. Zie [Werktijden instellen](docs://howto-werktijden-instellen).
 
 - **Presets** — knoppen die de werktijden in één keer zetten: *Dagdienst* (ma–vr 08:00 tot 16:00, een gewone dagkalender), *2 ploegen* (ma–vr 06:00 tot 22:00, 16 uur), *3 ploegen* (ma–vr 06:00 tot 06:00 volgende dag, 24 uur), *Nachtploeg* (ma–vr 22:00 tot 06:00, 8 uur) en *24/7* (alle dagen 00:00 tot 24:00). Achter de ingebouwde knoppen staan je eigen presets, met een kruisje om ze te verwijderen.
 - **Bewaar als preset…** — bewaart de huidige werktijden als eigen preset, op dit apparaat, zodat je ze in elk project kunt hergebruiken. Je geeft een naam (*Naam voor je eigen preset*) en klikt *Opslaan* of *Annuleren*.

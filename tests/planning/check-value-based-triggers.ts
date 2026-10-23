@@ -71,7 +71,7 @@ function setup(kind: Kind, layer: Layer): Fixture {
   S().setProject({ startDate: '2026-06-01' });
   if (kind === 'uur') {
     S().setCalendar(HOUR_CAL);
-    ctx.store.setState((s) => { s.ui.enableHourPlanning = true; });
+    ctx.store.setState((s) => {  });
   }
   const id = kind === 'dag'
     ? S().addTask({ name: 'Metselwerk', time: createDefaultTaskTime('2026-06-01', 5) })

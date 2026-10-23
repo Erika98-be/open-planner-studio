@@ -435,7 +435,7 @@ export function buildTutorialProject(lang: TutorialLang): TutorialBuild {
   // Schone lei: `newProject` zet de store terug, zodat `createNewProject` het (lege) tabblad
   // hergebruikt, net als bij de eerste start van de app.
   S().newProject();
-  S().setUI({ enableHourPlanning: false });
+  S().setUI({ });
   const span = computeGenerateSpan(PROJECT_START, undefined);
   // Wizardstandaard: land Nederland, geen bouwvak, generatiespanne startjaar−1 … startjaar+3.
   const wizardCalendar: WorkCalendar = buildGeneratedCalendar(
@@ -537,7 +537,7 @@ export function buildTutorialProject(lang: TutorialLang): TutorialBuild {
   stages.push(b.snapshot('na-tut-3'));
 
   // ── Tutorial 4: Instellingen › Urenplanning inschakelen; duur in uren (Duur-veld "6h") ──
-  S().setUI({ enableHourPlanning: true, allowMixedDayHour: true });
+  S().setUI({ allowMixedDayHour: true });
   const calForHours = S().calendar;
   for (const h of HOUR_TASKS) {
     const t = b.task(h.task);

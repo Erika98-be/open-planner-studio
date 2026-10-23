@@ -321,9 +321,6 @@
     "themeHighContrast": "Hoher Kontrast",
     "themeFollowSystem": "Systemdesign folgen",
     "themeSystemHint": "Folgt dem Farbschema deines Systems (aktuell: {{theme}}).",
-    "hourPlanningSection": "Stundenplanung",
-    "enableHourPlanning": "Stundenplanung aktivieren",
-    "enableHourPlanningHint": "Aktiviert Stunden-/Minuten-Scheduling: eine Stunden-Zeitskala, Schichten mit Arbeitszeitbändern und stundengenaue Vorgangsbalken. Aus ⇒ die App bleibt wie bisher vollständig tagesgenau.",
     "showTaskTypes": "Vorgangsarten verwenden",
     "showTaskTypesHint": "Wählen Sie pro Vorgang, was sich mitbewegt, wenn Dauer, Einheiten oder Arbeit sich ändern, wie Task Type in MS Project und Duration Type in P6. Aus: Dauer und Einheiten bleiben stehen. Eine Datei mit Vorgangsarten oder gespeicherter Arbeit zeigt sie auch, wenn diese Option aus ist.",
     "allowMixedDayHour": "Gemischte Tages-/Stundenplanung zulassen",
@@ -1094,10 +1091,6 @@
     "day": "Tag",
     "month": "Monat",
     "year": "Jahr"
-  },
-  "hourData": {
-    "notice": "Diese Datei enthält stundenbasierte Planung.",
-    "enable": "Stundenplanung aktivieren"
   },
   "recordedDates": {
     "activeCount_one": "Sie sehen den Terminplan so, wie Primavera ihn gespeichert hat; eine Neuberechnung würde {{count}} Vorgang verschieben.",

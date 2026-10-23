@@ -284,7 +284,7 @@ const hourCal = (start: number, end: number): Partial<WorkCalendar> => ({
   const ctx = createAppStoreContext();
   ctx.store.setState({ companies: fx.companies, pools: { [cid]: structuredClone(rawPool) } });
   ctx.store.getState().applyOpenedImport(await parseOpenedFile({ name: 'oud.ifc', text: ifc }), {
-    filePath: null, recompute: true, linkedOpen: true, hourDataNotice: false,
+    filePath: null, recompute: true, linkedOpen: true, 
   });
   same('§5 openroute: kalender 8/17 en geen afwijkingsdialoog',
     [ctx.store.getState().calendar.workEndHour, ctx.store.getState().ui.showLibraryLinkDialog ?? false], [17, false]);

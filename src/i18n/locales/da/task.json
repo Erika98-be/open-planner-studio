@@ -181,7 +181,6 @@
       "calendar": "Vælg en kalender fra listen.",
       "calendarNotFound": "Den valgte kalender findes ikke.",
       "calendarHours": "Kalenderen for denne opgave har ingen arbejdstimer pr. dag.",
-      "hourPlanningDisabled": "Timeplanlægning er slået fra under „Indstillinger“.",
       "durationConversionNotExact": "Denne varighed kan ikke præcist omregnes til den anden enhed.",
       "milestoneRequired": "Dette felt gælder kun for milepæle.",
       "milestoneUnavailable": "En hovedopgave med underopgaver kan ikke blive en milepæl.",
@@ -329,9 +328,6 @@
     "days": "Dage",
     "hours": "Timer",
     "invalid": "Indtast et helt antal dage eller timer, for eksempel 2d eller 12t.",
-    "enableHourPlanningFirst": "Slå timeplanlægning til for at redigere denne timeopgave.",
-    "enableHourPlanning": "Slå timeplanlægning til",
-    "requiresWorkBlocks": "Denne kalender har ingen gyldige arbejdstimer. Kontrollér arbejdsdage og arbejdstimer.",
     "conversionNotExact": "{{value}} svarer ikke til hele dage i denne kalender. Enheden er ikke ændret.",
     "unitInfo": "Den valgte enhed hører til denne opgave. Dage tæller arbejdsdage; timer tæller arbejdstimer inden for kalenderen. En anden kalender ændrer ikke enheden eller den indtastede varighed, men den kan ændre slutdatoen."
   },

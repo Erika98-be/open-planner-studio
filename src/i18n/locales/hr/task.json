@@ -181,7 +181,6 @@
       "calendar": "Odaberite kalendar s popisa.",
       "calendarNotFound": "Odabrani kalendar ne postoji.",
       "calendarHours": "Kalendar ovog zadatka nema radnih sati po danu.",
-      "hourPlanningDisabled": "Planiranje u satima isključeno je u odjeljku Postavke.",
       "durationConversionNotExact": "Ovo trajanje ne može se točno pretvoriti u drugu jedinicu.",
       "milestoneRequired": "Ovo polje vrijedi samo za kontrolne točke.",
       "milestoneUnavailable": "Zadatak sažetka s podzadacima ne može postati kontrolna točka.",
@@ -333,9 +332,6 @@
     "days": "Dani",
     "hours": "Sati",
     "invalid": "Unesite cijeli broj dana ili sati, na primjer 2d ili 12h.",
-    "enableHourPlanningFirst": "Uključite planiranje u satima da biste uredili ovaj zadatak u satima.",
-    "enableHourPlanning": "Uključi planiranje u satima",
-    "requiresWorkBlocks": "Ovaj kalendar nema ispravna radna vremena. Provjerite radne dane i radno vrijeme.",
     "conversionNotExact": "{{value}} ne odgovara cijelim danima u ovom kalendaru. Jedinica nije promijenjena.",
     "unitInfo": "Odabrana jedinica pripada ovom zadatku. Dani se broje kao radni dani, a sati kao radni sati unutar kalendara. Drugi kalendar ne mijenja jedinicu ni uneseno trajanje, ali može promijeniti datum završetka."
   },

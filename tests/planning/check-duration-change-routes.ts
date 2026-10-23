@@ -80,7 +80,7 @@ function setup(sc: Scenario): { S: () => AppState; id: string } {
   S().setProject({ startDate: '2026-06-01' });
   if (sc.kind === 'hour') {
     S().setCalendar(HOUR_CAL);
-    ctx.store.setState((s) => { s.ui.enableHourPlanning = true; });
+    ctx.store.setState((s) => {  });
   }
   const id = sc.kind === 'day'
     ? S().addTask({ name: sc.label, time: createDefaultTaskTime('2026-06-01', sc.from) })
@@ -273,7 +273,7 @@ function setupRunning(pc: ProgressCase): { ctx: ReturnType<typeof createAppStore
   S().setProject({ startDate: '2026-06-01' });
   if (pc.kind === 'hour') {
     S().setCalendar(HOUR_CAL);
-    ctx.store.setState((s) => { s.ui.enableHourPlanning = true; });
+    ctx.store.setState((s) => {  });
   }
   const id = pc.kind === 'day'
     ? S().addTask({ name: pc.label, time: createDefaultTaskTime('2026-06-01', pc.from) })

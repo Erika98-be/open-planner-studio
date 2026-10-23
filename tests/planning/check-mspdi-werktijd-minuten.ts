@@ -155,7 +155,7 @@ const blocks = (c: WorkCalendar | undefined, wd: 1 | 2 | 3 | 4 | 5 | 6 | 7) =>
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // §2 + §3 De echte open- en exportroute voor het MSPDI-bestand hierboven
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 function openAndRecalc(parsed: OpenedImport): DocumentPayload {
   const store = createAppStoreContext().store;
   store.getState().applyOpenedImport(parsed, OPEN);
