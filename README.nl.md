@@ -4,7 +4,7 @@
 
 # Open Planner Studio
 
-**Open-source bouwplanning. Kritiek pad, MS Project- en Primavera P6-bestanden, IFC 4.3 als eigen formaat en een ingebouwde AI-koppeling.**
+**Open-source bouwplanning. Kritiek pad, MS Project- en Primavera P6-bestanden, IFC 4.3 als eigen formaat en een MCP-server.**
 
 [![Versie](https://img.shields.io/github/package-json/v/OpenAEC-Foundation/open-planner-studio?label=versie&color=blue)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/OpenAEC-Foundation/open-planner-studio/total?label=downloads&color=success)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
@@ -13,8 +13,6 @@
 [![Licentie](https://img.shields.io/github/license/OpenAEC-Foundation/open-planner-studio)](#licentie)
 
 ### [Probeer in de browser](https://open-planner-studio.open-aec.com/) &nbsp;·&nbsp; [Download](https://github.com/OpenAEC-Foundation/open-planner-studio/releases/latest)
-
-![Open Planner Studio: Gantt-diagram met kritiek pad](docs/images/readme/hero.png)
 
 ![Demo: relatie leggen, duur wijzigen, herberekenen, kritiek pad lezen](docs/images/readme/demo.gif)
 
@@ -49,7 +47,7 @@ Geïnstalleerde apps werken zichzelf bij als er een nieuwe versie is (Windows, m
 - **Werkt met je bestaande bestanden.** Open Microsoft Project- (`.mpp`, `.xml`) en Primavera P6-bestanden (`.xer`, `.xml`) en exporteer naar MS Project XML, P6 XML en CSV.
 - **Rekenregels naar keuze.** Reken per project met de conventies van Primavera P6, Microsoft Project of Open Planner Studio.
 - **Gemaakt voor de bouw.** Feestdagen, bouwvak, werkkalenders, keuringsmomenten, fasering, resource-nivellering.
-- **AI-assistenten.** Een ingebouwde MCP-server laat een AI-assistent je planning lezen en bewerken, met veiligheidsschakelaars die jij beheert.
+- **MCP.** Een ingebouwde MCP-server laat een AI-assistent je planning lezen en bewerken, met veiligheidsschakelaars die jij beheert.
 - **Meertalig.** 28 talen, ook Arabisch en Perzisch (van rechts naar links).
 
 ## Schermafbeeldingen
@@ -58,7 +56,7 @@ Geïnstalleerde apps werken zichzelf bij als er een nieuwe versie is (Windows, m
 |---|---|
 | ![Kritiek pad](docs/images/readme/critical-path.png) **Kritiek pad en speling** | ![Tabel bewerken](docs/images/readme/table-editing.png) **Taaktabel als spreadsheet** |
 | ![Resourcehistogram](docs/images/readme/resources-histogram.png) **Resourcehistogram en nivellering** | ![Kalender](docs/images/readme/calendar-dialog.png) **Kalenders en werktijd** |
-| ![Rapportvoorbeeld](docs/images/readme/report-preview.png) **Rapporten met live voorbeeld** | ![AI-tab](docs/images/readme/ai-tab.png) **AI-assistent (MCP)** |
+| ![Rapportvoorbeeld](docs/images/readme/report-preview.png) **Rapporten met live voorbeeld** | ![AI-tab](docs/images/readme/ai-tab.png) **MCP** |
 | ![Exportformaten](docs/images/readme/formats.png) **Exporteren naar andere formaten** | ![Help](docs/images/readme/help-viewer.png) **Help in de app** |
 
 ## Geavanceerd plannen
@@ -102,7 +100,7 @@ Gantt-diagram, Resourcediagram, Mijlpalenoverzicht, Afwijking, Vooruitblik, Krit
 
 Planningsgezondheid bevat een DCMA 14-puntencontrole. Rapporten kunnen een rapportageperiode beslaan, vergelijken met een baseline en het filter en de groepering van je scherm volgen (Gantt-diagram). Zie [Rapporttypen](public/docs/nl/ref-rapporttypes.md).
 
-## AI-assistenten (MCP)
+## MCP
 
 OPS kan een lokale **MCP-server** (Model Context Protocol) draaien, zodat een AI-assistent werkt met de planning die je open hebt. Hij biedt 41 `planner_*`-tools om taken, relaties, resources, kalenders, baselines en documenten te lezen en te wijzigen. Jij bepaalt wat de assistent mag: pauze, alleen-lezen, automatische back-ups en een activiteitenlog staan op het tabblad *AI*. De server staat standaard uit en draait alleen in de desktop-app.
 

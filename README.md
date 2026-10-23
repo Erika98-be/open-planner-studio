@@ -4,7 +4,7 @@
 
 # Open Planner Studio
 
-**Open-source construction scheduling. Critical path, MS Project and Primavera P6 files, IFC 4.3 as the native format, and a built-in AI interface.**
+**Open-source construction scheduling. Critical path, MS Project and Primavera P6 files, IFC 4.3 as the native format, and an MCP server.**
 
 [![Version](https://img.shields.io/github/package-json/v/OpenAEC-Foundation/open-planner-studio?label=version&color=blue)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/OpenAEC-Foundation/open-planner-studio/total?label=downloads&color=success)](https://github.com/OpenAEC-Foundation/open-planner-studio/releases)
@@ -13,8 +13,6 @@
 [![License](https://img.shields.io/github/license/OpenAEC-Foundation/open-planner-studio)](#license)
 
 ### [Try in your browser](https://open-planner-studio.open-aec.com/) &nbsp;·&nbsp; [Download](https://github.com/OpenAEC-Foundation/open-planner-studio/releases/latest)
-
-![Open Planner Studio: Gantt chart with the critical path](docs/images/readme/hero.png)
 
 ![Demo: add a relation, change a duration, recalculate, read the critical path](docs/images/readme/demo.gif)
 
@@ -49,7 +47,7 @@ Installed apps update themselves when a new version is out (Windows, macOS, `.de
 - **Works with your existing files.** Open Microsoft Project (`.mpp`, `.xml`) and Primavera P6 (`.xer`, `.xml`) files, and export to MS Project XML, P6 XML and CSV.
 - **Scheduling rules you can choose.** Calculate with Primavera P6, Microsoft Project or Open Planner Studio conventions, per project.
 - **Built for construction.** Public holidays, building-trade holidays, work calendars, inspection milestones, phasing, resource levelling.
-- **AI assistants.** A built-in MCP server lets an AI assistant read and edit your schedule, with safety switches you control.
+- **MCP.** A built-in MCP server lets an AI assistant read and edit your schedule, with safety switches you control.
 - **Multilingual.** 28 languages, including right-to-left Arabic and Persian.
 
 ## Screenshots
@@ -58,7 +56,7 @@ Installed apps update themselves when a new version is out (Windows, macOS, `.de
 |---|---|
 | ![Critical path](docs/images/readme/critical-path.png) **Critical path and float** | ![Table editing](docs/images/readme/table-editing.png) **Spreadsheet-style task table** |
 | ![Resource histogram](docs/images/readme/resources-histogram.png) **Resource histogram and levelling** | ![Calendar](docs/images/readme/calendar-dialog.png) **Calendars and working time** |
-| ![Report preview](docs/images/readme/report-preview.png) **Reports with live preview** | ![AI tab](docs/images/readme/ai-tab.png) **AI assistant (MCP)** |
+| ![Report preview](docs/images/readme/report-preview.png) **Reports with live preview** | ![AI tab](docs/images/readme/ai-tab.png) **MCP** |
 | ![Export formats](docs/images/readme/formats.png) **Export to other formats** | ![Help](docs/images/readme/help-viewer.png) **In-app help** |
 
 ## Advanced scheduling
@@ -102,7 +100,7 @@ Gantt chart, Resource diagram, Milestone overview, Variance, Look-ahead, Critica
 
 Schedule health includes a DCMA 14-point check. Reports can cover a reporting period, compare against a baseline and follow the filter and grouping of your screen (Gantt chart). See [Report types](public/docs/en/ref-rapporttypes.md).
 
-## AI assistants (MCP)
+## MCP
 
 OPS can run a local **MCP server** (Model Context Protocol) so that an AI assistant works with the schedule you have open. It offers 41 `planner_*` tools to read and change tasks, relations, resources, calendars, baselines and documents. You decide what the assistant may do: pause, read-only mode, automatic backups and an activity log are on the *AI* tab. The server is off by default and runs in the desktop app only.
 

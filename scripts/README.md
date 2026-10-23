@@ -517,10 +517,10 @@ Maak een baseline daarom nooit langs ze heen:
 
 ## README-beelden
 
-`npm run gen:readme-screenshots` → `generate-readme-screenshots.mjs` maakt de negen PNG-beelden in
+`npm run gen:readme-screenshots` → `generate-readme-screenshots.mjs` maakt de acht PNG-beelden in
 `docs/images/readme/` met één Chromium-browser en opeenvolgende browsercontexten (Engels, licht thema,
 1600×900). `-- --demo` maakt ook `demo.gif` en `demo.mp4`; `-- --demo-only` alleen die twee.
-`-- --only hero,ai-tab` kiest beelden. Met `-- --url http://100.86.248.78:3221/` gebruikt het script een
+`-- --only critical-path,ai-tab` kiest beelden. Met `-- --url http://100.86.248.78:3221/` gebruikt het script een
 apart gestarte Vite-dienst; zonder `--url` start en stopt het zelf Vite op een vrije browsertestpoort.
 Zet `TMPDIR` op een map onder `~/tmp` voor video-opnamen en draai met `nice -n 19` op de gedeelde server.
 PNG's boven 150 KiB worden met ffmpeg verkleind; de demo gebruikt 8 beelden per seconde en 80 kleuren.

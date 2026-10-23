@@ -2,7 +2,7 @@
 // Screenshots en demo voor de README, reproduceerbaar met één commando:
 //
 //   npm run gen:readme-screenshots                     # alle stilstaande beelden
-//   npm run gen:readme-screenshots -- --only hero,ai-tab
+//   npm run gen:readme-screenshots -- --only critical-path,ai-tab
 //   npm run gen:readme-screenshots -- --demo           # ook demo.gif en demo.mp4 (duurt langer)
 //   npm run gen:readme-screenshots -- --demo-only      # alleen de demo
 //   npm run gen:readme-screenshots -- --url http://100.86.248.78:3221/ --demo
@@ -153,11 +153,6 @@ async function showcaseReady(page, { zoom, wide = false } = {}) {
 // ---------------------------------------------------------------- de beelden
 
 const SHOTS = {
-  async hero(page) {
-    await showcaseReady(page, { zoom: 12, wide: true });
-    await tab(page, 'Home');
-  },
-
   async 'critical-path'(page) {
     await showcaseReady(page);
     await tab(page, 'View');
