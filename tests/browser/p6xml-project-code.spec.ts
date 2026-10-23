@@ -119,7 +119,7 @@ test('P6 XML: rapportkop en PDF-naam dragen "Naam (code)"', async ({ page, ops: 
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /^(Export PDF|Exporteer PDF)$/ }).click();
-  expect((await download).suggestedFilename()).toBe('Project C (C-AFBOUW)-planning.pdf');
+  expect((await download).suggestedFilename()).toBe('Project C (C-AFBOUW)-schedule.pdf');
 });
 
 test('P6 XML: het bezettingsoverzicht noemt het document "Naam (code)"', async ({ page, ops: _ops }) => {

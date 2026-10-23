@@ -42,7 +42,7 @@ import {
   type RelationCellItem,
 } from '@/engine/taskGrid/relationCell';
 import { isParsedRelationTokenArray } from '@/engine/taskGrid/relationPlan';
-import { parseDuration as parseDurationMinutes } from '@/utils/durationFormat';
+import { parseDuration as parseDurationMinutes, parseableHourSuffix } from '@/utils/durationFormat';
 import {
   formatTaskDurationInput,
   parseTaskDurationInput,
@@ -55,6 +55,7 @@ import {
 import { isStrictIsoDateTime } from '@/utils/dateUtils';
 import { isFiniteNumber } from '@/utils/guards';
 import { isManuallyScheduled } from '@/utils/manualScheduling';
+import { formatReportNumber } from '@/utils/reportNumber';
 
 export const TASK_COLUMN_CATEGORY_ORDER: readonly TaskColumnCategory[] = [
   'task', 'planning', 'constraints', 'relations', 'resources',
@@ -428,10 +429,11 @@ const validateScheduledTaskDuration: Validator = value =>
     ? success(value)
     : failure('duration', value);
 
-/** Kopieertekst van de Duur-kolom: de eigen taakeenheid in parsebare vorm ("2d", "1.5h"), zodat
- *  plakken terug hetzelfde oplevert. De WEERGAVE loopt via {@link durationCellText}. */
-function scheduledTaskDurationText(task: Task): string {
-  return `${formatTaskDurationInput(task)}${task.time.durationUnit === 'hours' ? 'h' : 'd'}`;
+/** Kopieertekst van de Duur-kolom: de eigen taakeenheid in parsebare vorm ("2d", "1.5u" in nl,
+ *  "1.5h" in en), zodat plakken terug hetzelfde oplevert. De WEERGAVE loopt via {@link durationCellText}. */
+function scheduledTaskDurationText(task: Task, ctx: TaskColumnContext): string {
+  if (task.time.durationUnit !== 'hours') return `${formatTaskDurationInput(task)}d`;
+  return `${formatTaskDurationInput(task)}${parseableHourSuffix(ctx.labelForText?.('duration.suffixHour'), 'h')}`;
 }
 
 /** De vertaalde duur-afkortingen en weergave-instellingen van het raster, voor de gedeelde formatter. */
@@ -512,21 +514,22 @@ function assignmentWindowText(
 
 type AssignmentWorkField = 'plannedWorkMinutes' | 'actualWorkMinutes' | 'remainingWorkMinutes';
 
-/** De drie werkvelden zijn minuten in de state, uren in beeld
- *  (twee decimalen, zoals de contour-dialoog). Afwezig veld ⇒ niet getoond (afgeleid). */
+/** De drie werkvelden zijn minuten in de state, uren in beeld: dezelfde getalnotatie als de
+ *  duurkolom (`formatReportNumber` — hoogstens twee decimalen, decimaalteken van de taal).
+ *  Afwezig veld ⇒ niet getoond (afgeleid). */
 function assignmentWorkText(task: Task, ctx: TaskColumnContext, field: AssignmentWorkField): string {
   const values = assignments(task, ctx).flatMap(assignment => assignment[field] !== undefined
-    ? [`${assignmentLabel(assignment, ctx)}: ${formatScalar(Math.round((assignment[field] / 60) * 100) / 100)}`]
+    ? [`${assignmentLabel(assignment, ctx)}: ${workHoursText(assignment[field], ctx.numberLocale)}`]
     : []);
   return values.length > 0 ? values.join('; ') : '—';
 }
 
 /** Het begrote tempo naast een P6-resttempo (`plannedUnitsPerDay`); afwezig ⇒ niet getoond (dan is
  *  het begrote tempo de inzet zelf). Zelfde opmaak als de inzetkolom (`assignment.unitsPerDay`):
- *  `Naam: getal`, zonder afronding. */
+ *  `Naam: getal` in de getalnotatie van de taal ({@link unitsText}). */
 function assignmentPlannedUnitsText(task: Task, ctx: TaskColumnContext): string {
   const values = assignments(task, ctx).flatMap(assignment => assignment.plannedUnitsPerDay !== undefined
-    ? [`${assignmentLabel(assignment, ctx)}: ${assignment.plannedUnitsPerDay}`]
+    ? [`${assignmentLabel(assignment, ctx)}: ${unitsText(assignment.plannedUnitsPerDay, ctx.numberLocale)}`]
     : []);
   return values.length > 0 ? values.join('; ') : '—';
 }
@@ -689,11 +692,14 @@ const parseAssignmentUnits: Parser = (text, task, ctx) => {
     const separator = pair.lastIndexOf(':');
     if (separator <= 0) return failure('assignmentUnits', pair);
     const resolved = resolveAssignment(pair.slice(0, separator).trim(), task, ctx);
-    const unitsPerDay = Number(pair.slice(separator + 1).trim().replace(',', '.'));
+    const typed = pair.slice(separator + 1).trim();
+    const unitsPerDay = Number(typed.replace(',', '.'));
     if (!resolved.ok) return resolved;
     if (!Number.isFinite(unitsPerDay) || unitsPerDay <= 0) return failure('assignmentUnits', pair);
     if (seen.has(resolved.value.id)) return failure('assignmentDuplicateId', resolved.value.id);
     seen.add(resolved.value.id);
+    // Onveranderd getypt (de getoonde, afgeronde tekst) ⇒ de exacte opgeslagen inzet blijft staan.
+    if (typed === unitsText(resolved.value.unitsPerDay, ctx.numberLocale)) continue;
     tokenByAssignmentId.get(resolved.value.id)!.unitsPerDay = unitsPerDay;
   }
   return success(result);
@@ -752,9 +758,16 @@ function assignmentById(task: Task, ctx: TaskColumnContext, token: TaskAssignmen
     ?? { id: token.assignmentId ?? '', taskId: task.id, resourceId: token.resourceId, unitsPerDay: token.unitsPerDay };
 }
 
-function workHoursText(minutes: number | undefined): string {
+/** Werkminuten als uren, in de getalnotatie van de duurkolom (`formatReportNumber`): hoogstens twee
+ *  decimalen, het decimaalteken van de taal, geen overbodige nullen. */
+function workHoursText(minutes: number | undefined, locale: string | undefined): string {
   if (minutes === undefined || !Number.isFinite(minutes)) return '—';
-  return String(Math.round((minutes / 60) * 100) / 100);
+  return formatReportNumber(minutes / 60, locale);
+}
+
+/** Inzet (eenheden per dag) in dezelfde getalnotatie; de opgeslagen waarde blijft exact. */
+function unitsText(unitsPerDay: number, locale: string | undefined): string {
+  return formatReportNumber(unitsPerDay, locale);
 }
 
 const parseAssignmentWork: Parser = (text, task, ctx) => {
@@ -769,12 +782,16 @@ const parseAssignmentWork: Parser = (text, task, ctx) => {
     const separator = pair.lastIndexOf(':');
     if (separator <= 0) return failure('assignmentWork', pair);
     const resolved = resolveAssignment(pair.slice(0, separator).trim(), task, ctx);
-    const hours = Number(pair.slice(separator + 1).trim().replace(',', '.'));
+    const typed = pair.slice(separator + 1).trim();
+    const hours = Number(typed.replace(',', '.'));
     if (!resolved.ok) return resolved;
     if (!Number.isFinite(hours) || hours <= 0) return failure('assignmentWork', pair);
     if (seen.has(resolved.value.id)) return failure('assignmentDuplicateId', resolved.value.id);
     seen.add(resolved.value.id);
-    tokenByAssignmentId.get(resolved.value.id)!.remainingWorkMinutes = Math.round(hours * 60);
+    const token = tokenByAssignmentId.get(resolved.value.id)!;
+    // Onveranderd getypt (de getoonde, afgeronde tekst) ⇒ het exacte werk blijft staan.
+    if (typed === workHoursText(token.remainingWorkMinutes, ctx.numberLocale)) continue;
+    token.remainingWorkMinutes = Math.round(hours * 60);
   }
   return success(result);
 };
@@ -902,7 +919,7 @@ function fixedTaskColumns(input: TaskColumnRegistryInput): TaskColumnDescriptor[
     editableColumn({ id: 'task.constraint2.date', labelKey: 'taskGrid.columns.constraint2Date', category: 'constraints', valueKind: 'date', editorKind: 'date', route: 'task-constraint', read: task => task.constraint2?.date, parse: parseDate, validate: validateDate }),
     editableColumn({ id: 'task.isHammock', labelKey: 'taskGrid.columns.hammock', category: 'planning', valueKind: 'boolean', editorKind: 'boolean', route: 'task-hammock', read: task => task.isHammock, readOnly: task => task.isMilestone || task.childIds.length > 0, parse: parseBoolean, validate: validateBoolean }),
     editableColumn({ id: 'task.deadline', labelKey: 'taskGrid.columns.deadline', category: 'constraints', valueKind: 'date', editorKind: 'date', route: 'task-constraint', read: task => task.deadline, parse: parseDate, validate: validateDate }),
-    editableColumn({ id: 'task.calendarId', labelKey: 'taskGrid.columns.calendar', category: 'planning', valueKind: 'text', editorKind: 'autocomplete', route: 'task-schedule', read: task => task.calendarId, parse: parseOptionalText, validate: validateAny }),
+    editableColumn({ id: 'task.calendarId', labelKey: 'taskGrid.columns.calendar', category: 'planning', valueKind: 'enum', editorKind: 'enum', route: 'task-schedule', read: task => task.calendarId ?? '', parse: parseOptionalText, validate: validateAny }),
     editableColumn({
       id: 'task.notes', labelKey: 'taskGrid.columns.notes', category: 'task', valueKind: 'text', defaultWidth: 240,
       editorKind: 'text',
@@ -937,7 +954,7 @@ function fixedTimeColumns(): TaskColumnDescriptor[] {
   return [
     editableColumn({ id: 'task.time.durationType', labelKey: 'taskGrid.columns.durationType', category: 'planning', valueKind: 'enum', editorKind: 'enum', editorOptions: enumOptions('durationType', ['WORKTIME', 'ELAPSEDTIME']), route: 'task-schedule', read: task => task.time.durationType, parse: enumParser(['WORKTIME', 'ELAPSEDTIME']), validate: enumValidator(['WORKTIME', 'ELAPSEDTIME']) }),
     editableColumn({ id: 'task.time.durationUnit', labelKey: 'duration.unit', category: 'planning', valueKind: 'enum', editorKind: 'enum', editorOptions: [{ value: 'days', labelKey: 'duration.days' }, { value: 'hours', labelKey: 'duration.hours' }], route: 'task-schedule', read: task => task.time.durationUnit, readOnly: task => task.isHammock === true || task.childIds.length > 0 || task.isMilestone, parse: enumParser(['days', 'hours']), validate: enumValidator(['days', 'hours']) }),
-    editableColumn({ id: 'task.time.scheduleDuration', labelKey: 'taskGrid.columns.duration', category: 'planning', valueKind: 'duration', editorKind: 'duration', route: 'task-schedule', read: task => task.time.durationUnit === 'hours' ? task.time.durationMinutes : task.time.scheduleDuration, readOnly: task => task.isHammock === true || task.childIds.length > 0 || (task.isMilestone && task.time.scheduleDuration === 0), format: (_value, task, ctx) => durationCellText(task, ctx), copy: task => scheduledTaskDurationText(task), editText: task => formatTaskDurationInput(task), parse: parseScheduledTaskDuration, validate: validateScheduledTaskDuration }),
+    editableColumn({ id: 'task.time.scheduleDuration', labelKey: 'taskGrid.columns.duration', category: 'planning', valueKind: 'duration', editorKind: 'duration', route: 'task-schedule', read: task => task.time.durationUnit === 'hours' ? task.time.durationMinutes : task.time.scheduleDuration, readOnly: task => task.isHammock === true || task.childIds.length > 0 || (task.isMilestone && task.time.scheduleDuration === 0), format: (_value, task, ctx) => durationCellText(task, ctx), copy: (task, ctx) => scheduledTaskDurationText(task, ctx), editText: task => formatTaskDurationInput(task), parse: parseScheduledTaskDuration, validate: validateScheduledTaskDuration }),
     readonlyColumn({ id: 'task.time.durationMinutes', labelKey: 'taskGrid.columns.durationMinutes', category: 'technical', valueKind: 'number', read: task => task.time.durationMinutes }),
     // Start/Einde: de GETOONDE datums, dezelfde bron als Gantt-balk, tooltip, paneel en afdruk
     // (`shownStart`/`shownFinish`: een gestarte taak begint op haar werkelijke start, een voltooide
@@ -1028,7 +1045,10 @@ function fixedRelationColumns(): TaskColumnDescriptor[] {
       id: 'relation.driving', labelKey: 'relations.driving', category: 'relations', valueKind: 'text',
       defaultWidth: 180, scheduleDerived: true,
       read: analysisItems,
-      format: (value, _task, ctx) => relationDrivingText(value as readonly RelationCellItem[], ctx.textDirection),
+      format: (value, _task, ctx) => relationDrivingText(value as readonly RelationCellItem[], ctx),
+      copy: (task, ctx) => relationDrivingText(analysisItems(task, ctx), ctx),
+      tooltip: (_value, _task, ctx) => ctx.relationIndex.drivingKnown
+        ? null : ctx.labelForText?.('properties.drivingUnknown') ?? null,
     }),
     readonlyColumn({
       id: 'relation.freeFloat', labelKey: 'relations.freeFloat', category: 'relations', valueKind: 'text',
@@ -1098,13 +1118,15 @@ function fixedAssignmentColumns(): TaskColumnDescriptor[] {
       readOnly: (task, ctx) => task.isMilestone || task.childIds.length > 0 || assignments(task, ctx).length === 0,
       format: (value, _task, ctx) => Array.isArray(value) && value.length ? value.map(raw => {
         const item = raw as { resourceId: string; unitsPerDay: number };
-        return `${ctx.resourcesById.get(item.resourceId)?.name ?? item.resourceId}: ${item.unitsPerDay}`;
+        return `${ctx.resourcesById.get(item.resourceId)?.name ?? item.resourceId}: ${unitsText(item.unitsPerDay, ctx.numberLocale)}`;
       }).join('; ') : '—',
+      // Mensentekst in de taal; het machine-deel (tokens) blijft exact.
       copy: (task, ctx) => structuredClipboardText(
-        assignments(task, ctx).map(item => `${assignmentLabel(item, ctx)}: ${item.unitsPerDay}`).join('; '),
+        assignments(task, ctx).map(item => `${assignmentLabel(item, ctx)}: ${unitsText(item.unitsPerDay, ctx.numberLocale)}`).join('; '),
         ASSIGNMENT_CLIPBOARD_MARKER,
         assignmentTokens(task, ctx),
       ),
+      // Bewerktekst blijft exact (geen stille afronding bij Enter op de tekstroute).
       editText: (task, ctx) => assignments(task, ctx)
         .map(item => `${assignmentLabel(item, ctx)}: ${item.unitsPerDay}`).join('; '),
       parse: parseAssignmentUnits,
@@ -1155,15 +1177,15 @@ function fixedAssignmentColumns(): TaskColumnDescriptor[] {
       readOnly: (task, ctx) => !workRuleApplies(task) || assignments(task, ctx).length === 0,
       format: (value, _task, ctx) => Array.isArray(value) && value.length ? value.map(raw => {
         const item = raw as { resourceId: string; remainingWorkMinutes?: number };
-        return `${ctx.resourcesById.get(item.resourceId)?.name ?? item.resourceId}: ${workHoursText(item.remainingWorkMinutes)}`;
+        return `${ctx.resourcesById.get(item.resourceId)?.name ?? item.resourceId}: ${workHoursText(item.remainingWorkMinutes, ctx.numberLocale)}`;
       }).join('; ') : '—',
       copy: (task, ctx) => structuredClipboardText(
-        assignmentWorkTokens(task, ctx).map(item => `${assignmentLabel(assignmentById(task, ctx, item), ctx)}: ${workHoursText(item.remainingWorkMinutes)}`).join('; '),
+        assignmentWorkTokens(task, ctx).map(item => `${assignmentLabel(assignmentById(task, ctx, item), ctx)}: ${workHoursText(item.remainingWorkMinutes, ctx.numberLocale)}`).join('; '),
         ASSIGNMENT_CLIPBOARD_MARKER,
         assignmentWorkTokens(task, ctx),
       ),
       editText: (task, ctx) => assignmentWorkTokens(task, ctx)
-        .map(item => `${assignmentLabel(assignmentById(task, ctx, item), ctx)}: ${workHoursText(item.remainingWorkMinutes)}`).join('; '),
+        .map(item => `${assignmentLabel(assignmentById(task, ctx, item), ctx)}: ${workHoursText(item.remainingWorkMinutes, ctx.numberLocale)}`).join('; '),
       // ⚠ bij opgeslagen restwerk dat afwijkt van inzet × restduur, zoals in het paneel Toewijzingen.
       warning: (_value, task, ctx) => remainingWorkWarning(task, ctx),
       parse: parseAssignmentWork,

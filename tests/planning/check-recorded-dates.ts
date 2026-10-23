@@ -22,21 +22,24 @@ import {
   shiftedTaskIds,
   type RecordedTime,
 } from '@/engine/scheduler/recordedDates';
+import { knownDrivingSequenceIds } from '@/engine/scheduler/drivingInfo';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import type { ImportResult } from '@/services/importTypes';
 import type { Task } from '@/types/task';
 import type { WorkTimeBands } from '@/types/calendar';
 import { createAppStoreContext, useAppStore } from '@/state/appStore';
-import { recoveryInputFromParsed } from '@/state/documentContract';
+import { payloadFromImport, recoveryInputFromParsed } from '@/state/documentContract';
+import { applyRestoredRecordedMode, prepareLoadedPayload } from '@/state/documentActivation';
 import { LOCALES } from '../../scripts/i18n-tools';
 import { recordedDatesActiveKey, recordedDatesTaskMissingKey, recordedDatesTaskShownKey } from '@/components/layout/recordedDatesNoticeText';
 import { recordedTaskMark, recordedTaskWillShift, unrecordedExportGate } from '@/state/recordedDatesSelectors';
 import { writeCSV } from '@/services/csv/csvWriter';
-import { readCSV } from '@/services/csv/csvReader';
+import { CsvDateImportError, readCSV } from '@/services/csv/csvReader';
 import { CSV_FIXTURE_UNREADABLE_DATES } from '../fixtures/recordedTimesFormats';
 import { readIFC } from '@/services/ifc/ifcReader';
 import { writeIFC } from '@/services/ifc/ifcWriter';
+import { parseStep } from './ifcSchemaCheck';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { IFC_TASKTIME_SLOTS, TASKTIME_SLOT } from '@/services/ifc/ifcTaskSlots';
 import { externIfc, taskArgs } from '../fixtures/recordedDatesIfc';
@@ -302,6 +305,20 @@ for (const [label, got] of [
 }
 eq('3g sequenceFreeFloat blijft leeg', rec.sequenceFreeFloat, {});
 eq('3h floatPathByTask blijft leeg', rec.floatPathByTask, {});
+
+// Knownbug 105: een gereconstrueerde lege lijst betekent onbekend, geen berekend "niets driving".
+eq('3h1 opgeslagen datums markeren driving als onbekend', rec.drivingUnknown, true);
+eq('3h2 lezers krijgen geen driving-informatie uit de reconstructie', knownDrivingSequenceIds(rec), undefined);
+eq('3h3 onbekend wint ook van een achtergebleven driving-id',
+  knownDrivingSequenceIds({ ...rec, drivingSequenceIds: ['oud'] }), undefined);
+eq('3h4 berekend zonder driving blijft een bekende lege lijst',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: [] }), []);
+eq('3h5 bekende driving-ids blijven beschikbaar',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: ['ab'] }), ['ab']);
+eq('3h6 geen berekening is onbekend', knownDrivingSequenceIds(null), undefined);
+eq('3h7 ontbrekend resultaat is onbekend', knownDrivingSequenceIds(undefined), undefined);
+eq('3h8 mislukte berekening verbergt achtergebleven driving-ids',
+  knownDrivingSequenceIds({ ...rec, drivingUnknown: undefined, drivingSequenceIds: ['ab'], error: 'kring' }), undefined);
 
 // Zonder isCritical in het bestand: géén kritiek pad beweren. Schedule-paar aanwezig (MOET 1),
 // anders wordt 'a' hier overgeslagen en toont deze reconstructie niets.
@@ -775,6 +792,65 @@ const earlyStartOf = (id: string) => S().tasks.find((t) => t.id === id)!.time.ea
   S().restoreDocuments([input], 'rec-63');
   eq('7aj crashherstel van een gewoon #63-document zet de modus NIET aan', S().datesAsRecorded, false);
   eq('7ak …en vergeet de opgeslagen datums (geen aanbod)', S().recordedDates, null);
+}
+
+// ── (7D) Knownbug 116: IFC-faseactuals in opgeslagen-datummodus, expliciet ZONDER solve ──────────
+// Dezelfde productiehelpers als slapend crashherstel: lees → payload → reconstructie → save.
+// De fasedatums verschillen bewust van de kinderen: dit pad moet de bron bewaren, niet oprollen.
+{
+  const input = buildWriteIFCInput(createAppStoreContext().store.getState());
+  const variants: { label: string; children: Task[] }[] = [
+    { label: 'lopend op 100 %', children: [mk('L', { completion: 1, actualStart: '2026-03-02' }, { status: 'STARTED' })] },
+    { label: 'voltooid + niet-gestarte mijlpaal', children: [
+      mk('V', { completion: 1, actualStart: '2026-03-02', actualFinish: '2026-03-06' }, { status: 'COMPLETED' }),
+      mk('M', { scheduleDuration: 0, scheduleStart: '2026-03-09', scheduleFinish: '2026-03-09',
+        earlyStart: '2026-03-09', earlyFinish: '2026-03-09' }, { isMilestone: true }),
+    ] },
+  ];
+  const saved = (task: Task) => ({
+    status: task.status, completion: task.time.completion,
+    actualStart: task.time.actualStart ?? null, actualFinish: task.time.actualFinish ?? null,
+    remainingTime: task.time.remainingTime,
+    scheduleStart: task.time.scheduleStart, scheduleFinish: task.time.scheduleFinish,
+    earlyStart: task.time.earlyStart, earlyFinish: task.time.earlyFinish,
+    lateStart: task.time.lateStart, lateFinish: task.time.lateFinish,
+    totalFloat: task.time.totalFloat, freeFloat: task.time.freeFloat, isCritical: task.time.isCritical,
+  });
+  for (const variant of variants) {
+    const children = variant.children.map(t => ({ ...t, parentId: 'F' }));
+    const source = mk('F', {
+      completion: 1, actualStart: '2026-02-26', remainingTime: 3,
+      scheduleStart: '2026-03-16', scheduleFinish: '2026-03-27',
+      earlyStart: '2026-03-16', earlyFinish: '2026-03-27',
+      lateStart: '2026-03-23', lateFinish: '2026-04-03', totalFloat: 5, freeFloat: 2,
+    }, { status: 'STARTED', childIds: children.map(t => t.id) });
+    let text = writeIFC({ ...input, project: { ...input.project, startDate: '2026-02-23', statusDate: '2026-03-10' },
+      tasks: [source, ...children], recordedSourceFormat: 'ifc' });
+    for (let n = 1; n <= 2; n++) {
+      // Knownbug 109: ook ín de opgeslagen-datummodus volgt de native planomvang de getoonde
+      // fase (werkelijke start, berekend einde), niet de invoer of alleen de bladen. De tweede
+      // ronde schrijft via buildWriteIFCInput, dus ook de opgeslagen modus en bronherkomst tellen mee.
+      const planHeaders = parseStep(text).filter(e => e.type === 'IFCWORKPLAN' || e.type === 'IFCWORKSCHEDULE');
+      eq(`7D ${variant.label}, ronde ${n}: workplan en schema volgen de getoonde fase`,
+        planHeaders.map(e => [e.type, ...[11, 12].map(i => { const v = e.args[i]; return v.k === 'str' ? v.raw : '$'; })]),
+        [['IFCWORKPLAN', "'2026-02-26T07:00:00'", "'2026-03-27T07:00:00'"],
+          ['IFCWORKSCHEDULE', "'2026-02-26T07:00:00'", "'2026-03-27T07:00:00'"]]);
+      const parsed = readIFC(text);
+      const payload = prepareLoadedPayload(payloadFromImport(parsed, null), { recompute: false });
+      eq(`7D ${variant.label}, ronde ${n}: geen solve bij payloadvoorbereiding`, payload.cpmResult, null);
+      applyRestoredRecordedMode(payload, parsed);
+      eq(`7D ${variant.label}, ronde ${n}: opgeslagen-datummodus actief`,
+        [payload.datesAsRecorded, payload.scheduleStale, payload.recordedDates?.sourceFormat], [true, false, 'ifc']);
+      const phase = payload.tasks.find(t => t.id === source.id)!;
+      eq(`7D ${variant.label}, ronde ${n}: fase houdt al haar eigen datums en voortgang`, saved(phase), saved(source));
+      eq(`7D ${variant.label}, ronde ${n}: vastlegging heeft geen verzonnen werkelijk einde`,
+        payload.recordedDates?.times[source.id]?.summaryProgress,
+        { completion: 1, status: 'STARTED', actualStart: '2026-02-26' });
+      eq(`7D ${variant.label}, ronde ${n}: reconstructie toont het opgeslagen fase-einde`,
+        payload.cpmResult?.tasks.get(source.id)?.earlyFinish, '2026-03-27');
+      text = writeIFC(buildWriteIFCInput(payload));
+    }
+  }
 }
 
 /**
@@ -1705,14 +1781,58 @@ const inMode = (ifcText: string): ImportResult => ({ ...offerOnly(ifcText), reco
   }
 }
 
-// ── (17) CSV met onleesbare datumcellen opent NIET in de modus (critreview ded4d8c3, bevinding 1) ─
-// Vóór de fix legde de CSV-lezer "vandaag" vast voor een gevulde maar onleesbare datumcel; B hangt
-// aan A, dus na de solve verschoof B t.o.v. die verzonnen vastlegging en ging het document de modus
-// in met alle taken op vandaag. Het laadpad hieronder is het echte (`applyOpenedImport`).
+// ── (17) CSV met onleesbare datumcellen weigert vóór activatie (knownbug 128) ────────────────────
+// De oude terugval kon een vastlegging op vandaag verzinnen en daarmee de datummodus aanzetten.
+// Een onleesbare CSV levert nu geen importresultaat op. Het bestaande, bewerkte IFC-document met
+// echte vastlegging moet volledig behouden blijven; de laadactie mag niet bereikt worden.
 {
-  S().newProject();
-  S().applyOpenedImport(readCSV(CSV_FIXTURE_UNREADABLE_DATES), { filePath: null, recompute: true });
-  eq('17a onleesbare CSV-datums: geen modus, geen vastlegging', [S().datesAsRecorded, S().recordedDates], [false, null]);
+  // Eigen context: de bestaande meldings-/documentstand van de volgende secties blijft ongemoeid.
+  const ctx = createAppStoreContext({ emitHostEvents: false });
+  const state = () => ctx.store.getState();
+  state().applyOpenedImport(readIFC(externIfc('17')), { filePath: '/projecten/bestaand-17.ifc', recompute: true });
+  const historyCount = state().historyEvents.length;
+  state().setProject({ description: 'Bestaande bewerking behouden bij een geweigerde CSV' });
+  const before = state();
+  const documentsBefore = J(before.getOpenDocumentPayloads());
+  eq('17a tegenproef: bestaand IFC met twee taken en echte vastlegging in de modus', {
+    tasks: before.tasks.map(t => [t.name, t.time.earlyStart, t.time.earlyFinish]),
+    datesAsRecorded: before.datesAsRecorded,
+    recordedCount: Object.keys(before.recordedDates?.times ?? {}).length,
+  }, {
+    tasks: [['A', '2026-03-02', '2026-03-06'], ['B', '2026-03-16', '2026-03-20']],
+    datesAsRecorded: true, recordedCount: 2,
+  });
+  eq('17b tegenproef: eigen bewerking, historie en bestaand opslagdoel',
+    [before.isDirty, before.historyEvents.length - historyCount, before.importPristine, before.filePath],
+    [true, 1, false, '/projecten/bestaand-17.ifc']);
+
+  let applyReached = false;
+  let error: CsvDateImportError | undefined;
+  try {
+    const parsed = readCSV(CSV_FIXTURE_UNREADABLE_DATES);
+    applyReached = true;
+    state().applyOpenedImport(parsed, { filePath: null, recompute: true });
+  } catch (e) {
+    if (!(e instanceof CsvDateImportError)) throw e;
+    error = e;
+  }
+  truthy('17c onleesbare CSV geeft de specifieke datumvalidatiefout', error instanceof CsvDateImportError);
+  eq('17d de fout noemt onafhankelijk verwachte naam, melding en oorspronkelijke celcontext', error ? {
+    name: error.name, message: error.message, row: error.row, column: error.column, value: error.value,
+  } : null, {
+    name: 'CsvDateImportError',
+    message: 'CSV record 2, column "Start": unrecognised date "Mon 3/2/26". Use YYYY-MM-DD, DD-MM-YYYY or DD/MM/YYYY.',
+    row: 2, column: 'Start', value: 'Mon 3/2/26',
+  });
+  eq('17e mislukte parse bereikt applyOpenedImport niet', applyReached, false);
+  truthy('17f geen activatie of andere storemutatie', state() === before);
+  eq('17g alle bestaande documenten en taakgegevens behouden', J(state().getOpenDocumentPayloads()), documentsBefore);
+  eq('17h bestaande datummodus en vastlegging behouden, geen verzonnen CSV-vastlegging',
+    [state().datesAsRecorded, state().recordedDates, state().importPristine],
+    [before.datesAsRecorded, before.recordedDates, before.importPristine]);
+  eq('17i historie, dirty-status en opslagdoel behouden',
+    [state().historyEvents, state().nextHistorySequence, state().isDirty, state().filePath, state().fileHandle, state().siteFileId, state().siteFileVersion],
+    [before.historyEvents, before.nextHistorySequence, before.isDirty, before.filePath, before.fileHandle, before.siteFileId, before.siteFileVersion]);
 }
 
 // ── (18) Heropenen van een EIGEN IFC geeft geen openingsmelding (critreview ded4d8c3, bevinding 6) ─

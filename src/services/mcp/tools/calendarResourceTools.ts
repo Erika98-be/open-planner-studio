@@ -579,13 +579,16 @@ function classifyCalendars(s: StoreState, items: CalendarItem[]): { plans: Calen
   return { plans, rejections };
 }
 
-/** Spanne voor `computeGenerateSpan` (via resolveCalendarHolidays). Bij AANMAAK geven we bewust een
+/** Spanne voor `computeGenerateSpan` (via resolveCalendarHolidays). Bij wijzigen telt het latere van
+ *  het ingevoerde en het berekende projecteinde. Bij AANMAAK geven we bewust een
  *  LEEG projecteinde door: dan geldt de create-spanne (startjaar−1 t/m startjaar+3) i.p.v. een
  *  spanne rond een einddatum die nog niets met deze nieuwe kalender te maken heeft. */
 function calendarSpan(s: StoreState, forCreate: boolean): { projectStart: string; projectEnd: string } {
+  const endDate = s.project.endDate || '';
+  const calculatedEnd = s.cpmResult?.projectEnd || '';
   return {
     projectStart: s.project.startDate,
-    projectEnd: forCreate ? '' : (s.project.endDate || s.cpmResult?.projectEnd || ''),
+    projectEnd: forCreate ? '' : (endDate > calculatedEnd ? endDate : calculatedEnd),
   };
 }
 
@@ -679,9 +682,9 @@ function netHoursReason(item: CalendarItem, existing: CalendarBase): string | nu
   return `\`hoursPerDay\` ${hoursLabel(item.hoursPerDay)} does not match this calendar: with a break the net ` +
     'hours are DERIVED from working day minus break, like the non-editable "Standard workday" in the ' +
     `calendar dialog — here ${clockLabel(start)}–${clockLabel(end)} with ${pause} min break = ` +
-    `${hoursLabel(net)} h net. Leave \`hoursPerDay\` out, or change the working day ` +
+    `${hoursLabel(net)}h net. Leave \`hoursPerDay\` out, or change the working day ` +
     '(`workStartHour`/`workEndHour`, in HOURS) or the break duration (`simpleBreakDurationMinutes`, in ' +
-    `MINUTES) so that working day minus break becomes ${hoursLabel(item.hoursPerDay)} h` +
+    `MINUTES) so that working day minus break becomes ${hoursLabel(item.hoursPerDay)}h` +
     `${(examples.length > 0 ? ` (e.g. ${examples.join(' or ')})` : '')}`;
 }
 
@@ -1070,9 +1073,9 @@ const updateCalendar: BatchStepTool = {
     'bands. `hoursPerDay` follows the new bands only if it was equal to the modal day sum of the bands ' +
     'before the change; a deliberate deviation (P6 `day_hr_cnt`, e.g. bands 14:00–24:00 with 8 hours per day) stays. A ' +
     '`hoursPerDay` you pass in the same item always wins. The working days are read from the ' +
-    'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): a newly created ' +
-    'calendar to which NO task and no resource is attached does NOT survive save+reload — so attach tasks to ' +
-    'it right away with `update_tasks.calendarId`. Hour bands survive IFC, also when they DIFFER PER ' +
+    'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): unused calendars survive IFC save+reload ' +
+    'even without task or resource assignments. There is no need to attach a task just to retain a calendar. ' +
+    'Hour bands survive IFC, also when they DIFFER PER ' +
     'WEEKDAY (for example a short Friday). A calendar in which tasks no longer fit (e.g. a long holiday block) gives no ' +
     'error but a prominent warning with `cappedTaskIds`. If, on the other hand, NO working time at all is ' +
     'left (empty `workDays`, or `workTime` bands on no day at all), the recalculation fails and the whole ' +
@@ -1143,7 +1146,9 @@ const updateCalendar: BatchStepTool = {
             },
             generate: {
               type: 'object',
-              description: 'Generator basis for holidays; the year span is derived from the project.',
+              description: 'Generator basis for holidays. Updating covers the year before the project start ' +
+                'through the year after the later of the entered and calculated project ends; without ' +
+                'either end, through start year + 3. Creating always uses start year - 1 through start year + 3.',
               required: ['country'],
               properties: {
                 country: {
@@ -1871,7 +1876,7 @@ const PROJECT_REFUSED: Record<string, string> = {
     '`pathsMode` which setting applies.',
   calendarId:
     'WHICH calendar is the project default cannot be switched via the bridge — you do that in the app ' +
-    '(calendar library → set as project calendar). If you want to change the CONTENT of the project calendar ' +
+    '(calendar library → Set as project default). If you want to change the CONTENT of the project calendar ' +
     '(or align it with that of another document), write with `planner_update_calendar` to the id from ' +
     '`planner_get_calendars.projectDefaultId`; attaching a task to another calendar is done with ' +
     '`update_tasks.calendarId`. Calendar ids are per document.',
@@ -2015,14 +2020,14 @@ const updateProject: BatchStepTool = {
   description:
     'Change project details: `name`, `description`, `author`, `company`, `statusDate` (the reporting date on ' +
     'which progress is recorded — WITHOUT this date the progress path of update_tasks refuses), `endDate` ' +
-    '(the contractual/desired end date — pure metadata, it enforces NOTHING in the schedule; an empty string ' +
-    'clears it), `defaultWorkRule` (project default task type for tasks without their own `workRule`; null = ' +
+    '(the contractual/desired end date — pure metadata, it enforces NOTHING in the schedule; it does steer the span of ' +
+    'holidays generated by planner_update_calendar `generate`; an empty string clears it), `defaultWorkRule` (project default task type for tasks without their own `workRule`; null = ' +
     'FIXED_DURATION_RATE), `progressMode` (RETAINED_LOGIC or PROGRESS_OVERRIDE — how the solver handles ' +
     'out-of-sequence work; null = back to the default RETAINED_LOGIC) and `startDate`. An UNKNOWN field is ' +
     'refused with the allowed list — nothing is ever silently thrown away. IMPORTANT about `startDate`: it ' +
     'is the anchor for tasks still to be CREATED and does not shift the REST of the existing schedule — no ' +
     'task FINISH moves along, except the finish of the clamped anchors themselves, which moves along ' +
-    'preserving duration. Since T7b there IS one targeted exception (edit protection, not a Δ shift): a ' +
+    'preserving duration. There is one targeted exception (edit protection, not a Δ shift): a ' +
     'LATER `startDate` clamps existing task anchors that have no predecessor and no constraint and lie ' +
     'before the new start date forward TO that date (the response reports `anchorsClamped`) — so a root task ' +
     'does not silently stay hanging before the official project start after moving the start. A task with a ' +

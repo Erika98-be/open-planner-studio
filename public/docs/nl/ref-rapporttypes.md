@@ -20,7 +20,7 @@ Open het tabblad *Rapport* (of druk op Ctrl+P). Links staat de kolom *Rapportage
 
 **Papier:** — het papierformaat van de PDF. Keuze uit A4, A3, A2 en A1. Standaard: A3. Effect: de pagina's worden voor dat formaat opgelegd. Er is één keuze voor alle rapporten: wat je bij het ene rapport kiest, geldt ook voor de andere. Op A4 staand wordt een brede tabel klein, want de tabel wordt op de paginabreedte geschaald. Waar: *Instellingen* (Gantt-afdruk en Resourcediagram) of *Rapportopties* (de zeven tabelrapporten). Het Mijlpalen-overzicht en de Variance tonen geen keuzes.
 
-**Orientatie:** — liggend of staand. Keuze uit *Liggend* en *Staand*. Standaard: *Liggend*. Effect: zoals *Papier:*. Waar: dezelfde plek als *Papier:*.
+**Oriëntatie:** — liggend of staand. Keuze uit *Liggend* en *Staand*. Standaard: *Liggend*. Effect: zoals *Papier:*. Waar: dezelfde plek als *Papier:*.
 
 ## Gantt-afdruk
 
@@ -120,7 +120,7 @@ Waar het project staat op de statusdatum. Opties onder *Rapportopties*.
 
 **Near-critical ≤ (wd):** — Standaard: 5. Zoals bij de Look-ahead.
 
-Het blok *Overzicht* toont *Statusdatum*, *Periode*, *Vooruitblik t/m*, *Baseline-einde*, *Prognose-einde*, *Δ einde (wd)*, *Gepland* (met *(baseline)* of *(huidige planning)*), *Werkelijk*, de tellingen *Voltooid*, *In uitvoering*, *Niet gestart*, *Achterstallig* en *Kritiek*. Gepland en werkelijk zijn gewogen naar de duur van de taken. Gepland meet tegen de baseline als er een actieve baseline is, anders tegen de huidige planning. De secties zijn *Voltooid in de afgelopen periode*, *In uitvoering*, *Start in de komende periode*, *Achterstallig* en *Kritieke open activiteiten*; een taak kan in meer dan één sectie staan.
+Het blok *Overzicht* toont *Statusdatum*, *Periode*, *Vooruitblik t/m*, *Baseline-einde*, *Prognose-einde*, *Δ einde (wd)*, *Gepland* (met *(baseline)* of *(huidige planning)*), *Werkelijk*, de tellingen *Voltooid*, *In uitvoering*, *Niet gestart*, *Achterstallig* en *Kritiek*. Gepland en werkelijk zijn gewogen naar de duur van de taken. Gepland meet tegen de baseline als er een actieve baseline is, anders tegen de huidige planning. De secties zijn *Voltooid in de afgelopen periode*, *In uitvoering*, *Start in de komende periode*, *Achterstallig* en *Kritieke open activiteiten*; een taak kan in meer dan één sectie staan. Elke sectie heeft dezelfde kolommen: *WBS*, *Naam*, *Baseline-einde*, *Prognose-einde*, *Volt.*, *Rest (wd)*, *TF (wd)*, *Kritiek* en *Status*. De status per rij is *Voltooid*, *In uitvoering*, *Niet gestart*, *Had moeten starten* of *Had moeten eindigen*.
 
 ## Planningsgezondheid
 
@@ -177,7 +177,7 @@ Per resource de activiteiten waaraan hij hangt: wat doet deze ploeg of kraan? Op
 
 **Voltooide taken meenemen** — Standaard: uit. Effect: aan neemt ook de toewijzingen van voltooide activiteiten mee.
 
-De rijen staan per resource, en binnen een resource op start. Het blok *Overzicht* telt *Resources*, *Toewijzingen* en *Taken zonder resource*. De kolommen bevatten onder meer de resource, de taak, start en einde, *Rest (wd)*, *Eenh./dag*, *Volt.*, *Kritiek* en *Status*.
+De rijen staan per resource, en binnen een resource op start. Het blok *Overzicht* telt *Resources*, *Toewijzingen* en *Taken zonder resource*. De kolommen zijn *Resource*, *Type*, *WBS*, *Naam*, *Start*, *Einde*, *Rest (wd)*, *Eenh./dag*, *Volt.*, *Kritiek* en *Status*. *Resource* en *Type* staan alleen op de eerste rij van een resource. De status per rij is dezelfde als bij het Voortgangsrapport: *Voltooid*, *In uitvoering*, *Niet gestart*, *Had moeten starten* of *Had moeten eindigen*.
 
 ## WBS-samenvatting
 

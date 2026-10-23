@@ -63,7 +63,7 @@ import type {
 import type { WorkCalendar } from '@/types/calendar';
 import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import type { Resource, ResourceType } from '@/types/resource';
-import type { ImportLabels, ImportResult } from '@/services/importTypes';
+import { hasMsProjectImportLoss, type ImportLabels, type ImportResult } from '@/services/importTypes';
 import { generateId } from '@/utils/id';
 import { formatDate, formatInstant, parseInstant, localTodayIso } from '@/utils/dateUtils';
 import { normalizeImportedProgress, deriveImportedWorkRules, reconstructResourceIds } from '@/services/importNormalize';
@@ -88,6 +88,8 @@ import {
 import { readCalendars, promoteCalendarsForHourMode, type CalendarReadResult } from './mppCalendars';
 import { MAX_VAR_TEXT_BYTES, clampRemainingDurationTenths, clampManualDurationTenths, clampLevelingDelayTenths } from './limits';
 import { readRelations, readResources, readAssignments, readAssignmentTimephasedRaw } from './mppEntities';
+import { scanMppImportLoss } from './mppImportLoss';
+import { collectValidTaskIndices } from './mppRecords';
 import { builtInProfile } from '@/engine/scheduler/conventions/registry';
 import { buildRecordedTime, leafRecordedTimes, recordedFloatDays, type RecordedTime } from '@/engine/scheduler/recordedDates';
 import {
@@ -134,15 +136,6 @@ const TASK_FIXED_META_ITEM_SIZE = 47;
 /** TBkndTask/Fixed2Meta-itemgrootte-KANDIDATEN (MPP14Reader.java: `new FixedMeta(stream,
  *  taskFixedData, 92, 93, 94, 95, 96)` — de heuristische variant, `FixedMeta.withHeuristicItemSize`). */
 const TASK_FIXED2_META_ITEM_SIZES = [92, 93, 94, 95, 96];
-/** Fixed-data-blokken kleiner dan dit zijn "null-taak"-plaatshouders (verwijderde/vrijgemaakte
- *  unique-ID's die geen echte taak dragen) — MPP14Reader.java's `NULL_TASK_BLOCK_SIZE`. */
-const NULL_TASK_BLOCK_SIZE = 16;
-/** Bit 0x02 in de eerste 4 bytes van een FixedMeta-item markeert een verwijderde taak
- *  (`createTaskMap`'s `flags & 0x02`-check). */
-const DELETED_TASK_FLAG = 0x02;
-/** De eerste drie FixedData-slots zijn geen taken (MPP14Reader.java's `createTaskMap`: "First
- *  three items are not tasks, so let's skip them"). */
-const FIRST_TASK_INDEX = 3;
 
 /**
  * Klem op het RUWE outline-level (SHORT, 0..65535). Dat veld stuurt zowel de stackdiepte in
@@ -277,49 +270,6 @@ export function assignHierarchyAndWbs<T extends HierarchyTaskLike>(
   }
 }
 
-/** Poort van `MPP14Reader.processTaskData`'s `createTaskMap`, vereenvoudigd tot een
- *  `uniqueID → FixedData-index`-tabel zonder verwijderde/null-/spooktaken (KRITIEK voor
- *  taakaantal-pariteit met MS Project). Java itereert achterwaarts en voegt alleen toe als de sleutel
- *  nog niet bestaat (hoogste index wint); hier voorwaarts met overschrijven — zelfde resultaat. */
-function collectValidTaskIndices(fixedMeta: FixedMeta, fixedData: FixedData, varMeta: VarMeta12, uniqueIdOffset: number): Map<number, number> {
-  const itemCount = fixedMeta.getAdjustedItemCount();
-  const validIndexByUniqueId = new Map<number, number>();
-  const deletedIds = new Set<number>();
-
-  for (let index = FIRST_TASK_INDEX; index < itemCount; index++) {
-    const data = fixedData.getByteArrayValue(index);
-    if (!data) continue;
-    const metaItem = fixedMeta.getByteArrayValue(index);
-    if (!metaItem || metaItem.length < 4) continue;
-
-    const flags = getInt(metaItem, 0, 'TBkndTask/FixedMeta-flags');
-    if ((flags & DELETED_TASK_FLAG) !== 0) {
-      // Verwijderde-taak-marker: alleen de unique-ID onthouden (voor de spooktaak-check
-      // hieronder) — MPP14Reader.java leest 'm hier als SHORT ("Only a short stored for deleted
-      // tasks?"), niet als de gebruikelijke INT.
-      if (data.length >= 2) deletedIds.add(getShort(data, 0, 'TBkndTask/FixedData deleted-uid'));
-      continue;
-    }
-    // Null-taak-plaatshouder: MPXJ voegt deze wél toe (`task.setNull(true)`) om ID-continuïteit te
-    // bewaren, maar hij is nooit zichtbaar in de UI of een XML-export, dus hier overgeslagen. Dit
-    // verklaart ID-gaten in een rauwe TBkndTask/FixedData-dump.
-    if (data.length === NULL_TASK_BLOCK_SIZE) continue;
-
-    if (data.length < uniqueIdOffset + 4) continue;
-    const uniqueId = getInt(data, uniqueIdOffset, 'TBkndTask/FixedData uniqueId');
-    validIndexByUniqueId.set(uniqueId, index); // latere/hogere index wint
-  }
-
-  // Spooktaak-check (MPP14Reader.java): een unique-ID die zowel als verwijderd gemarkeerd staat
-  // ALS een normaal record heeft, telt alleen mee als er var-data voor bestaat.
-  for (const uid of deletedIds) {
-    if (validIndexByUniqueId.has(uid) && !varMeta.containsKey(uid)) {
-      validIndexByUniqueId.delete(uid);
-    }
-  }
-
-  return validIndexByUniqueId;
-}
 
 /** Percent complete: SHORT, 0..100 direct (MPPUtility.getPercentage) — buiten dat bereik ⇒ 0
  *  (spiegelt de Java-bron: een ongeldige waarde levert daar `null`, hier de neutrale 0). */
@@ -1661,6 +1611,13 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
 
   // Pas ná beide mutatielussen staan `splitGaps` en de timephased-velden op de taak.
   const scheduleNotes = countScheduleNotes(tasks);
+  // Importverslag (issue #391): wat deze lezer niet overneemt (`mppImportLoss.ts`).
+  const msProjectReport = scanMppImportLoss({
+    cfb, taskFieldMap, resourceFieldMap, assignmentFieldMap,
+    taskUniqueIds: new Set(taskIdByUniqueId.keys()),
+    resourceUniqueIds: new Set(resourceIdByUniqueId.keys()),
+    criticalSlackLimitDays: criticalSlackLimitDaysOf(projectProps),
+  });
 
   return {
     project,
@@ -1675,6 +1632,7 @@ export function readMPP(bytes: Uint8Array, labels?: ImportLabels): ImportResult 
     // Alleen gezet als ≥1 taak een signaal draagt, zodat `fileSlice.ts` met
     // `parsed.sourceScheduleNotes?.total` volstaat.
     ...(scheduleNotes.total > 0 ? { sourceScheduleNotes: scheduleNotes } : {}),
+    ...(hasMsProjectImportLoss(msProjectReport) ? { msProjectReport } : {}),
     // Alleen bladtaken — zie `leafRecordedTimes`.
     ...(() => {
       const leafTimes = leafRecordedTimes(tasks, recordedTimes);

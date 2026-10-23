@@ -16,7 +16,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Volg systeemthema** — laat het kleurenschema van je besturingssysteem kiezen. Standaard: uit. Effect: de app is *Licht* of *Donker*, naar wat je systeem heeft; de drie themakaarten staan dan uit. *Hoog contrast* volgt je systeem niet: dat kies je zelf. Zet je de schakelaar uit, dan blijft het thema staan dat op dat moment in beeld was. Waar: *Weergave*, onder *Thema*.
 
-**Taal** — de taal van de interface. Standaard: de taal van je browser of systeem als de app die kent, anders Engels. Effect: alle teksten in de app; de veertien talen staan gesorteerd op hun korte code. Arabisch en Perzisch spiegelen de interface van rechts naar links. De taal van de Help-artikelen stel je apart in, bij *Documentatietaal* in *Bestand › Help*. Waar: *Weergave*.
+**Taal** — de taal van de interface. Standaard: de taal van je browser of systeem als de app die kent, anders Engels. Effect: alle teksten in de app; de talen staan gesorteerd op hun korte code. Arabisch en Perzisch spiegelen de interface van rechts naar links. De taal van de Help-artikelen stel je apart in, bij *Documentatietaal* in *Bestand › Help*. Waar: *Weergave*.
 
 **Lettertype** — het lettertype van de hele interface. Keuze uit *Standaard*, *Systeem*, *Met schreef* en *Monospace*. Standaard: *Standaard*. Effect: koppen en tekst in het venster, en de tekst in de Gantt en het histogram. Een webapp volgt het lettertype van je systeem niet vanzelf; daarom kies je het hier. Waar: *Weergave*.
 
@@ -26,7 +26,7 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Tijdnotatie** — hoe kloktijden in de app staan. Keuze uit *24 uur (13:00)* en *12 uur (1:00 PM)*. Standaard: *24 uur (13:00)*. Effect: de tijden in het kalendervenster, de datum met tijd van taken in uren (tabel, splitsingen, meldingen) en de tijdschaal *Uur* in de Gantt. In een tijdveld mag je beide vormen typen: *13:00*, *1300*, *13*, *1:00 PM* of *1 pm*. Middernacht als einde van de dag is *24:00* of *12:00 AM*. Bestanden en berekeningen veranderen niet: die blijven 24 uur. Waar: *Weergave*.
 
-**Duurweergave** — in welke eenheid de duur van een taak staat. Keuze uit *Automatisch (eigen eenheid per taak)*, *Altijd dagen* en *Altijd uren*. Standaard: *Automatisch (eigen eenheid per taak)*. Effect: in het taakraster, de balklabels van de Gantt, de tooltip, de afdruk en de rapporten. Bij *Automatisch* toont een dagtaak dagen en een urentaak uren. Bij *Altijd dagen* of *Altijd uren* rekent de app om met de uren per dag van de taakkalender en zet, als de eenheid van de taak verschilt, de eigen eenheid erachter tussen haakjes, bijvoorbeeld `2,25d(18h)`. Alleen de weergave verandert; de taak houdt haar eigen eenheid. Waar: *Weergave*.
+**Duurweergave** — in welke eenheid de duur van een taak staat. Keuze uit *Automatisch (eigen eenheid per taak)*, *Altijd dagen* en *Altijd uren*. Standaard: *Automatisch (eigen eenheid per taak)*. Effect: in het taakraster, de balklabels van de Gantt, de tooltip, de afdruk en de rapporten. Bij *Automatisch* toont een dagtaak dagen en een urentaak uren. Bij *Altijd dagen* of *Altijd uren* rekent de app om met de uren per dag van de taakkalender en zet, als de eenheid van de taak verschilt, de eigen eenheid erachter tussen haakjes, bijvoorbeeld `2,25d(18u)`. Alleen de weergave verandert; de taak houdt haar eigen eenheid. Waar: *Weergave*.
 
 **Documentwissel-stijl** — hoe je wisselt tussen geopende projecten. Keuze uit *Horizontale tabbladen*, *Verticale tabbladen* en *Pil*. Standaard: *Horizontale tabbladen*. Effect: bij *Horizontale tabbladen* staat een tabbalk onder het lint; bij *Verticale tabbladen* een projectbalk links; bij *Pil* een kleine projectknop in de titelbalk. Waar: *Weergave*.
 
@@ -78,7 +78,9 @@ Een wijziging werkt direct. Er is geen knop *Toepassen* en geen *Annuleren*.
 
 **Rondleiding starten** — de introductierondleiding opnieuw. Effect: sluit het venster *App-instellingen* en start de rondleiding vanaf de eerste stap. Waar: *Geavanceerd*, onder *Rondleiding*.
 
-**Versie** — het versienummer van de app, met twee knoppen. *Controleren op updates* opent het updatevenster. *Wat is er nieuw* toont de nieuwigheden van de huidige versie. Waar: *Geavanceerd*, onder *Versie*.
+**Versie** — het versienummer van de app, met twee knoppen. *Controleren op updates* opent het updatevenster. *Wat is er nieuw* toont de nieuwigheden van de huidige versie. Bij een AUR-installatie (Arch Linux) werk je bij via je pakketbeheer (bijv. `yay -Syu`), niet via de app. Waar: *Geavanceerd*, onder *Versie*.
+
+Een automatisch gevonden update wacht tot de welkomstschermen en een lopende tutorialbegeleiding gesloten zijn. Handmatig controleren via de knop blijft mogelijk.
 
 **Klassieke weergaveknoppen tonen** — een vervangen functie, achter *Legacy-functies*. Standaard: uit. Effect: aan zet op het tabblad *Beeld* een groep *Weergave* terug met de losse knoppen *Kolommen…*, *Filteren…*, *Groeperen…* en *Sorteren…*. Die zijn vervangen door de plus in de tabelkop, de layoutknoppen en het layoutvenster. Waar: *Geavanceerd*, onder *Legacy-functies*.
 

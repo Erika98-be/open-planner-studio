@@ -1,4 +1,5 @@
 import type { UIState, AppSlice, AppNotification, NotifyInput } from './types';
+import type { FeedbackDraft } from '@/services/feedback/feedbackDraft';
 import type { McpServerStatus } from '@/services/mcp/contracts';
 import { MCP_DEFAULT_PORT, peekTheme } from '@/utils/settingsStore';
 import { detectSystemPrefersDark } from '@/utils/theme';
@@ -11,6 +12,8 @@ import { AI_MODE_AVAILABLE } from '@/utils/buildFlags';
 export interface UiSlice {
   ui: UIState;
   setUI: (updates: Partial<UIState>) => void;
+  /** Bewaar (of wis met null) het feedbackconcept; sessiestate, geen undo, geen document. */
+  setFeedbackDraft: (draft: FeedbackDraft | null) => void;
   /** MCP-bridge: schrijf de serverstatus (uit/live/poort-bezet/fout) — gevoed door
    *  `server.ts` uit de `mcp://status`-events + de start-fout. */
   setAiServerStatus: (status: McpServerStatus) => void;
@@ -116,6 +119,8 @@ export function createDefaultUI(): UIState {
     showNewOrOpenProjectDialog: false,
     pendingTaskNameFocusId: null,
     showFeedbackDialog: false,
+    feedbackEmail: '',
+    feedbackDraft: null,
     showStructureDialog: false,
     traceMode: 'off',
     showResourcePanel: false,
@@ -167,6 +172,7 @@ export function createDefaultUI(): UIState {
     showStatsDialog: false,
     pendingExtensionConsent: null,
     pendingActualStartQuestion: null,
+    pendingPhaseAssignmentQuestion: null,
     pendingSiteOpen: null,
     pendingSiteSave: null,
     pendingIfcSchemaQuestion: null,
@@ -208,6 +214,9 @@ export function createDefaultUI(): UIState {
 
 export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
   ui: createDefaultUI(),
+
+  setFeedbackDraft: (draft) =>
+    set((s) => { s.ui.feedbackDraft = draft; }),
 
   setUI: (updates) =>
     set((s) => {
@@ -310,7 +319,13 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           (updates as Partial<UIState>).showPropertiesPanel = true;
         }
       }
+      const helpWasOpen = s.ui.activeRibbonTab === 'file' && s.ui.backstageSection === 'help';
       Object.assign(s.ui, updates);
+      // Wegnavigeren annuleert het sectieverzoek, ook als Help nog lazy laadt. Een verzoek dat
+      // juist naar Help opent blijft staan tot de viewer het kan afhandelen.
+      if (helpWasOpen && (s.ui.activeRibbonTab !== 'file' || s.ui.backstageSection !== 'help')) {
+        s.ui.pendingHelpSection = null;
+      }
       const max = maxGanttZoom(s.ui.enableQuarterHourZoom, s.ui.enableHourPlanning);
       if (s.view.zoom > max) s.view.zoom = max;
     }),
@@ -404,6 +419,8 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
       s.ui.activeRibbonTab = 'file';
       s.ui.backstageSection = 'help';
       s.ui.pendingHelpArticleId = articleId;
+      // Een expliciet artikel vervangt de eerdere intentie om een inhoudssectie te tonen.
+      s.ui.pendingHelpSection = null;
     }),
 
   toggleCollapse: (taskId) => {

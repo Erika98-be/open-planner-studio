@@ -1,15 +1,16 @@
-import { useState, useEffect, useMemo, useId } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Info, Plus, Trash2, X } from 'lucide-react';
 import { isHourModeCalendar, type WorkCalendar, type Holiday, type WorkTimeBands } from '@/types/calendar';
 import { accentChipClass, CalendarGeneratorFields } from './CalendarGeneratorFields';
 import { WorkTimeEditor } from './WorkTimeEditor';
 import { DateTextInput } from '@/components/common/DateTextInput';
+import { formatReportNumber } from '@/utils/reportNumber';
 import { StepButtons, TimeInput, TIME_STEP_MINUTES } from '@/components/common/TimeInput';
 import { formatClock, parseClock } from '@/utils/displayTime';
 import { useAppStore } from '@/state/appStore';
 import {
-  hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
+  hoursPerDayDiffers, hoursPerDayForBlocks, workDayTogglePatch, workDaysFromBands, workDaysSetPatch,
   type WorkTimeSessionStart,
 } from '@/services/subdayIo';
 import { generateId } from '@/utils/id';
@@ -116,10 +117,12 @@ export function CalendarForm({
   const [simpleBreakDurationText, setSimpleBreakDurationText] = useState(() =>
     String(draft.simpleBreakDurationMinutes ?? inferredSimpleBreakDuration));
   const [scalarTimeIssues, setScalarTimeIssues] = useState<Partial<Record<ScalarTimeField, ScalarTimeIssue>>>({});
-  const netHoursFormatter = useMemo(
-    () => new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    [i18n.language],
-  );
+  const appHoursPerDay = effHoursPerDay(draft);
+  const showFileHoursNotice = draft.workDays.length > 0 && hoursPerDayDiffers(draft.hoursPerDay, appHoursPerDay);
+  // Eén opmaak voor alle uur-getallen in dit venster (check eigenaar 2026-10-20): de getalnotatie van
+  // de taal zonder overbodige nullen ("10", "7,5", "7,75"; `formatReportNumber`), met "u"/"h" alleen
+  // via i18n. Het oranje blok draagt de eenheid in zijn eigen zin; hier alleen het getal.
+  const formatHours = (hours: number) => formatReportNumber(hours, i18n.language);
 
   useEffect(() => {
     setWorkStartText(formatClock(draft.workStartHour * 60, timeNotation));
@@ -605,10 +608,23 @@ export function CalendarForm({
             data-ops-simple-break-net-hours
           >
             {/* Zonder werkdagen weigert de solver de kalender (`noWorkingDays`): geen getal. */}
-            {draft.workDays.length === 0 ? '—' : `${netHoursFormatter.format(effHoursPerDay(draft))} h`}
+            {draft.workDays.length === 0 ? '—' : tMenu('ribbon.calendarDialog.hoursValue', { hours: formatHours(appHoursPerDay) })}
           </output>
         </div>
       </div>
+      {/* Eigen werkdag uit het bestand (besluit eigenaar 2026-10-20, punt 8, optie 2). De opgeslagen
+          `hoursPerDay` (XER `day_hr_cnt`, P6 XML `HoursPerDay`, MSPDI `MinutesPerDay`) telt niet mee in
+          het rekenwerk (een dag is de werktijd, `effHoursPerDay`), maar gaat ongewijzigd mee bij export.
+          Alleen tonen, niets veranderen. Zelfde vergelijking als de IFC-schrijver (`hoursPerDayDiffers`);
+          het blok volgt de draft live. Een dagkalender wijkt nooit af: daar ís `hoursPerDay` het getal. */}
+      {showFileHoursNotice && (
+        <div className="alert alert--info break-words" data-ops-file-hours-per-day-notice>
+          {tMenu('ribbon.calendarDialog.fileHoursPerDayNotice', {
+            fileHours: formatHours(draft.hoursPerDay),
+            appHours: formatHours(appHoursPerDay),
+          })}
+        </div>
+      )}
       {!hourMode && (
         <>
         <div className="grid grid-cols-2 gap-3" data-ops-simple-break>

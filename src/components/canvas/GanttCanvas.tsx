@@ -65,6 +65,9 @@ import { editableSplitPieces } from './hooks/useBarDrag';
 import { removeGap } from '@/engine/scheduler/splitEdit';
 import { useGanttRowDragBridge } from './ganttRowDragBridge';
 import { TASK_ROW_HEIGHT } from '@/engine/taskGrid/rowHeight';
+// Dikte van de zwevende balken: één gedeelde waarde met de takenlijst (zie scrollExtent.ts).
+import { OVERLAY_SCROLLBAR_SIZE } from '@/engine/taskGrid/scrollExtent';
+import { GANTT_WORKSPACE_SPLITTER_GRIP } from './ganttSplitter';
 import type { HistogramRenderInput } from './hooks/ganttCoordinatorTypes';
 import { shownFinish, shownStart } from '@/utils/taskDates';
 
@@ -73,12 +76,6 @@ import { shownFinish, shownStart } from '@/utils/taskDates';
 // waarden, nooit deze constanten direct, anders lopen tekenen en hit-testen uit de pas.
 const ROW_HEIGHT = TASK_ROW_HEIGHT; // gedeeld met FullTaskGrid (`taskGrid/rowHeight.ts`)
 const HEADER_HEIGHT = 50;
-// Dikte van de ZWEVENDE scrollbalken over de panes (horizontaal en verticaal).
-// Exact de `::-webkit-scrollbar`-maat uit globals.css (8px) — NIET ruimer: meer levert een dode
-// strook op die als een te brede balk leest. Omdat de balken overlays zijn is gelijkheid met
-// globals.css bovendien functioneel: de strook is dan precies één scrollbalk dik,
-// dus er ontstaat geen dode klikzone náást de balk die de kaart eronder afdekt.
-const SCROLLBAR_GUTTER = 8;
 // Breedte van de sleepbare ratio-balk tussen de twee panes — de mini-map-strook eronder laat
 // exact dezelfde tussenruimte, anders schuift hij t.o.v. zijn pane.
 const SPLIT_RATIO_BAR_WIDTH = 5;
@@ -400,7 +397,7 @@ export function GanttCanvas({
     const date = pointer.contextMenu?.clickDate;
     addTaskAtEnd({
       name: milestone ? defaultMilestoneName : defaultTaskName,
-      ...(milestone ? { isMilestone: true, taskType: 'ATTENDANCE' as const } : {}),
+      ...(milestone ? { isMilestone: true, milestoneKind: 'FINISH' as const, taskType: 'USERDEFINED' as const } : {}),
       ...(date ? { time: createDefaultTaskTime(date, milestone ? 0 : 5, 'days', calendar) } : {}),
     });
   };
@@ -580,14 +577,14 @@ export function GanttCanvas({
       // Zelfde tekstschaal als de Gantt erboven, anders staan
       // de strooklabels zichtbaar uit de pas op de gedeelde as.
       fontScale,
-      labels: { unitsSuffix: tCommon('resource.histogram.units') },
+      labels: { unitsSuffix: tCommon('resource.histogram.units'), numberLocale: i18n.language },
       emptyHint: !scopedResourceLoadResult
         ? tCommon('resource.histogram.noData')
         : scopedTaskResources.resources.length === 0
           ? tCommon('resource.histogram.noResources')
           : undefined,
     } : undefined
-  ), [showHistogram, histogramSeries, histogramPicker, effectiveHistogramResourceId, effectiveView, histogramPickerWidth, histogramPickerSide, histogramPickerScrollY, scopedResourceLoadResult, scopedTaskResources.resources.length, tCommon, histogramAxis, canvasFontFamily, fontScale]);
+  ), [showHistogram, histogramSeries, histogramPicker, effectiveHistogramResourceId, effectiveView, histogramPickerWidth, histogramPickerSide, histogramPickerScrollY, scopedResourceLoadResult, scopedTaskResources.resources.length, tCommon, i18n.language, histogramAxis, canvasFontFamily, fontScale]);
 
   const primaryRenderInput = useMemo<GanttRenderOptionsSourceInput>(() => ({
     rows: viewRows,
@@ -817,6 +814,17 @@ export function GanttCanvas({
       ) : null, miniMapHost)
     : null;
 
+  // De splittergrijpzone ligt over de Gantt-rand aan de kant van de takenlijst: links in ltr, rechts
+  // in ar/fa. De pane-rij is altijd ltr, dus in ar/fa raakt het SECUNDAIRE pane de splitter zodra de
+  // splitsing aan staat. Het pane dat de splitter raakt, laat zijn balk pas na de zone beginnen en
+  // maakt de spacer even veel smaller: zo blijft het schuifbereik gelijk aan dat van de kaart.
+  const splitterOnLeft = histogramPickerSide === 'left';
+  const primaryHScrollInset = {
+    left: splitterOnLeft ? GANTT_WORKSPACE_SPLITTER_GRIP : 0,
+    right: !splitterOnLeft && !splitView ? GANTT_WORKSPACE_SPLITTER_GRIP : 0,
+  };
+  const secondaryHScrollInsetRight = !splitterOnLeft && splitView ? GANTT_WORKSPACE_SPLITTER_GRIP : 0;
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Pane-rij. De scrollbalken zijn ZWEVENDE overlays binnen deze rij en binnen de panes
@@ -948,10 +956,10 @@ export function GanttCanvas({
           ref={hScrollRef}
           data-testid="gantt-hscroll"
           className="gantt-overlay-scrollbar absolute overflow-x-auto overflow-y-hidden"
-          style={{ left: 0, right: 0, bottom: 0, height: SCROLLBAR_GUTTER, zIndex: 4 }}
+          style={{ left: primaryHScrollInset.left, right: primaryHScrollInset.right, bottom: 0, height: OVERLAY_SCROLLBAR_SIZE, zIndex: 4 }}
           onScroll={viewport.scrollHandlers.onPrimaryHorizontalScroll}
         >
-          <div style={{ width: Math.max(1, viewport.primary.scrollbarWidth), height: 1 }} />
+          <div style={{ width: Math.max(1, viewport.primary.scrollbarWidth - primaryHScrollInset.left - primaryHScrollInset.right), height: 1 }} />
         </div>
       </div>
       {/* Secundair pane: eigen tijdvenster, gedeelde rijen + verticale scroll */}
@@ -979,10 +987,10 @@ export function GanttCanvas({
               ref={hScrollSecondaryRef}
               data-testid="gantt-hscroll-secondary"
               className="gantt-overlay-scrollbar absolute overflow-x-auto overflow-y-hidden"
-              style={{ left: 0, right: 0, bottom: 0, height: SCROLLBAR_GUTTER, zIndex: 4 }}
+              style={{ left: 0, right: secondaryHScrollInsetRight, bottom: 0, height: OVERLAY_SCROLLBAR_SIZE, zIndex: 4 }}
               onScroll={viewport.scrollHandlers.onSecondaryHorizontalScroll}
             >
-              <div style={{ width: Math.max(1, viewport.secondary?.scrollbarWidth ?? 0), height: 1 }} />
+              <div style={{ width: Math.max(1, (viewport.secondary?.scrollbarWidth ?? 0) - secondaryHScrollInsetRight), height: 1 }} />
             </div>
           </div>
         </>
@@ -1019,7 +1027,8 @@ export function GanttCanvas({
             addTask({
               name: defaultMilestoneName,
               isMilestone: true,
-              taskType: 'ATTENDANCE',
+              milestoneKind: 'FINISH',
+              taskType: 'USERDEFINED',
               parentId: contextMenu.task?.id || null,
             });
           }}

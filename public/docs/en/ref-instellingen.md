@@ -16,7 +16,7 @@ A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 
 **Follow system theme** — lets the colour scheme of your operating system decide. Default: off. Effect: the app is *Light* or *Dark*, depending on your system; the three theme cards are then switched off. *High Contrast* does not follow your system: you pick it yourself. If you switch this off, the theme that was on screen at that moment stays. Where: *Appearance*, under *Theme*.
 
-**Language** — the language of the interface. Default: the language of your browser or system if the app knows it, otherwise English. Effect: all texts in the app; the fourteen languages are sorted by their short code. Arabic and Persian mirror the interface from right to left. You set the language of the Help articles separately, under *Documentation language* in *File › Help*. Where: *Appearance*.
+**Language** — the language of the interface. Default: the language of your browser or system if the app knows it, otherwise English. Effect: all texts in the app; the languages are sorted by their short code. Arabic and Persian mirror the interface from right to left. You set the language of the Help articles separately, under *Documentation language* in *File › Help*. Where: *Appearance*.
 
 **Font** — the font of the whole interface. Choose from *Default*, *System*, *Serif* and *Monospace*. Default: *Default*. Effect: headings and text in the window, and the text in the Gantt and the histogram. A web app does not follow your system font by itself; that is why you choose it here. Where: *Appearance*.
 
@@ -78,7 +78,9 @@ A change takes effect immediately. There is no *Apply* button and no *Cancel*.
 
 **Start tour** — the introductory tour again. Effect: closes the *App settings* window and starts the tour from the first step. Where: *Advanced*, under *Tour*.
 
-**Version** — the version number of the app, with two buttons. *Check for updates* opens the update window. *What's new* shows the news of the current version. Where: *Advanced*, under *Version*.
+**Version** — the version number of the app, with two buttons. *Check for updates* opens the update window. *What's new* shows the news of the current version. With an AUR installation (Arch Linux), update through your package manager (for example `yay -Syu`), rather than through the app. Where: *Advanced*, under *Version*.
+
+An automatically detected update waits until the welcome screens and any active tutorial guide have closed. You can still check manually using the button.
 
 **Show classic view buttons** — a replaced feature, under *Legacy features*. Default: off. Effect: on puts a group *Display* back on the *View* tab with the separate buttons *Columns…*, *Filter…*, *Group…* and *Sort…*. They have been replaced by the plus in the table header, the layout buttons and the layout window. Where: *Advanced*, under *Legacy features*.
 

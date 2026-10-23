@@ -22,7 +22,7 @@ whole app state back to IFC.
 
 ## Prerequisites
 
-- **Node.js** (with npm)
+- **Node.js 22** (with npm)
 - **Rust** plus the [Tauri 2 prerequisites](https://tauri.app/start/prerequisites/) for your OS — only
   needed for the desktop build; the browser build needs Node alone.
 
@@ -30,7 +30,7 @@ whole app state back to IFC.
 
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Start the browser dev server — it prints which port it picked
 npm run dev

@@ -233,3 +233,46 @@ test('Voorbeelden: een voorbeeldproject laadt via het basispad', async ({ page }
   expect(seen.catalogRequests).toEqual([]);
   expect(seen.pageErrors).toEqual([]);
 });
+
+// Productiebundel (PR #369, hercheck): in een productiebouw vangt een voorpoort Ctrl+S af vóór het
+// sneltoets-register. Die voorpoort moet het actieve tekstveld eerst laten committen, net als het
+// register; anders staat een getypte inzet die direct met Ctrl+S wordt opgeslagen er niet in.
+// Geen `__OPS__` in deze bouw: we lezen de waarde uit het gedownloade IFC-bestand.
+test('Ctrl+S direct na het typen van een inzet slaat de nieuwe inzet op', async ({ page }) => {
+  const seen = await openApp(page);
+  await openBackstage(page);
+  await navItem(page, 'Examples').click();
+  const card = page.locator('.backstage-main button.backstage-export-card').first();
+  await expect(card).toBeVisible({ timeout: 15_000 });
+  await card.click();
+  await expect(page.locator('.backstage')).toHaveCount(0, { timeout: 15_000 });
+  await expect.poll(() => taskRows(page).count(), { timeout: 15_000 }).toBeGreaterThan(0);
+
+  // Kies de eerste taak met een toewijzing (klik op de rij, zoals een planner).
+  const row = page.locator('[data-ops-assignment-row]').first();
+  const count = await taskRows(page).count();
+  for (let i = 0; i < count && !(await row.isVisible()); i++) {
+    await taskRows(page).nth(i).click();
+    await page.waitForTimeout(100);
+  }
+  await expect(row).toBeVisible();
+  const input = row.locator('input').first();
+  await input.click();
+  await input.press('Control+a');
+  await page.keyboard.type('3.25');
+  await expect(input).toBeFocused();
+
+  const download = page.waitForEvent('download');
+  await page.keyboard.press('Control+s');
+  const ifc = readFileSync(await (await download).path(), 'utf8');
+  expect(ifc).toMatch(/IFCTEXT\('3\.25\|/);
+
+  // De focus staat weer in het veld: Backspace verwijdert de geselecteerde taak niet.
+  await expect(input).toBeFocused();
+  const rowsBefore = await taskRows(page).count();
+  await page.keyboard.press('Backspace');
+  await page.waitForTimeout(300);
+  expect(await taskRows(page).count()).toBe(rowsBefore);
+
+  expect(seen.pageErrors).toEqual([]);
+});

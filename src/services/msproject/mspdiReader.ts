@@ -7,12 +7,13 @@ import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { createDefaultCalendar } from '@/engine/calendar/defaultCalendar';
 import { Baseline, BaselineTask } from '@/types/baseline';
 import { generateId } from '@/utils/id';
-import { parseInstant, parseDate } from '@/utils/dateUtils';
+import { parseInstant, parseDate, localTodayIso } from '@/utils/dateUtils';
 import { normalizeImportedProgress, deriveImportedWorkRules, rebuildImportedHierarchy, reconstructResourceIds } from '@/services/importNormalize';
-import { emptyMissingScheduleDates, importDateTime, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
+import { emptyMissingScheduleDates, importDateTimeOrUndefined, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
 import { tenthsOfMinutesToDays } from '@/services/importDurations';
 import { descendantText, toInt, toFloat } from '@/services/xmlDom';
-import type { ImportResult } from '@/services/importTypes';
+import { hasMsProjectImportLoss, type ImportResult } from '@/services/importTypes';
+import { scanMspdiImportLoss } from '@/services/msproject/mspdiImportLoss';
 import type { CustomTaskType } from '@/types/taskType';
 import {
   MSP_LINK_TYPE_CODE,
@@ -326,8 +327,10 @@ export function readMSPDI(content: string): ImportResult {
     if (!cal) continue;
     const durMin = mspDurationMinutes(getElementText(te, 'Duration'));
     const durSignal = durMin != null && isSubDayMinutes(durMin, cal.hoursPerDay);
-    const dateSignal = hasNonAnchorTime(getElementText(te, 'Start'), DAY_TIME_ANCHOR)
-      || hasNonAnchorTime(getElementText(te, 'Finish'), DAY_TIME_ANCHOR);
+    const dateSignal = ['Start', 'Finish'].some(field => {
+      const raw = getElementText(te, field);
+      return hasNonAnchorTime(raw, DAY_TIME_ANCHOR) && importDateTimeOrUndefined(raw, true) !== undefined;
+    });
     if (durSignal || dateSignal) cSignalCalIds.add(calId);
   }
   // MSPDI valt terug op de scalar-synth zodra de geregistreerde canonical geen werkdag draagt
@@ -393,19 +396,20 @@ export function readMSPDI(content: string): ImportResult {
       : parseMSPDuration(durationStr, effHpd);
     const startRaw = getElementText(te, 'Start');
     const finishRaw = getElementText(te, 'Finish');
-    const start = importDateTime(startRaw, isHour);
-    const finish = importDateTime(finishRaw, isHour);
-    // Ontbrekende Start/Finish: plaatshouder hierboven, vervangen door `resolveMissingScheduleDates`.
-    if (!startRaw) missingDates.start.add(id);
-    if (!finishRaw) missingDates.finish.add(id);
+    const parseTaskDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);
+    const sourceStart = parseTaskDate(startRaw);
+    const sourceFinish = parseTaskDate(finishRaw);
+    const start = sourceStart ?? localTodayIso();
+    const finish = sourceFinish ?? localTodayIso();
+    // Onleesbaar is ontbrekend: dezelfde plaatshouder en ankerregel, zonder kapotte bronuitvoer.
+    if (sourceStart === undefined) missingDates.start.add(id);
+    if (sourceFinish === undefined) missingDates.finish.add(id);
 
     // "Datums zoals opgeslagen" voor MSPDI: MS Project's EIGEN rekenuitvoer — `EarlyStart`/
     // `EarlyFinish` (terugval `Start`/`Finish`), `LateStart`/`LateFinish`, `TotalSlack`/`FreeSlack`
     // (tienden van een minuut) en `Critical` (0/1) — als apart kanaal (`ImportResult.recordedTimes`),
     // nooit solverinvoer. Ontbrekende assen ontbreken.
     {
-      const recordedDate = (raw: string): string | undefined =>
-        raw ? importDateTime(raw, isHour) : undefined;
       const slackDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const tenths = Number.parseFloat(raw);
@@ -417,10 +421,10 @@ export function readMSPDI(content: string): ImportResult {
       const earlyStartRaw = getElementText(te, 'EarlyStart');
       const earlyFinishRaw = getElementText(te, 'EarlyFinish');
       const recorded = buildRecordedTime({
-        start: earlyStartRaw ? recordedDate(earlyStartRaw) : (startRaw ? start : undefined),
-        finish: earlyFinishRaw ? recordedDate(earlyFinishRaw) : (finishRaw ? finish : undefined),
-        lateStart: recordedDate(getElementText(te, 'LateStart')),
-        lateFinish: recordedDate(getElementText(te, 'LateFinish')),
+        start: parseTaskDate(earlyStartRaw) ?? sourceStart,
+        finish: parseTaskDate(earlyFinishRaw) ?? sourceFinish,
+        lateStart: parseTaskDate(getElementText(te, 'LateStart')),
+        lateFinish: parseTaskDate(getElementText(te, 'LateFinish')),
         totalFloat: slackDays(getElementText(te, 'TotalSlack')),
         freeFloat: slackDays(getElementText(te, 'FreeSlack')),
         isCritical: criticalRaw === '1' ? true : criticalRaw === '0' ? false : undefined,
@@ -458,31 +462,29 @@ export function readMSPDI(content: string): ImportResult {
     const actualStartRaw = getElementText(te, 'ActualStart');
     const actualFinishRaw = getElementText(te, 'ActualFinish');
     const remainingRaw = getElementText(te, 'RemainingDuration');
-    const actualStart = actualStartRaw ? importDateTime(actualStartRaw, isHour) : undefined;
-    const actualFinish = actualFinishRaw ? importDateTime(actualFinishRaw, isHour) : undefined;
+    const actualStart = parseTaskDate(actualStartRaw);
+    const actualFinish = parseTaskDate(actualFinishRaw);
     // RemainingDuration: uur ⇒ minuten; dag ⇒ het dag-pad.
     const remainingMinutes = durationUnit === 'hours' && remainingRaw ? (mspDurationMinutes(remainingRaw) ?? undefined) : undefined;
     const remainingTime = durationUnit === 'days' && remainingRaw ? parseMSPDuration(remainingRaw, effHpd) : undefined;
 
     // Datumconstraint: ConstraintType/ConstraintDate. 0/ontbrekend ⇒ geen constraint. MSPDI kent geen
     // secundaire constraint. Datum: uur ⇒ echte tijd, dag ⇒ strip.
-    const parseCstrDate = (raw: string): string => importDateTime(raw, isHour);
     let constraint: TaskConstraint | undefined;
     const cTypeRaw = getElementText(te, 'ConstraintType');
     if (cTypeRaw) {
       const mapped = mspCodeToConstraint(parseInt(cTypeRaw, 10));
       if (mapped) {
-        const cdateRaw = getElementText(te, 'ConstraintDate');
+        const cdate = parseTaskDate(getElementText(te, 'ConstraintDate'));
         constraint = {
           type: mapped.type,
           ...(mapped.hard ? { hard: true } : {}),
-          ...(cdateRaw ? { date: parseCstrDate(cdateRaw) } : {}),
+          ...(cdate ? { date: cdate } : {}),
         };
       }
     }
     // Zachte deadline: native <Deadline> → task.deadline.
-    const deadlineRaw = getElementText(te, 'Deadline');
-    const deadline = deadlineRaw ? parseCstrDate(deadlineRaw) : undefined;
+    const deadline = parseTaskDate(getElementText(te, 'Deadline'));
 
     // Baseline 0: eerste direct-kind <Baseline> met <Number>0</Number>.
     const baselineEls = te.getElementsByTagName('Baseline');
@@ -490,10 +492,19 @@ export function readMSPDI(content: string): ImportResult {
       const bEl = baselineEls[b];
       if (bEl.parentElement !== te) continue;
       if (getElementInt(bEl, 'Number', -1) !== 0) continue;
+      // Dezelfde modus als de taakdatums: een urentaak houdt het tijdstip van haar baseline
+      // (`YYYY-MM-DDTHH:mm`, zoals `saveBaseline` hem zelf vastlegt), een dagtaak alleen de datum
+      // (PR #392, fixronde 5).
+      const baselineStart = importDateTimeOrUndefined(getElementText(bEl, 'Start'), isHour);
+      const baselineFinish = importDateTimeOrUndefined(getElementText(bEl, 'Finish'), isHour);
+      // Onleesbaar (`NA`) = ontbrekend: zonder start én einde krijgt de taak geen baseline-entry, want
+      // `BaselineTask` eist beide datums en een verzonnen datum (vandaag) zou een valse afwijking tonen.
+      // Vóór deze regel brak `NA` bij een urentaak de hele import af (`RangeError`, VERVOLG 13 van #392).
+      if (baselineStart === undefined || baselineFinish === undefined) break;
       baselineEntries.push({
         taskId: id,
-        start: parseMSPDate(getElementText(bEl, 'Start')),
-        finish: parseMSPDate(getElementText(bEl, 'Finish')),
+        start: baselineStart,
+        finish: baselineFinish,
         // Dezelfde dag als de taakduur (`mspdiBaselineDays`), anders leest een 24/7-taak haar eigen
         // baseline als 2,33 dagen terug, of een urentaak van 1870 u op 8 u/dag met blokken van 10 u
         // haar baseline als 234 d naast een taak van 187 d.
@@ -734,6 +745,13 @@ export function readMSPDI(content: string): ImportResult {
   normalizeImportedProgress(tasks, project.statusDate);
   deriveImportedWorkRules(tasks); // werkregel uit <Type>/<EffortDriven>
 
+  // Importverslag (issue #391): wat deze lezer niet overneemt. De OPS-transportvelden die hierboven
+  // zijn gebruikt, tellen niet als eigen veld.
+  const msProjectReport = scanMspdiImportLoss(root, (fieldId, value) =>
+    (durationUnitMarkerFieldId !== null && fieldId === durationUnitMarkerFieldId)
+    || (opsMilestoneKindMarkerEnabled && fieldId === OPS_MILESTONE_KIND_FIELD_ID)
+    || (fieldId === OPS_CUSTOM_TASK_TYPE_FIELD_ID && decodeCustomTaskType(value) !== undefined));
+
   return {
     project,
     calendar,
@@ -742,6 +760,7 @@ export function readMSPDI(content: string): ImportResult {
     resources,
     assignments,
     resourceCalendars,
+    ...(hasMsProjectImportLoss(msProjectReport) ? { msProjectReport } : {}),
     customTaskTypes: [...customTaskTypes.values()],
     baselines,
     activeBaselineId,

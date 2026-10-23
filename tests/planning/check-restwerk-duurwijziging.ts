@@ -498,7 +498,7 @@ console.log('-- (q) besluit V10: de slotzin van de uitleg volgt de regel, in tab
     });
   };
   const hint = (stored: number, derived: number, slot: string) =>
-    `Opgeslagen werk ${stored} u wijkt af van inzet × resterende duur (${derived} u). Het histogram volgt het opgeslagen werk over de hele taakduur. ${slot}`;
+    `Opgeslagen werk ${stored}u wijkt af van inzet × resterende duur (${derived}u). Het histogram volgt het opgeslagen werk over de hele taakduur. ${slot}`;
 
   // Per regel: de zin in tabel en paneel, en dan de echte duurwijziging — de zin moet kloppen met wat er gebeurt.
   const cases: { label: string; code: string; src: string; prep?: () => void; keeps: boolean }[] = [
@@ -553,10 +553,10 @@ console.log('-- (q) besluit V10: de slotzin van de uitleg volgt de regel, in tab
   openFixture();
   S().assignResource(byCode('E-1020').id, asg('7500').resourceId, 1);
   eq('q5 twee toewijzingen (Vaste duur en inzet): de regels en daaronder één slotzin', tableText('E-1020'),
-    `Opgeslagen werk wijkt af van inzet × resterende duur:\nDesign Engineer 2: 160 u (inzet × resterende duur: 40 u)\n${FOLLOWS}`);
+    `Opgeslagen werk wijkt af van inzet × resterende duur:\nDesign Engineer 2: 160u (inzet × resterende duur: 40u)\n${FOLLOWS}`);
   useAppStore.setState((s) => { s.tasks.find((x) => x.wbsCode === 'E-1020')!.workRule = 'FIXED_WORK'; });
   eq('q6 dezelfde taak onder Vast werk: de andere slotzin', tableText('E-1020'),
-    `Opgeslagen werk wijkt af van inzet × resterende duur:\nDesign Engineer 2: 160 u (inzet × resterende duur: 40 u)\n${KEEPS}`);
+    `Opgeslagen werk wijkt af van inzet × resterende duur:\nDesign Engineer 2: 160u (inzet × resterende duur: 40u)\n${KEEPS}`);
 }
 
 if (diffs.length > 0) {

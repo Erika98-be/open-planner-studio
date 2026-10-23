@@ -32,6 +32,7 @@ import {
 import type { CalendarReadResult } from './mppCalendars';
 import { MAX_VAR_TEXT_BYTES } from './limits';
 import type { AssignmentTimephasedRaw } from './mppTimephased';
+import { selectAssignmentRecords } from './mppRecords';
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // Relaties (TBkndCons), resources (TBkndRsc) en assignments (TBkndAssn).
@@ -297,6 +298,11 @@ function readResourcesUnsafe(
   // volgens de field map). Alleen een interne join-sleutel; de echte unique-ID komt uit
   // `varMeta.getUniqueIdentifierArray()`. Bij < 65536 resources is de truncatie een no-op; bewust
   // letterlijk gespiegeld.
+  // MPXJ toetst de volledige fieldmap-lengte vóór de eerste-wint-join. Onze fieldmap kent alleen
+  // locaties, geen veldbreedtes: eis het volledige bereik van de velden die we lezen (SHORT-uid en
+  // optionele DOUBLE MAX_UNITS). De offsets komen uit het bestand, ook bij Project 2013/2016/2021;
+  // een vaste recordmaat zou geldige kortere layouts of de default-layout ten onrechte weren.
+  const minFixedDataSize = Math.max(uniqueIdOffset + 2, maxUnitsOffset === null ? 0 : maxUnitsOffset + 8);
   const { offset: typeOffset, mask: typeMask } = resourceTypeBitFlag(applicationVersion);
   const indexByShortUid = new Map<number, number>();
   const itemCount = fixedMeta.getAdjustedItemCount();
@@ -304,6 +310,9 @@ function readResourcesUnsafe(
     const data = fixedData.getByteArrayValue(index);
     if (!data || data.length < uniqueIdOffset + 2) continue;
     const shortUid = getShort(data, uniqueIdOffset, `${label}/FixedData uniqueId (short, spiegelt MPXJ)`);
+    // UID 0 blijft de bewust ondersteunde sentinel; voor echte resources mag een kort
+    // plaatshoudersrecord nooit de index (en daarmee type/meta en maxUnits) vastleggen.
+    if (shortUid !== 0 && data.length < minFixedDataSize) continue;
     if (!indexByShortUid.has(shortUid)) indexByShortUid.set(shortUid, index); // eerste-wint, spiegelt Java's containsKey-guard
   }
 
@@ -319,7 +328,7 @@ function readResourcesUnsafe(
     if (!data) continue;
 
     // UniqueID 0 is MPP's ingebouwde "niet-toegewezen"-plaatshouder. MPXJ slaat hem over
-    // (`createResourceMap`'s `data.length < maxFixedDataSize`-guard, niet geport), maar MS Project
+    // (`createResourceMap`'s `data.length < maxFixedDataSize`-guard), maar MS Project
     // schrijft hem WÉL naar zijn MSPDI-export ("Niet toegekend", maxUnits 1). Deze lezer kiest
     // COUNT-PARITEIT MET readMSPDI: het record blijft, met een VASTE naam/type/maxUnits (het
     // placeholder-record is typisch te kort om die uit te lezen). De calendarId-koppeling volgt de
@@ -363,12 +372,6 @@ function readResourcesUnsafe(
   return { resources, resourceIdByUniqueId };
 }
 
-/** TBkndAssn/FixedMeta-itemgrootte (MPP14Reader.java: `new FixedMeta(..., 34)`). */
-const ASSIGNMENT_FIXED_META_ITEM_SIZE = 34;
-/** TBkndAssn/FixedData-itemgrootte — GEEN meta-afgeleide offset/grootte, contigue blokken van 110
- *  bytes vanaf offset 0 (MPP14Reader.java: `new FixedData(110, ...)`, de `withoutMeta`-variant). */
-const ASSIGNMENT_FIXED_DATA_ITEM_SIZE = 110;
-
 /** Poort van `ResourceAssignmentFactory.process` — `"   114"/TBkndAssn` → `ResourceAssignment[]`,
  *  met mspdiReader's `unitsPerDay`-afleiding. Geëxporteerd voor `check-mpp-relations.ts`. */
 export function readAssignments(
@@ -391,39 +394,17 @@ function readAssignmentsUnsafe(
   resourceIdByUniqueId: ReadonlyMap<number, string>,
 ): ResourceAssignment[] {
   const label = '"   114"/TBkndAssn';
-  const fixedMetaBytes = cfb.getStream(['   114', 'TBkndAssn', 'FixedMeta']);
-  const fixedDataBytes = cfb.getStream(['   114', 'TBkndAssn', 'FixedData']);
-  const varMetaBytes = cfb.getStream(['   114', 'TBkndAssn', 'VarMeta']);
-  if (!fixedMetaBytes || !fixedDataBytes || !varMetaBytes) return [];
-
-  const fixedMeta = FixedMeta.withItemSize(fixedMetaBytes, ASSIGNMENT_FIXED_META_ITEM_SIZE, `${label}/FixedMeta`);
-  const fixedData = FixedData.withoutMeta(ASSIGNMENT_FIXED_DATA_ITEM_SIZE, fixedDataBytes, `${label}/FixedData`);
-  const varMeta = new VarMeta12(varMetaBytes, `${label}/VarMeta`);
-
   const uniqueIdOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.UniqueId);
   const taskUidOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.TaskUniqueId);
   const resourceUidOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.ResourceUniqueId);
   const unitsOffset = fixedOffsetOf(assignmentFieldMap, AssignmentFieldId.Units);
   if (uniqueIdOffset === null || taskUidOffset === null || resourceUidOffset === null) return [];
+  // De recordselectie (verwijderd, geen var-data) is gedeeld met het importverslag (`mppRecords.ts`).
+  const selected = selectAssignmentRecords(cfb, uniqueIdOffset);
+  if (!selected) return [];
 
   const assignments: ResourceAssignment[] = [];
-  // Geklemd (FixedMeta.getItemCount) — ResourceAssignmentFactory.java gebruikt de RUWE headerwaarde.
-  const itemCount = fixedMeta.getItemCount();
-  for (let index = 0; index < itemCount; index++) {
-    const meta = fixedMeta.getByteArrayValue(index);
-    // Verwijderd-vlag: hier een enkele BYTE (`meta[0] !== 0`), NIET de SHORT-check van TBkndCons
-    // hierboven — spiegelt ResourceAssignmentFactory.java letterlijk (`meta[0] != 0`).
-    if (!meta || meta.length < 8 || meta[0] !== 0) continue;
-
-    const offset = getInt(meta, 4, `${label}/FixedMeta offset`);
-    const dataIndex = fixedData.getIndexFromOffset(offset);
-    if (dataIndex === -1) continue;
-    const data = fixedData.getByteArrayValue(dataIndex);
-    if (!data || data.length < uniqueIdOffset + 4) continue;
-
-    const uid = getInt(data, uniqueIdOffset, `${label}/FixedData uniqueId`);
-    if (!varMeta.containsKey(uid)) continue; // spiegelt `assnVarMeta.getUniqueIdentifierSet().contains(varDataId)`
-
+  for (const { data } of selected.records) {
     if (data.length < taskUidOffset + 4 || data.length < resourceUidOffset + 4) continue;
     const taskUid = getInt(data, taskUidOffset, `${label}/FixedData taskUid`);
     const resourceUid = getInt(data, resourceUidOffset, `${label}/FixedData resourceUid`);

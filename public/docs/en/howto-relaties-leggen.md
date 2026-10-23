@@ -69,7 +69,7 @@ You type a lag in the box next to the type, with each of the ways above. You cha
 - `3` or `3d`: 3 work days. A weekend does not count. The app shows `+3d`.
 - `3ed`: 3 calendar days. The weekend does count, as with concrete that also cures on Saturday and Sunday.
 - `-1`: a negative lag (lead). The successor may start a day earlier, so the tasks overlap.
-- `4h`: 4 working hours; the app shows it as `+4u`. If the predecessor is a day task on a calendar without working-time blocks of its own, such as the standard calendar, the app converts this to whole work days, rounded to the nearest whole day: `4h` then acts as 1 day, `2h` as 0. On a calendar with working-time blocks of its own, or after an hour task, the lag counts exactly in hours.
+- `4h`: 4 working hours; the app shows it as `+4h`. If the predecessor is a day task on a calendar without working-time blocks of its own, such as the standard calendar, the app converts this to whole work days, rounded to the nearest whole day: `4h` then acts as 1 day, `2h` as 0. On a calendar with working-time blocks of its own, or after an hour task, the lag counts exactly in hours.
 - `50%`: half the predecessor's duration.
 
 Example: the foundation concrete has to cure before the bricklayer can work on it, so *Pour foundation → Foundation brickwork* gets an FS relation with lag `3`. If the pour is on Friday 18 June 2027, the brickwork starts after **Calculate** on Thursday 24 June: Monday to Wednesday is waiting time. With `3ed` the weekend counts and the brickwork starts on Tuesday 22 June.

@@ -323,6 +323,7 @@ export interface ExtensionApi {
   events: {
     on(event: string, listener: (data: unknown) => void): () => void;
     off(event: string, listener: (data: unknown) => void): void;
+    /** Eigen events uitzenden; namen met `host:` zijn voor de app gereserveerd en geven een fout. */
     emit(event: string, data?: unknown): void;
   };
 

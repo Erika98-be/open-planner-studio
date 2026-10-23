@@ -61,7 +61,8 @@ If you turn it off again, it stays an ordinary task with duration 0: enter a dur
 
 ### Other ways
 
-- Ctrl+M (⌘+M on a Mac) puts a new milestone at the bottom of the list, even if a task is selected. The *Properties* panel does not open.
+- Ctrl+M (⌘+M on a Mac) creates an ordinary finish milestone using the same insertion route as the ribbon: below the selection in tree view, otherwise at the bottom. The new milestone is selected and the *Properties* panel opens with its name ready to type.
+- Ordinary milestones from the ribbon, Ctrl+M or the right-click menu get the work category *Other*. Ctrl+M and the right-click menu create a finish milestone. Only the explicit inspection-point choice creates a mandatory milestone with the work category *Inspection*.
 - *Add milestone* in a task's right-click menu makes the milestone a subtask of that task, not a sibling.
 
 ### Copying a task or a whole branch

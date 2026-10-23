@@ -15,7 +15,9 @@
     "openFailed": "파일을 열 수 없습니다",
     "extGuideCallbackFailed": "확장 프로그램 {{name}}의 단계에서 오류가 발생했습니다. 안내는 계속됩니다.",
     "extHelpProjectOpenFailed": "확장 프로그램 {{name}}의 프로젝트 파일 {{file}}을(를) 열 수 없습니다.",
+    "extImportFailed": "{{name}} 가져오기에 실패했습니다.",
     "extensionMessage": "확장 프로그램 {{name}}: {{message}}",
+    "extensionInstallFailed": "확장 프로그램을 설치할 수 없습니다. 파일을 확인하고 다시 시도하세요.",
     "xerInvalidInput": "XER 가져오기는 원본 파일 바이트가 필요합니다.",
     "xerInvalidFile": "유효하거나 지원되는 XER 파일이 아닙니다.",
     "xerInvalidEncoding": "이 XER 파일의 문자 인코딩이 잘못되었거나 잘렸습니다.",
@@ -44,7 +46,7 @@
     "xerImportCalendarIssues_other": "달력 발견 사항: {{count}}",
     "xerImportNumberIssues_other": "숫자 형식 문제: {{count}}",
     "xerImportEnumFallbacks_other": "열거형 대체: {{count}}",
-    "xerImportMissingPlannedStarts_other": "계획 시작이 없던 활동 {{count}}개가 이제 파일의 데이터 날짜 또는 프로젝트 시작일에 시작합니다.",
+    "xerImportMissingPlannedStarts_other": "계획 시작이 없던 작업 {{count}}개는 이제 파일의 상태 날짜 또는 프로젝트 시작일에 시작합니다.",
     "xerImportUnsupportedSemantics_other": "안전한 대체를 사용한 P6 일정 설정: {{count}}",
     "xerImportDatesAsRecorded_other": "Primavera에 기록된 날짜를 그대로 표시하는 작업: {{count}}개(다시 계산하지 않음)",
     "importDatesAsRecorded_other": "파일에 기록된 날짜를 그대로 표시하는 작업: {{count}}개(다시 계산하지 않음)",
@@ -52,6 +54,7 @@
     "mppLegacy": "이 .mpp 파일은 이전 형식(Project 2007 이하)을 사용합니다. MS Project에서 XML로 내보낸 후(파일 → 다른 이름으로 저장 → XML) 해당 파일을 여세요.",
     "mppEncrypted": "이 .mpp 파일은 암호로 보호되어 있습니다. MS Project에서 XML로 내보낸 후(파일 → 다른 이름으로 저장 → XML) 해당 파일을 여세요.",
     "saveFailed": "저장하지 못했습니다",
+    "ambiguousThousands": "\"{{text}}\"은(는) 모호합니다. 소수입니까, 천 단위입니까? 소수는 \"{{separator}}\"(1{{separator}}5)로, 천 단위는 구분 기호 없이(1500) 입력하세요. 값이 변경되지 않았습니다.",
     "siteSaveConflict": "저장되지 않았습니다. 그사이 다른 사람이 사이트에서 '{{name}}' 파일을 변경했습니다. 변경 내용은 아직 앱에 있습니다. 새 파일로 보관하려면 다른 이름으로 저장을 선택하세요.",
     "siteFileGone": "'{{name}}' 파일이 더 이상 사이트에 없습니다. '최근'에서 제거되었습니다.",
     "savedViaDownload": "다운로드로 저장했습니다. '{{name}}' 파일이 다운로드 폴더에 있습니다. 이 환경에서는 앱이 선택한 위치에 직접 쓸 수 없습니다.",
@@ -74,13 +77,14 @@
     "relationsSkippedOnInsert_other": "관계 {{count}}개를 만들지 않았습니다. 잘못된 연결입니다(예: 작업이 자신의 상위 요약 작업에 연결되었거나 중복된 관계).",
     "mppSourceScheduleNotes_other": "이 MS Project 파일에는 분할되었거나 평준화되었거나 리소스 기반으로 조정된 작업이 {{count}}개 포함되어 있습니다. 있는 그대로 가져와 표시됩니다.",
     "exportSplitsLost_other": "중단이 있는 작업 {{count}}개가 중단 없이 내보내졌습니다. MS Project/P6은 중단을 작업 분배로만 인식합니다.",
+    "exportP6Truncated_other": "{{count}}개의 이름 또는 코드가 P6가 허용하는 길이로 줄었습니다.",
     "projectStartAnchorsClamped_other": "작업 {{count}}개가 프로젝트 시작일과 함께 이동했습니다.",
     "mppTimephasedSteeringLost_other": "이 편집 이후 MS Project의 시간 분배가 더 이상 {{count}}개 작업을 제어하지 않습니다. 원래 분배는 파일에 그대로 보존됩니다.",
     "readMore": "더 알아보기",
-    "taskTypesUnlocked": "이 파일에는 저장된 작업량 또는 사용자 작업 규칙이 포함되어 있습니다. 이 프로젝트에서는 작업 규칙과 남은 작업량이 표시됩니다.",
-    "taskTypesUnlockedDetail": "이 파일에는 저장된 작업량 또는 사용자 작업 규칙이 포함되어 있습니다. 이 프로젝트에서는 작업 규칙과 남은 작업량이 표시됩니다.",
-    "workRulesReadMore": "작업 규칙 설명",
-    "workRuleDurationsChanged_other": "달력 변경 후 작업 규칙이 {{count}}개 작업의 기간을 조정했습니다(작업량 유지, 일일 시간 변경).",
+    "taskTypesUnlocked": "이 파일에는 저장된 작업량이나 작업 유형이 들어 있습니다. 이 프로젝트에서는 작업 유형과 남은 작업량이 표시됩니다.",
+    "taskTypesUnlockedDetail": "이 파일에는 저장된 작업량이나 작업 유형이 들어 있습니다. 이 프로젝트에서는 작업 유형과 남은 작업량이 표시됩니다.",
+    "workRulesReadMore": "작업 유형 설명",
+    "workRuleDurationsChanged_other": "달력 변경 후 작업 유형이 작업 {{count}}개의 기간을 조정했습니다(작업량은 유지되고 하루 시간은 바뀌었습니다).",
     "pasteSkippedReadOnly_other": "읽기 전용 셀 {{count}}개를 건너뛰었습니다(예: 자동 번호가 매겨진 WBS 코드 또는 계산된 열).",
     "librarySaveFailed": "라이브러리를 저장하지 못했습니다",
     "levelingDelayRoundedToWorkdays_other": "평준화는 MS Project의 분 단위로 정확한 평준화 지연({{count}}개 작업)을 전체 근무일로 반올림합니다.",
@@ -92,15 +96,20 @@
     "startBlockedByConstraintMany_other": "작업 {{count}}개의 새 시작일이 적용되지 않았습니다. 이 작업들에는 선행 작업과 지정일 이후 시작 (SNET)이 아닌 제약 조건이 있습니다. 시작일을 옮기려면 그 제약 조건을 변경하세요.",
     "dragStartIsActual": "'{{name}}'이(가) 시작되었습니다. 시작은 실제 시작이므로 이동하지 않습니다. 진행률에서 변경하세요.",
     "dragDatesAreActual": "'{{name}}'이(가) 완료되었습니다. 시작과 종료는 실제 날짜이므로 이동하지 않습니다. 진행률에서 변경하세요.",
-    "referencesClearedOnPaste_other": "이 문서에 없는 참조 {{count}}개를 비웠습니다(원본 문서의 작업 달력, 사용자 지정 작업 유형, 작업 코드 또는 사용자 지정 필드).",
-    "milestoneRefusedAssignments_other": "리소스 할당이 있는 작업 {{count}}개는 마일스톤이 될 수 없습니다. 먼저 할당을 제거하세요.",
-    "milestoneRefusedSummary_other": "하위 작업이 있는 요약 작업 {{count}}개는 마일스톤이 될 수 없습니다.",
+    "referencesClearedOnPaste_other": "{{count}}개의 참조가 이 문서에 없어 비워졌습니다(원본 문서의 작업 달력, 사용자 지정 공종, 활동 코드 또는 사용자 지정 필드).",
+    "milestoneRefusedAssignmentsMany_other": "리소스 할당이 있는 작업 {{count}}개는 마일스톤이 될 수 없습니다. 먼저 할당을 제거하세요.",
+    "milestoneRefusedSummaryMany_other": "하위 작업이 있는 요약 작업 {{count}}개는 마일스톤이 될 수 없습니다.",
     "assignmentsMovedToSubtask_other": "할당 {{count}}개를 하위 작업 '{{child}}'(으)로 옮겼습니다.",
     "assignmentsMovedToSubtasks_other": "작업 {{count}}개의 할당을 하위 작업으로 옮겼습니다.",
-    "milestoneClearedOnPhase_other": "작업 {{count}}개가 더 이상 마일스톤이 아닙니다.",
+    "milestoneClearedOnPhaseMany_other": "작업 {{count}}개가 더 이상 마일스톤이 아닙니다.",
     "phaseRefusedNoAssignableChild": "'{{phase}}'은(는) 요약 작업이 될 수 없습니다. 새 하위 작업 중 할당을 가질 수 있는 작업이 없어(마일스톤 또는 요약 작업) 할당을 옮길 곳이 없습니다. 아무것도 변경하지 않았습니다.",
     "phaseRefusedDuplicateResource": "'{{phase}}'은(는) 요약 작업이 될 수 없습니다. 새 하위 작업 '{{child}}'에 이미 {{resource}}이(가) 있어 {{resource}} 할당을 옮길 수 없습니다. 아무것도 변경하지 않았습니다.",
+    "phaseQuestionOutdated": "질문이 열려 있는 동안 작업 또는 할당이 바뀌었습니다. 아무것도 변경되지 않았습니다. 다시 시도하세요.",
     "schedulingProfileApplied": "이 프로젝트는 {{profile}}(으)로 계산됩니다. 파일 → 프로젝트 정보 → 계산 프로필 및 옵션에서 변경하세요.",
+    "schedulingTemplateSaved": "템플릿 “{{name}}”을(를) 저장했습니다.",
+    "schedulingTemplateLimit": "템플릿을 저장하지 않았습니다. 이미 템플릿이 {{max}}개 있습니다. 먼저 템플릿을 삭제하세요.",
+    "schedulingTemplateStorageFailed": "템플릿을 저장하지 않았습니다. 앱 저장 공간이 가득 찼거나 사용할 수 없습니다.",
+    "schedulingTemplateDeleteFailed": "템플릿을 삭제하지 않았습니다. 앱 저장 공간이 가득 찼거나 사용할 수 없습니다.",
     "schedulingProfileShifted_other": "적용 후 작업 {{count}}개가 이동했습니다.",
     "actions": {
       "openProjectInfo": "계산 프로필 열기",
@@ -117,10 +126,39 @@
     "xerArchiveReasonStructure": "이유: IFC 안의 아카이브 구조가 올바르지 않습니다(중복, 순서 변경 또는 잘못된 연결).",
     "statusDateSetToday": "상태 날짜를 오늘({{date}})로 설정했습니다.",
     "durationBelowDoneWork": "'{{name}}'은(는) 이미 {{percent}}% 완료되었습니다. 이미 수행한 작업보다 짧은 기간은 불가능합니다. 기간을 변경하지 않았습니다.",
+    "refusedTaskNames": "변경되지 않았습니다: {{names}}.",
+    "refusedTaskNamesMore_other": "변경되지 않았습니다: {{names}} 그리고 작업 {{count}}개 더.",
+    "notAppliedTaskNames": "다음 작업에는 적용되지 않았습니다: {{names}}.",
+    "notAppliedTaskNamesMore_other": "다음 작업에는 적용되지 않았습니다: {{names}} 그리고 작업 {{count}}개 더.",
+    "refusedRelationNames": "관계가 만들어지지 않았습니다: {{names}}.",
+    "refusedRelationNamesMore_other": "관계가 만들어지지 않았습니다: {{names}} 그리고 관계 {{count}}개 더.",
     "remainingWorkRecomputed": "‘{{name}}’의 남은 작업량을 다시 계산했습니다: {{before}}시간 → {{after}}시간(파일에서 온 값). Ctrl+Z로 되돌릴 수 있습니다.",
     "remainingWorkRecomputedMany_other": "작업 {{count}}개의 남은 작업량을 다시 계산했습니다(파일에서 온 값). Ctrl+Z로 되돌릴 수 있습니다.",
     "tutorialOfferLater": "튜토리얼은 언제든지 도움말 › 튜토리얼에서 찾을 수 있습니다.",
-    "tutorialOfferUnavailable": "지금은 튜토리얼을 설치하거나 시작할 수 없습니다. 나중에 도움말 › 튜토리얼에서 다시 시도할 수 있습니다."
+    "tutorialOfferUnavailable": "지금은 튜토리얼을 설치하거나 시작할 수 없습니다. 나중에 도움말 › 튜토리얼에서 다시 시도할 수 있습니다.",
+    "taskAddedAtEnd": "새 작업이 맨 끝에 추가되었습니다. 필터, 그룹화 또는 정렬 중에는 앱이 선택 항목 아래에 넣을 수 없습니다.",
+    "p6xmlImportEmpty": "이 파일에는 앱이 읽을 수 있는 작업이 없습니다.",
+    "p6xmlImportEmptyNoObjectIds": "작업에 ObjectId가 없습니다. 그래서 앱이 작업을 연결할 수 없습니다. 이것은 표준 Primavera P6 XML이 아닙니다.",
+    "p6xmlImportEmptyXerColumns": "이 파일은 P6 XML 필드 대신 XER 열 이름(예: task_code)을 사용합니다. .xer 파일 자체를 여세요.",
+    "p6xmlImportOpened_other": "P6 XML 파일을 열었습니다: 프로젝트 문서 {{count}}개.",
+    "p6xmlImportCrossProjectRelations_other": "프로젝트 사이의 관계 {{count}}개는 관계로 가져오지 않았습니다.",
+    "p6xmlImportUnassignedActivities_other": "프로젝트가 없는 작업 {{count}}개는 읽지 않았습니다.",
+    "msProjectImportLoss": "이 MS Project 파일의 모든 내용을 가져오지는 않았습니다.",
+    "msProjectLostSubprojects_other": "삽입된 프로젝트 {{count}}개를 다른 파일과의 연결 없이 일반 작업으로 읽었습니다.",
+    "msProjectLostExternalTasks_other": "다른 프로젝트의 외부 작업 {{count}}개를 일반 작업으로 읽었습니다.",
+    "msProjectLostInactiveTasks_other": "비활성 작업 {{count}}개를 활성 작업으로 읽었으며, 계산에 포함됩니다.",
+    "msProjectLostManualTasks_other": "수동 일정 작업 {{count}}개를 자동 일정 작업으로 읽었습니다.",
+    "msProjectLostLevelingDelays_other": "작업 {{count}}개의 평준화 지연을 가져오지 않았습니다.",
+    "msProjectLostCriticalSlack_other": "파일의 주공정 임계값(여유 최대 {{count}}근무일)을 가져오지 않았습니다. 앱은 임계값 0을 사용합니다.",
+    "msProjectLostBaselines_other": "기준선 {{count}}개를 가져오지 않았습니다.",
+    "msProjectLostExtraBaselines_other": "기준선 1–10 {{count}}개를 가져오지 않았습니다.",
+    "msProjectLostBaselineWorkCost_other": "작업, 리소스 또는 할당 {{count}}개에서 기준선 0의 작업량 또는 비용을 가져오지 않았습니다.",
+    "msProjectLostAssignmentBaselineDates_other": "기준선이 작업과 다른 할당 {{count}}개의 차이는 가져오지 않았습니다.",
+    "msProjectLostCustomFields_other": "값이 있는 사용자 지정 필드(사용자 지정 필드 또는 개요 코드) {{count}}개를 가져오지 않았습니다.",
+    "msProjectLostNotes_other": "메모 {{count}}개를 가져오지 않았습니다.",
+    "msProjectLostHyperlinks_other": "하이퍼링크 {{count}}개를 가져오지 않았습니다.",
+    "msProjectLostFixedCosts_other": "작업 {{count}}개의 고정 비용을 가져오지 않았습니다.",
+    "msProjectLostResourceRates_other": "리소스 {{count}}개의 단가를 가져오지 않았습니다."
   },
   "scheduleErrors": {
     "cycle": "작업 간 순환 관계: {{path}}",
@@ -134,6 +172,7 @@
   "no": "아니오",
   "days": "일",
   "daysLong": "일",
+  "dayUnitLong_other": "일",
   "ok": "확인",
   "apply": "적용",
   "create": "만들기",
@@ -185,7 +224,7 @@
     "collapseAll": "모두 접기"
   },
   "settings": {
-    "title": "설정",
+    "title": "앱 설정",
     "appearanceTab": "모양",
     "planningTab": "계획",
     "advancedTab": "고급",
@@ -230,8 +269,8 @@
     "hourPlanningSection": "시간 단위 계획",
     "enableHourPlanning": "시간 단위 계획 사용",
     "enableHourPlanningHint": "시간/분 단위 스케줄링을 켭니다: 시간 단위 시간축, 근무 시간대가 있는 교대, 시간 단위로 정확한 작업 막대. 끄면 ⇒ 앱은 이전처럼 완전히 일 단위로 유지됩니다.",
-    "showTaskTypes": "작업 규칙과 작업량 표시",
-    "showTaskTypesHint": "MS Project 또는 Primavera P6 파일에서는 항상 표시됩니다. 끄기: 기간과 단위는 그대로이고 작업량이 따라갑니다.",
+    "showTaskTypes": "작업 유형 사용",
+    "showTaskTypesHint": "작업마다 기간, 단위 또는 작업량이 바뀔 때 무엇이 함께 바뀔지 고르세요. MS Project의 Task Type, P6의 Duration Type과 같습니다. 끄면 기간과 단위는 그대로 유지됩니다. 작업 유형이나 저장된 작업량이 있는 파일은 이 설정이 꺼져 있어도 이를 표시합니다.",
     "allowMixedDayHour": "일/시간 혼합 계획 허용",
     "defaultTaskDurationUnit": "새 작업의 기본 단위",
     "defaultTaskDurationUnitHint": "새 작업을 근무일 또는 근무 시간 중 어떤 단위로 시작할지 정합니다. 기존 작업은 바뀌지 않습니다.",
@@ -292,6 +331,10 @@
     "dateNotationDmy": "일-월-년",
     "dateNotationMdy": "월-일-년",
     "dateNotationYmd": "년-월-일",
+    "timeNotation": "시간 표기",
+    "timeNotationHint": "시계 시간을 표시하고 입력하는 방식을 정합니다. 적용 위치: 달력 창, 표의 시간 단위 작업, Gantt의 시간 눈금, 메시지. 파일과 계산은 바뀌지 않습니다(24시간제).",
+    "timeNotation24h": "24시간제 (13:00)",
+    "timeNotation12h": "12시간제 (오후 1:00)",
     "fontFamilyLabel": "글꼴",
     "fontScaleLabel": "텍스트 크기",
     "fontScaleHint": "인터페이스 텍스트와 레이아웃 크기를 조정합니다.",
@@ -404,6 +447,8 @@
     "newProject": "새 프로젝트",
     "openExistingProject": "기존 프로젝트 열기",
     "allProjects": "모든 프로젝트",
+    "scrollTabsStart": "탭을 처음으로 스크롤",
+    "scrollTabsEnd": "탭을 끝으로 스크롤",
     "active": "활성",
     "tasksWord": "작업",
     "criticalWord": "임계",
@@ -415,19 +460,45 @@
   "feedback": {
     "buttonTooltip": "피드백 보내기",
     "title": "피드백 보내기",
-    "typeBug": "버그",
-    "typeFeature": "기능 요청",
+    "typeBug": "작동하지 않음",
+    "typeFeature": "아이디어",
+    "typeGeneral": "질문 또는 의견",
     "fieldTitle": "제목",
+    "titlePlaceholder": "예: 저장 후 주공정 경로가 달라짐",
     "fieldDescription": "설명",
+    "descriptionPlaceholder": "무엇을 했고, 무엇을 예상했으며, 무슨 일이 일어났습니까?",
     "attachScreenshot": "스크린샷 첨부",
+    "screenshotPreview": "스크린샷 미리 보기",
+    "retake": "다시 찍기",
+    "removeScreenshot": "제거",
     "capturing": "스크린샷 캡처 중…",
     "captureFailed": "스크린샷 캡처에 실패했습니다. 스크린샷 없이도 피드백을 보낼 수 있습니다.",
-    "submit": "GitHub로 보내기",
+    "submit": "보내기",
+    "sending": "보내는 중…",
+    "fieldEmail": "이메일 주소 (선택 사항, 답변용)",
+    "emailInvalid": "이메일 주소가 올바르지 않습니다. 수정하거나 칸을 비워 두세요.",
+    "titleRequired": "제목을 입력하세요.",
+    "tooShort": "제목과 설명을 합쳐 10자 이상 입력하세요.",
+    "privacy": "메시지와 스크린샷은 OpenAEC의 Open Feedback Studio로 전송되며, GitHub에 공개 이슈로 올라갈 수 있습니다. 공유하고 싶지 않은 내용은 넣지 마세요.",
+    "sentWith": "함께 보낸 정보: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "감사합니다. 메시지를 보냈습니다.",
+    "alreadyIn": "이 메시지는 이미 접수되었습니다. 추가하고 싶은 내용이 있으면 텍스트를 바꾼 뒤 다시 보내세요.",
+    "sentScreenshotDropped": "스크린샷이 너무 커서 함께 보내지 않았습니다.",
+    "viewOnGithub": "GitHub에서 보기",
+    "errorValidation": "메시지를 접수하지 못했습니다. 텍스트(링크만 있는 것이 아닌지)와 이메일 주소를 확인하고 다시 시도하세요.",
+    "errorRateLimited": "짧은 시간에 메시지를 많이 보냈습니다. 한 시간 뒤에 다시 시도하세요.",
+    "errorFailed": "보내지 못했습니다. 인터넷 연결을 확인하고 다시 시도하거나, GitHub에서 메시지를 여세요.",
+    "errorUncertain": "메시지가 도착했는지 확실하지 않습니다. 1분 정도 기다렸다가 다시 보내세요. 이미 도착했다면 시스템이 자동으로 알아봅니다.",
+    "fallbackGithub": "GitHub에서 열기",
     "cancel": "취소",
+    "clearDraft": "비우기",
+    "clearDraftTitle": "모든 칸과 스크린샷 지우기",
     "close": "닫기",
+    "saveAndClose": "저장하고 닫기",
     "tools": {
       "arrow": "화살표",
       "rectangle": "사각형",
+      "mask": "가리기",
       "pen": "펜",
       "text": "텍스트",
       "color": "색상",
@@ -444,6 +515,7 @@
     "openGithub": "OK, GitHub로 이동",
     "annotate": "주석 달기",
     "editorDone": "완료",
+    "annotationSaveFailed": "편집 내용을 저장할 수 없습니다. 다시 시도하세요. 스크린샷은 변경되지 않았으며 이 편집기에서는 전송되지 않습니다.",
     "rotateFeedback": "피드백 보내기",
     "rotateBug": "버그 신고",
     "rotateFeature": "새 기능 제안"
@@ -706,7 +778,7 @@
       "projectEndUnchanged": "프로젝트 종료일: 변경 없음 ({{date}})",
       "projectEndChanged": "프로젝트 종료일: {{before}} → {{after}}",
       "remainingConflicts": "남은 충돌",
-      "remainingConflictsHint": "이 작업들은 여유 내에 맞지 않습니다 — 대개 자원이 해당 일자에 근무하지 않거나 용량이 부족하기 때문입니다.",
+      "remainingConflictsHint": "이 작업들의 리소스 충돌이 남아 있습니다. 아래 세부 정보를 확인하세요.",
       "intrinsicOverrun": "{{resource}}은(는) 최대 {{peak}} 단위/일이 필요하지만 용량은 {{capacity}}입니다 — 이동으로는 해결할 수 없습니다.",
       "noChanges": "이동해야 할 작업이 없습니다 — 일정이 이미 충돌 없는 상태입니다.",
       "notCalculated": "평준화 제안을 만들려면 계산을 클릭하세요.",
@@ -784,7 +856,7 @@
       "cancel": "취소"
     },
     "regen": {
-      "hint": "공휴일은 {{from}}–{{to}}를 포함합니다. 프로젝트는 {{year}}까지 진행됩니다. 다시 생성할까요?",
+      "hint": "공휴일은 {{from}}–{{to}} 기간을 포함합니다. {{year}}까지 다시 생성할까요?",
       "button": "다시 생성"
     },
     "countryName": {
@@ -819,7 +891,7 @@
       "decreaseBreakDuration": "휴식 시간을 15분 줄이기",
       "start": "휴식 시작",
       "duration": "휴식 시간(분)",
-      "hint": "근무 시간대가 자동으로 계산됩니다. 0분은 연속 근무일입니다.",
+      "hint": "휴식 시작 시각과 기간을 설정하세요. 기본 근무일과 근무 구간은 자동으로 계산됩니다. 연속 근무일이면 기간을 0으로 설정하세요.",
       "errors": {
         "invalidDuration": "휴식 시간은 0 이상의 정수 분이어야 합니다.",
         "outsideWorkingDay": "휴식은 설정된 근무일 안에 모두 있어야 합니다.",
@@ -843,9 +915,13 @@
       "copyToAll": "모든 근무일에 복사",
       "noBands": "비근무",
       "nextDay": "다음 날",
+      "bandStart": "구간 시작",
+      "bandEnd": "구간 끝",
       "shiftPreset": "교대",
       "breakHint": "두 구간 사이의 간격은 휴식 시간입니다. 필요에 따라 시간을 조정하세요."
-    }
+    },
+    "defaultConstructionName": "건설 달력 NL",
+    "defaultStandardName": "표준 달력"
   },
   "view": {
     "structureLockedHint": "필터링/그룹화/정렬 중에는 사용할 수 없습니다",
@@ -1077,7 +1153,7 @@
     "warnPast": "새 시작일이 과거입니다.",
     "noTasks": "이 프로젝트에는 아직 작업이 없습니다. 프로젝트 날짜만 이동합니다.",
     "invalidDate": "유효한 날짜를 선택하세요.",
-    "invalidCurrentStart": "프로젝트에 유효한 시작일이 없습니다. 먼저 프로젝트 정보에서 설정하세요.",
+    "invalidCurrentStart": "프로젝트 시작일이 유효하지 않습니다. 먼저 프로젝트 정보에서 설정하세요.",
     "apply": "이동",
     "calcError": "일정을 계산할 수 없습니다: {{error}}"
   },
@@ -1153,7 +1229,7 @@
   "progressImport": {
     "title": "시트에서 진행률 업데이트",
     "chooseFile": "파일 선택…",
-    "intro": "반송된 CSV 시트를 선택하세요. 앱은 완료율, 실제 시작일, 실제 종료일만 읽습니다 — 나머지 일정은 변경되지 않습니다.",
+    "intro": "반송된 CSV 또는 XLSX 시트를 선택하세요. 앱은 완료율, 실제 시작, 실제 완료만 읽습니다. 나머지 일정은 변경되지 않습니다.",
     "summaryApplied": "적용됨: {{applied}}",
     "summaryNoop": "변경 없음: {{noop}}",
     "summaryNeedsLink": "연결 대기 중: {{needsLink}}",
@@ -1227,11 +1303,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "완료 마일스톤을 경계 창으로 처리",
-      "help": "완료 마일스톤은 인접한 두 달력 경계에 놓일 수 있습니다. 빠른 시작은 구간의 시작, 조기 완료는 이전 구간의 끝입니다."
+      "help": "완료 마일스톤은 인접한 두 달력 경계에 놓일 수 있습니다. 빠른 시작은 구간의 시작, 빠른 완료는 이전 구간의 끝입니다."
     },
     "p6PreserveActualInstants": {
       "label": "실적 날짜를 정확히 유지",
-      "help": "기록된 실적 시작 및 완료 날짜는 근무 시간 구간으로 이동되지 않습니다."
+      "help": "기록된 실제 날짜(실제 시작과 실제 완료)는 근무 구간의 가장자리로 옮겨지지 않습니다."
     },
     "p6UseRemainingStartForProgress": {
       "label": "진행 중 작업: 빠른 시작 = 남은 작업의 시작",
@@ -1239,7 +1315,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "마일스톤의 제약 시점을 정확히",
-      "help": "기간이 0인 마일스톤의 날짜·시간 제약은 작업 구간의 시작에서도 정확한 시점입니다."
+      "help": "기간이 0인 마일스톤의 날짜·시간 제약 조건은 구간의 시작에서도 정확한 시점입니다."
     },
     "resumeFromActualElapsed": {
       "label": "남은 작업은 경과 기간 후에 재개",
@@ -1251,23 +1327,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "후속 작업은 완료 경계에서 시작",
-      "help": "공유 구간 경계에서 지연 없는 완료-시작 관계의 경우 후속 작업은 선행 작업의 완료 시점에 시작합니다(파일이 그렇게 표시한 관계만). 역산 시 후속 작업은 최종 시작을 단순히 작업 구간의 시작으로 표시합니다."
+      "help": "완료-시작 관계에 지연이 없고, 파일에서 후속 작업이 선행 작업의 완료 시점에 정확히 시작하며 그것이 근무 구간의 끝인 경우, 후속 작업은 다음 구간의 시작이 아니라 그 완료 시점에 시작합니다. 파일은 이를 표시하지 않습니다. 앱이 .xer 파일을 열 때 이런 관계를 스스로 인식합니다. 직접 추가한 관계는 여기에 해당하지 않습니다. 역산할 때 후속 작업은 늦은 시작을 구간의 시작으로 표시합니다."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "완료 경계에서 역방향 지연",
-      "help": "역방향 계산이 완료 경계에서 근무 시간 지연을 빼서 정확히 구간 시작에 닿으면 이전 완료 경계에 놓입니다. 지연 없는 완료-완료 관계에서도 구간 끝에 있는 늦은 완료는 그 완료 경계에 머뭅니다."
+      "help": "역방향 계산이 완료 경계에서 근무 시간 지연을 빼고 정확히 구간의 시작에 닿으면, 결과는 이전 완료 경계에 놓입니다. 지연 없는 완료-완료 관계에서도 구간 끝에 있는 늦은 완료는 그 완료 경계에 머뭅니다."
     },
     "p6CompletedDataDateWindow": {
       "label": "상태 날짜 창 안의 완료 작업",
-      "help": "완료된 작업은 상태 날짜 창 안에서 조기 날짜를 받으며, 그 완료는 프로젝트 완료에 포함됩니다(P6 출처 작업만)."
+      "help": "완료된 작업은 상태 날짜 창 안에서 빠른 날짜를 받으며, 그 완료는 프로젝트 종료일에 포함됩니다."
     },
     "p6CompletedLoeActualFinish": {
       "label": "실적 완료를 통한 완료 LOE",
-      "help": "시작-시작 입력만 있는 완료된 LOE(level-of-effort) 활동은 실적 완료를 거치는 경로를 따릅니다(P6 출처 작업만)."
+      "help": "시작-시작 입력만 있는 완료된 LOE(level-of-effort) 작업은 실제 완료를 거치는 경로를 따릅니다."
     },
     "p6OpenLoeTargetSpan": {
       "label": "시작되지 않은 LOE는 목표 창을 사용",
-      "help": "아직 시작되지 않은 LOE(level-of-effort) 활동은 목표 창을 기간으로 사용합니다(P6 출처 작업만)."
+      "help": "아직 시작되지 않은 LOE(level-of-effort) 작업은 목표 창을 기간으로 사용합니다."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "완료된 선행 작업은 상태 날짜 이후로 붙잡지 않음",
@@ -1283,7 +1359,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "순서 밖에서 완료된 작업은 선행 작업을 기다림",
-      "help": "선행 작업이 아직 끝나지 않은 완료 작업은 영(0) 구간을 상태 날짜가 아니라 그 선행 작업 뒤에 둡니다(Retained Logic)."
+      "help": "선행 작업이 아직 끝나지 않은 완료 작업은 영(0) 창을 상태 날짜가 아니라 그 선행 작업 뒤에 둡니다(Retained Logic). ‘상태 날짜 창 안의 완료 작업’과 ‘진행 중 작업: 빠른 시작 = 남은 작업의 시작’도 켜져 있을 때만 작동합니다."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "물리적 진척 완료 작업은 데이터 날짜에 놓임",
@@ -1311,11 +1387,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "빠른 완료는 완료-완료 경계보다 앞서지 않음",
-      "help": "완료-완료 관계에서 후속 작업의 빠른 완료는 시계 시간으로 선행 작업이 정한 경계보다 앞서지 않습니다. 그 경계가 후속 작업의 비근무 시간에 해당하면, 종료는 다음 근무 시간대의 시작이 됩니다."
+      "help": "완료-완료 관계에서 후속 작업의 빠른 완료는 시계 시간으로 선행 작업이 정한 경계보다 앞서지 않습니다. 그 경계가 후속 작업의 비근무 시간에 놓이면, 완료는 다음 근무 기간의 시작이 됩니다."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "ALAP 작업을 후속 작업이 허용하는 만큼 늦게",
-      "help": "'가능한 한 늦게' 제약이 있는 시작되지 않은 작업은 후속 작업이 필요로 하는 분 단위 시점에 끝납니다. 후속 작업을 먼저 계산하므로 체인이 빈틈없이 이어집니다. 자체 계획 시작은 고려하지 않으며, 선행 작업이 없는 작업은 상태 날짜보다 먼저 시작하지 않습니다. 시간 단위 달력에만 적용됩니다."
+      "help": "‘가능한 한 늦게’ 제약 조건이 있는 아직 시작되지 않은 작업은 후속 작업이 필요로 하는 분 단위 시점에 끝납니다. 후속 작업을 먼저 계산하므로 체인이 빈틈없이 이어집니다. 자체 계획 시작은 고려하지 않으며, 선행 작업이 없는 작업은 상태 날짜보다 먼저 시작하지 않습니다."
     }
   },
   "profiles": {
@@ -1330,13 +1406,22 @@
   "schedulingProfile": {
     "title": "계산 프로필 및 옵션",
     "profile": "계산 프로필",
+    "newProfile": "새 프로필",
+    "newProfileTitle": "새 계산 프로필",
+    "newProfileIntro": "새 프로필은 “{{name}}”의 모든 규칙을 가져오며, 차이점도 포함됩니다. 그다음 각 규칙을 직접 켜거나 끌 수 있습니다. 적용을 눌러야 프로젝트가 새 프로필로 계산합니다.",
+    "newProfileName": "새 프로필 이름",
+    "newProfileCreate": "만들기",
+    "bareBaseHint": "“{{name}}”은(는) 차이점이 없는 기본 프로필입니다. 이 프로젝트의 차이점은 포함되지 않습니다. 차이점을 유지하려면 “{{modified}}”을(를) 선택하세요.",
     "conventionsTitle": "이 프로필의 규칙",
+    "builtInReadOnly": "{{name}}은(는) 내장 프로필입니다. 규칙은 참고용으로 표시되며 변경할 수 없습니다. 다른 규칙이 필요하면 {{button}}을(를) 선택하세요.",
+    "builtInDeviations": "이 프로젝트는 이전 버전 파일에서 왔습니다. 주황색 규칙은 {{name}}의 기본값과 다르며, 표시된 대로 계산에 사용됩니다. 변경하려면 {{button}}을(를) 선택하세요.",
     "optionsTitle": "이 프로젝트의 계산 옵션",
     "customName": "이 사용자 지정 프로필의 이름",
     "saveAsTemplate": "템플릿으로 저장",
     "updateTemplate": "이 프로젝트로 템플릿 업데이트",
     "applyTemplate": "템플릿에서 업데이트",
     "deleteTemplate": "템플릿 삭제",
+    "deleteTemplateConfirm": "템플릿 “{{name}}”을(를) 삭제하시겠습니까? 이 프로필을 사용하는 프로젝트는 각자의 복사본을 유지합니다.",
     "templateDeviates": "이 프로필은 템플릿 “{{name}}”과(와) 다릅니다.",
     "themes": {
       "completedWork": "진행 및 완료된 작업",
@@ -1347,12 +1432,13 @@
       "msproject": "Microsoft Project 방식의 진행",
       "ownProfilesOnly": "사용자 프로필 전용"
     },
-    "ownProfilesOnlyNote": "이 규칙은 Primavera P6를 포함한 모든 기본 제공 프로필에서 꺼져 있습니다. 하나를 켜면 사용자 프로필이 됩니다.",
+    "ownProfilesOnlyNote": "이 규칙은 모든 기본 제공 프로필에서 꺼져 있습니다. 여기에는 Primavera P6 프로필도 포함됩니다. 켜려면 사용자 프로필만 가능하므로 ‘새 프로필’을 선택하세요.",
     "deviatingCount": "변경됨: {{n}}",
     "baseValue": "기준: {{value}}",
     "on": "켬",
     "off": "끔",
     "resetToBase": "기준으로 되돌리기",
+    "storeChangedUnderDraft": "프로젝트의 계산 프로필이 그 사이에 바뀌었습니다(예: 실행 취소로). 아래에는 아직 선택한 내용이 남아 있습니다. {{apply}}을(를) 누르면 그 선택이 프로젝트에 다시 적용됩니다.",
     "showHelp": "“{{name}}” 설명",
     "sourceOptions": {
       "title": "원본 파일의 설정",
@@ -1361,6 +1447,21 @@
       "useProjectEndDateForFloat": "프로젝트 완료일까지 여유 계산",
       "p6CompletedLateFromRemainingWindow": "완료된 작업: 데이터 날짜부터 늦은 날짜",
       "needsConvention": "현재 꺼져 있는 규칙 “{{convention}}”과 함께일 때만 작동합니다."
+    },
+    "requires": {
+      "xerOrigin": ".xer 작업만",
+      "hourPlanning": "시간 단위 계획에서만",
+      "hourPlanningTitle": "시간 단위 계획에서만 작동합니다: 근무 구간이 있는 달력, 시간 단위 작업, 또는 24시간제 지연 달력."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (기본값: {{standard}})",
+      "intro": "이 계산 옵션은 {{name}}의 기본값과 다릅니다. 열린 파일에서 왔기 때문에 의도된 경우가 많습니다.",
+      "introNeutral": "이 계산 옵션은 {{name}}의 기본값과 다릅니다. 의도적으로 바꾼 설정일 수 있습니다.",
+      "useDefaults": "{{name}}의 기본 설정 사용",
+      "totalFloatAtMost": "총 여유 ≤ {{amount}}",
+      "hours_other": "{{count}}시간",
+      "days_other": "{{count}}근무일",
+      "tfAuto": "자동"
     }
   },
   "dialogHelp": {
@@ -1418,5 +1519,66 @@
     "saveHint": "프로젝트가 사이트에 새 IFC 파일로 저장됩니다. 이후 저장(Ctrl+S)을 누르면 그곳에 새 버전이 저장됩니다.",
     "saveToSite": "사이트에 저장",
     "toThisPc": "이 PC에…"
+  },
+  "formatNotice": {
+    "title": "{{format}} 열림",
+    "readMore": "더 읽기",
+    "dontShowAgain": "{{format}}에 대해 다시 표시하지 않음",
+    "close": "확인",
+    "settingsSection": "열 때 설명 표시",
+    "formats": {
+      "xer": {
+        "name": "Primavera 파일 (.xer)",
+        "kept": "앱은 WBS와 작업을 관계, 달력, 리소스, 진행률, 활동 코드, 사용자 지정 필드와 함께 가져왔습니다. 기준선 프로젝트는 그것을 참조하는 프로젝트의 기준선이 됩니다.",
+        "limited": "두 프로젝트 사이의 관계는 일정의 관계로 바뀌지 않습니다. 계산 결과가 다르면 먼저 Primavera가 저장한 날짜가 표시됩니다.",
+        "save": "저장하면 원래 .xer 파일을 포함한 새 IFC 파일이 기록됩니다. .xer 파일로 되돌려 쓸 수는 없습니다. .xer 파일은 바뀌지 않습니다."
+      },
+      "mpp": {
+        "name": "MS Project 파일 (.mpp)",
+        "kept": "앱은 구조, 기간, 제약 조건이 있는 작업을 관계, 달력, 리소스, 할당, 진행률과 함께 가져왔습니다.",
+        "limited": "기준선, 비용과 단가, 메모와 MS Project의 사용자 지정 필드는 포함되지 않습니다. 계산 결과가 다르면 먼저 MS Project가 저장한 날짜가 표시됩니다.",
+        "save": "저장하면 새 IFC 파일이 만들어집니다. .mpp 파일은 바뀌지 않습니다. .mpp 파일로 되돌려 쓸 수는 없습니다. MS Project XML로 내보내기는 가능합니다."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "앱은 구조가 있는 작업을 관계, 제약 조건, 달력, 리소스, 할당, 진행률, 상태 날짜 및 기준선 0과 함께 가져왔습니다.",
+        "limited": "메모, 활동 코드, 사용자 지정 필드는 포함되지 않습니다. 이 프로젝트는 Microsoft Project가 아닌 Open Planner Studio 프로필로 계산합니다.",
+        "save": "저장하면 새 IFC 파일이 만들어집니다. XML 파일은 바뀌지 않습니다. 다시 기록하려면 내보내기 › MS Project XML을 사용하세요."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "앱은 WBS와 작업을 가져왔습니다. 관계, 제약 조건, 달력, 리소스, 할당, 진행률, 상태 날짜도 함께 가져왔습니다. 기준선 프로젝트는 속한 프로젝트의 기준선이 됩니다.",
+        "limited": "기한, 활동 코드, 사용자 지정 필드, 메모는 포함되지 않습니다. 이 프로젝트는 Open Planner Studio 프로필로 계산하며, Primavera P6 프로필로는 계산하지 않습니다.",
+        "save": "저장하면 새 IFC 파일이 만들어집니다. XML 파일은 바뀌지 않습니다. 다시 기록하려면 내보내기 › Primavera P6 XML을 사용하세요."
+      },
+      "csv": {
+        "name": "CSV 파일",
+        "kept": "앱은 한 행을 작업 하나로 읽었습니다: 이름, WBS 코드, 기간, 날짜, 선행 작업, 진행률.",
+        "limited": "CSV에는 리소스, 달력, 제약 조건, 기한, 기준선이 들어 있지 않습니다. 프로젝트 이름은 CSV Import입니다.",
+        "save": "저장하면 새 IFC 파일이 만들어집니다. CSV 파일은 바뀌지 않습니다. 다시 기록하려면 내보내기 › CSV (세미콜론 구분)을 사용하세요."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "어떤 IFC 스키마로 저장하시겠습니까?",
+    "body": "이 파일은 {{schema}}로 저장되어 있습니다. 앱은 기본적으로 IfcOpenShell과 Bonsai의 스키마인 IFC 4.3 ADD2로 저장합니다. 이 파일을 {{schema}}로 유지하시겠습니까? 나중에 프로젝트 정보에서 바꿀 수 있습니다.",
+    "bodyUnwritable": "이 파일은 {{schema}}로 저장되어 있습니다. 앱은 이 스키마로 기록할 수 없습니다. 앱이 저장할 스키마를 선택하세요. 나중에 프로젝트 정보에서 바꿀 수 있습니다.",
+    "keep": "{{schema}} 유지",
+    "toDefault": "IFC 4.3 ADD2로 저장"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "작업이 요약 작업이 됩니다",
+    "intro_other": "'{{phase}}'에 하위 작업 {{count}}개가 생기고 요약 작업이 됩니다.",
+    "introMany_other": "이 작업으로 {{count}}개 작업이 요약 작업이 됩니다.",
+    "noOwnAssignments": "요약 작업에는 자체 할당이 없습니다.",
+    "question_other": "{{resources}}의 할당을 어떻게 하시겠습니까?",
+    "questionMany": "이 할당들을 어떻게 하시겠습니까?",
+    "row": "'{{phase}}': {{resources}}",
+    "remove_other": "할당 삭제",
+    "moveTo": "'{{child}}'(으)로 이동",
+    "moveToSubtasks": "하위 작업으로 이동",
+    "blockedDuplicate": "이동할 수 없습니다: '{{child}}'에 {{resources}} 할당이 이미 있습니다.",
+    "blockedNoChild": "이동할 수 없습니다: '{{phase}}'에는 할당을 담을 수 있는 하위 작업이 생기지 않습니다. 마일스톤이나 요약 작업만 가능합니다.",
+    "actualWorkLost_other": "{{resource}}의 할당에는 이미 실제 작업 {{hours}}시간이 기록되어 있습니다. 삭제하면 그 실제 작업이 사라집니다."
   }
 }

@@ -1141,7 +1141,7 @@ export function ReportPanel() {
         console.warn('[ReportPanel] Vector-PDF-export mislukt, terugval op raster:', describeVectorFallback(err));
         pdfBytes = exportRaster();
       }
-      await writePdf(pdfBytes, `${fileBase}-${reportType === 'resourceGantt' ? 'resourcediagram' : 'planning'}.pdf`);
+      await writePdf(pdfBytes, `${fileBase}-${reportType === 'resourceGantt' ? t('fileSuffix.resourceGantt') : t('fileSuffix.gantt')}.pdf`);
       return;
     }
 
@@ -1150,7 +1150,7 @@ export function ReportPanel() {
     // gepagineerd door dezelfde paginateVectorToPdfBytes als de Gantt-tak hierboven. Bij een fout
     // valt de export terug op het BESTAANDE DOM-screenshot-pad (modern-screenshot), zodat de export
     // nooit stukloopt.
-    const suffix = tableSpec ? tableSpec.fileSuffix : reportType === 'milestones' ? 'mijlpalen' : 'afwijkingen';
+    const suffix = tableSpec ? tableSpec.fileSuffix : reportType === 'milestones' ? t('fileSuffix.milestones') : t('fileSuffix.variance');
 
     const exportTableRaster = async (): Promise<Uint8Array> => {
       const node = tableSpec ? tableReportRef.current : reportType === 'milestones' ? milestoneRef.current : varianceRef.current;
@@ -1673,10 +1673,15 @@ export function ReportPanel() {
           />
         )}
 
-        {/* Action buttons — alle rapporttypes exporteren naar PDF. */}
-        <div className="flex flex-col gap-2">
+        {/* Alleen de exportknoppen horen bij dit formulier: Enter in rapportinvoer exporteert niet.
+            Rapport › Afdruk dient hetzelfde formulier in, met de actuele paneelstate. */}
+        <form
+          id="report-pdf-export"
+          className="flex flex-col gap-2"
+          onSubmit={e => { e.preventDefault(); handleExportPDF(); }}
+        >
           <button
-            onClick={handleExportPDF}
+            type="submit"
             className="px-4 py-2 bg-accent text-accent-on rounded-lg hover:bg-accent-hover text-small leading-4 font-medium"
             style={{ boxShadow: 'var(--shadow-glow)' }}
           >
@@ -1687,7 +1692,7 @@ export function ReportPanel() {
               {scheduleErrorText(exportError, tCommon)}
             </div>
           )}
-        </div>
+        </form>
       </div>
 
       {/* Right: Live preview */}

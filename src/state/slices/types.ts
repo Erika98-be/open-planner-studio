@@ -36,6 +36,7 @@ import type { McpServerStatus } from '@/services/mcp/contracts';
 import type { SiteOpenRequest, SiteSaveRequest } from '@/services/fileAccess/siteDialogs';
 import type { IfcSchemaQuestion } from '@/services/ifc/ifcSchemaQuestion';
 import type { FormatNoticeKind } from '@/services/formatNoticeKinds';
+import type { FeedbackDraft } from '@/services/feedback/feedbackDraft';
 export type { McpServerStatus };
 
 export type WeekStartDay = 'monday' | 'sunday';
@@ -177,10 +178,13 @@ export type NotificationSeverity = 'error' | 'info';
  * een unie over twee namespaces typecheckt niet, zelf nagemeten). Daarom staat de
  * tak-als-sjabloon-melding hier als `notifications.templateSaved` en niet als
  * `task:structure.templateSaved` — dezelfde vertaalde tekst, in de namespace die het kanaal kan
- * typeren. Een nieuwe melding zet zijn sleutel hier én in alle veertien `common.json`-bestanden.
+ * typeren. Een nieuwe melding zet zijn sleutel in deze unie én in de `common.json`-bronnen voor `nl` en `en`.
+ * `i18n:add` beheert de bronhashes in `i18n/ui-sources/`; de vertaalstraat vult de overige talen aan.
+ * Een release vereist volledige, actuele UI-vertalingen in alle 28 talen (`verify:translations`).
  */
 export type NotificationMessageKey =
   | 'notifications.openFailed'
+  | 'notifications.csvInvalidDate'
   | 'notifications.extGuideCallbackFailed'
   | 'notifications.extHelpProjectOpenFailed'
   // Een extensie-importer (Backstage → Importeren) gooide een fout. Parameter `name` (de naam van de
@@ -189,7 +193,12 @@ export type NotificationMessageKey =
   // `api.ui.showNotification` van een extensie — zie `src/extensions/extensionNotifications.ts`.
   // Parameters `name` (extensienaam) en `message` (onvertaalde extensietekst, als platte tekst).
   | 'notifications.extensionMessage'
+  | 'notifications.extensionInstallFailed'
   | 'notifications.saveFailed'
+  // Inzet/werk (blok Toewijzingen): "1,500" in en of "1.500" in nl is dubbelzinnig (1500 of 1,5)
+  // en wordt geweigerd. Parameters `text` (de getypte invoer) en `separator` (decimaalteken van de
+  // taal; de vertaling toont het voorbeeld als 1{{separator}}5).
+  | 'notifications.ambiguousThousands'
   // Opslag via de site (issue #309): de site weigerde omdat het bestand intussen verder is
   // (`code === 'conflict'`). Parameter `name`. Het document blijft gewijzigd.
   | 'notifications.siteSaveConflict'
@@ -200,6 +209,8 @@ export type NotificationMessageKey =
   | 'notifications.browserCannotOverwrite'
   | 'notifications.browserSavesAsDownload'
   | 'notifications.autoSaveFailed'
+  | 'notifications.recoveryManifestBlocked'
+  | 'notifications.recoveryStorageBlocked'
   | 'notifications.recoveryReadFailed'
   | 'notifications.recoveryRestoreFailed'
   // Recovery-robuustheid (corrupt herstelbestand): `restoreDocuments` slaat een
@@ -230,12 +241,16 @@ export type NotificationMessageKey =
   // wordt mijlpaal ⇒ weigeren; wordt fase ⇒ toewijzingen naar de eerste nieuwe subtaak, of weigeren
   // als dat niet schoon kan; een mijlpaal die kinderen krijgt verliest zijn mijlpaalvlag.
   | 'notifications.milestoneRefusedAssignments'
+  | 'notifications.milestoneRefusedAssignmentsMany'
   | 'notifications.milestoneRefusedSummary'
+  | 'notifications.milestoneRefusedSummaryMany'
   | 'notifications.assignmentsMovedToSubtask'
   | 'notifications.assignmentsMovedToSubtasks'
   | 'notifications.milestoneClearedOnPhase'
+  | 'notifications.milestoneClearedOnPhaseMany'
   | 'notifications.phaseRefusedNoAssignableChild'
   | 'notifications.phaseRefusedDuplicateResource'
+  | 'notifications.phaseQuestionOutdated'
   | 'notifications.mppLegacy'
   | 'notifications.mppEncrypted'
   | 'notifications.xerInvalidInput'
@@ -279,6 +294,23 @@ export type NotificationMessageKey =
   | 'notifications.p6xmlImportOpened'
   | 'notifications.p6xmlImportCrossProjectRelations'
   | 'notifications.p6xmlImportUnassignedActivities'
+  // MS Project (MSPDI `.xml` en `.mpp`): wat de lezer niet overnam (`msProjectImportNotice`, issue #391).
+  | 'notifications.msProjectImportLoss'
+  | 'notifications.msProjectLostBaselines'
+  | 'notifications.msProjectLostExtraBaselines'
+  | 'notifications.msProjectLostBaselineWorkCost'
+  | 'notifications.msProjectLostAssignmentBaselineDates'
+  | 'notifications.msProjectLostCustomFields'
+  | 'notifications.msProjectLostNotes'
+  | 'notifications.msProjectLostHyperlinks'
+  | 'notifications.msProjectLostFixedCosts'
+  | 'notifications.msProjectLostResourceRates'
+  | 'notifications.msProjectLostSubprojects'
+  | 'notifications.msProjectLostExternalTasks'
+  | 'notifications.msProjectLostManualTasks'
+  | 'notifications.msProjectLostLevelingDelays'
+  | 'notifications.msProjectLostInactiveTasks'
+  | 'notifications.msProjectLostCriticalSlack'
   // Dezelfde regel, formaatneutraal,
   // voor P6 XML/MSPDI/.mpp/CSV/IFC — één melding per geopend bestand (`applyOpenedImport`).
   | 'notifications.importDatesAsRecorded'
@@ -474,6 +506,34 @@ export interface ActualStartQuestionRequest {
   items: ActualStartQuestionItem[];
 }
 
+/** Eén taak die door de handeling een fase wordt en toewijzingen draagt (`structuralTransition.ts`,
+ *  `phaseAssignmentQuestion`). Namen zijn vooraf opgezocht: de vraag toont ze zoals ze nu zijn. */
+export interface PhaseAssignmentQuestionItem {
+  phaseId: string;
+  phaseName: string;
+  /** Aantal nieuwe subtaken, en de naam van de eerste (voor "krijgt de subtaak '…'"). */
+  childCount: number;
+  firstChildName: string;
+  /** De eerste nieuwe subtaak die toewijzingen mag dragen; `null` ⇒ er is er geen. */
+  targetId: string | null;
+  targetName: string | null;
+  /** De resources van de toewijzingen van de fase, in volgorde. */
+  resourceNames: string[];
+  /** Toewijzingen met verricht werk (actuals), die Verwijderen zou weggooien (eigenaarsbesluit
+   *  2026-10-17: het venster noemt ze en zet de focus op Annuleren). */
+  actualWork: { resourceName: string; minutes: number }[];
+  /** Waarom verplaatsen niet kan; `null` ⇒ het kan. */
+  blocked:
+    | null
+    | { kind: 'noAssignableChild' }
+    | { kind: 'duplicateResource'; resourceNames: string[] };
+}
+
+/** De vraag "Taak wordt een samenvattingstaak" (eigenaarsbesluit 2026-10-17): één vraag voor de hele handeling. */
+export interface PhaseAssignmentQuestion {
+  items: PhaseAssignmentQuestionItem[];
+}
+
 export interface UIState {
   showTaskDialog: boolean;
   editingTaskId: string | null;
@@ -534,6 +594,13 @@ export interface UIState {
   /** Een pas gemaakte taak krijgt éénmalig de naamfocus in het eigenschappenpaneel. */
   pendingTaskNameFocusId: string | null;
   showFeedbackDialog: boolean;              // session — feedback-dialoog open
+  /** persisted (`ops-feedbackEmail`) — het optionele e-mailadres uit de feedbackdialoog, onthouden na
+   *  een geslaagde melding. Geen paneelinstelling: het hoort bij het formulier zelf. */
+  feedbackEmail: string;
+  /** Session — het bewaarde feedbackconcept (soort, tekst, e-mail, screenshot + annotaties). Blijft
+   *  staan na Esc/Annuleren/sluiten; leeg na een geslaagde verzending of *Leegmaken*. Bewust niet in
+   *  het document en niet in localStorage. */
+  feedbackDraft: FeedbackDraft | null;
   showStructureDialog: boolean;             // session — codes & velden-beheer open
   traceMode: TraceMode;                     // session — path tracing rond de geselecteerde taak
   showResourcePanel: boolean;               // session — resource-beheerpaneel (full-panel) open
@@ -647,6 +714,10 @@ export interface UIState {
    *  `state/actualStartQuestion.ts` (een promise-resolver hoort niet in state thuis, zoals bij
    *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */
   pendingActualStartQuestion: ActualStartQuestionRequest | null;
+  /** session — de openstaande vraag "Taak wordt een samenvattingstaak" (`PhaseAssignmentDialog`), of `null`.
+   *  Draagt alleen de VRAAG; de handeling die op het antwoord wacht staat in de taakslice
+   *  (`answerPhaseAssignmentQuestion`), niet in state. Modaal: telt mee in `hasBlockingDialogOpen`. */
+  pendingPhaseAssignmentQuestion: PhaseAssignmentQuestion | null;
   /** session — de openstaande vraag "Openen van de site" (issue #309), of `null`. Draagt alleen de
    *  VRAAG; het antwoord gaat via de resolver in `state/siteDialogBridge.ts` (zoals bij
    *  `pendingExtensionConsent`). Modaal: telt mee in `hasBlockingDialogOpen`. */
@@ -759,8 +830,9 @@ export interface UIState {
    *  `pendingHelpArticleId`. */
   pendingExtensionsTab: 'browse' | null;
   /** session — eenmalig verzoek om in Backstage → Help een sectie van de inhoudsopgave in beeld te
-   *  brengen (de tutorialvraag valt terug op Help › Tutorials). Geconsumeerd (en direct weer op
-   *  `null` gezet) door `HelpPanel` — zelfde eenmalig-verzoek-patroon als `pendingHelpArticleId`. */
+   *  brengen (de tutorialvraag valt terug op Help › Tutorials). Blijft staan tijdens laden;
+   *  `HelpPanel` consumeert na de eerste artikellayout (ook bij een laadfout). Een andere
+   *  artikelkeuze of wegnavigeren uit Help annuleert het verzoek. */
   pendingHelpSection: 'tutorials' | null;
 }
 

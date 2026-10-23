@@ -35,13 +35,13 @@ Een taak zonder toewijzing heeft niets om te koppelen, dus het taaktype doet daa
 
 ### Het werk zien en aanpassen
 
-Bij een taak met toewijzingen verschijnt in het blok *Toewijzingen* van het paneel *Eigenschappen* een kolom *Werk (rest)*, naast *Eenh./dag*. Dat is het resterende werk van die resource in uren. Een slotje boven een kolom laat zien wat het taaktype vasthoudt: *Eenh./dag* bij *Vaste duur en inzet* en bij *Vaste inzet*, *Werk (rest)* bij *Vaste duur en werk* en bij *Vast werk*.
+Bij een taak met toewijzingen verschijnt in het blok *Toewijzingen* van het paneel *Eigenschappen* een kolom *Werk (u)*, naast *Inzet*. Dat is het resterende werk van die resource in uren. Een slotje boven een kolom laat zien wat het taaktype vasthoudt: *Inzet* bij *Vaste duur en inzet* en bij *Vaste inzet*, *Werk (u)* bij *Vaste duur en werk* en bij *Vast werk*.
 
 Wil je het werk zelf wijzigen, typ dan de uren in het veld en druk op Enter. Een waarde van 0 of lager neemt de app niet over: het veld springt terug naar de vorige waarde.
 
 ### Zien wat er gebeurt
 
-Kies je een taaktype, dan verandert er nog geen getal. Onder een taaktype dat werk beschermt, legt de app alleen het huidige werk vast, zodat *Werk (rest)* een opgeslagen waarde heeft. Pas bij de volgende wijziging beslist het taaktype wat meebeweegt. Wijzig bijvoorbeeld de *Eenh./dag* en kijk wat er met de duur en het werk gebeurt.
+Kies je een taaktype, dan verandert er nog geen getal. Onder een taaktype dat werk beschermt, legt de app alleen het huidige werk vast, zodat *Werk (u)* een opgeslagen waarde heeft. Pas bij de volgende wijziging beslist het taaktype wat meebeweegt. Wijzig bijvoorbeeld de *Inzet* en kijk wat er met de duur en het werk gebeurt.
 
 Verandert daardoor de duur van de taak, dan meldt de statusbalk *Verouderd — herbereken (F5)*. Druk op **Bereken** (F5), bijvoorbeeld via *Start › Planning › Bereken*, om de nieuwe datums te zien. Staat *Automatisch berekenen* aan (zelfde tabblad *Planning*, kopje *Berekenen*), dan doet de app dat zelf.
 
@@ -58,11 +58,11 @@ Verandert daardoor de duur van de taak, dan meldt de statusbalk *Verouderd — h
 
 **De duur verandert zonder dat ik hem wijzig.** Onder *Vast werk* en *Vaste inzet* volgt de duur uit inzet en werk. Wijzig je een van die twee of het aantal resources, dan past de app de duur aan, afgerond op hele werkdagen. Bij een taak in uren rondt de app af op hele minuten.
 
-**Het werk klopt niet precies met inzet × duur.** Door de afronding kan dat. Naast *Werk (rest)* staat dan een waarschuwingsteken, *Wijkt af van inzet × duur*. Het histogram volgt het opgeslagen werk.
+**Het werk klopt niet precies met inzet × duur.** Door de afronding kan dat. In het veld *Werk (u)* staat dan een waarschuwingsteken, *Wijkt af van inzet × duur*. Het histogram volgt het opgeslagen werk.
 
-**Materiaal telt niet mee.** Bij een materiaalresource staat in *Werk (rest)* een streepje. Materiaal stuurt de duur nooit.
+**Materiaal telt niet mee.** Bij een materiaalresource staat in *Werk (u)* een streepje. Materiaal stuurt de duur nooit.
 
-**Een taak met voortgang.** Het taaktype werkt op het resterende deel. *Werk (rest)* toont dus alleen wat nog moet gebeuren.
+**Een taak met voortgang.** Het taaktype werkt op het resterende deel. *Werk (u)* toont dus alleen wat nog moet gebeuren.
 
 **Terugdraaien.** Een taaktype kiezen en elke wijziging die het taaktype doorrekent, is één stap voor *Ongedaan* (Ctrl+Z). Het gekozen taaktype verdwijnt dan weer, maar het veld *Taaktype* blijft in beeld.
 

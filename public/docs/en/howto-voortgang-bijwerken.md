@@ -44,7 +44,7 @@ A milestone has one field, *Actual date*.
 2. Double-click a cell, type the value and press Enter. You type a percentage as `50` or `50%`, a date as `25-06-2027`, a remaining duration as `1`.
 3. For *Status*, after a double-click press Enter and choose *Not started*, *In progress* or *Completed*.
 
-If you type a remaining duration, the app works back to the percentage: for a task of 2 work days a remainder of 1 gives a percentage of 50. A remainder of 0 completes the task. If you choose *Not started* at *Status*, the percentage goes to 0 and the actual dates disappear.
+If you type a remaining duration, the app works back to the percentage: for a task of 2 work days a remainder of 1 gives a percentage of 50. A remainder of 0 completes the task. The *Actual duration* column (also in the category *Progress*) works the other way round: type how much work is already done and the app calculates the percentage. For a task of 4 work days, an actual duration of 1 gives 25%. If you choose *Not started* at *Status*, the percentage goes to 0 and the actual dates disappear.
 
 **Everything of one task in the Edit task window.** Right-click the task and choose *Edit...*. The progress fields are there too. They only apply once you click *Save*.
 
@@ -66,7 +66,7 @@ Every change to progress or the status date makes the schedule out of date: the 
 
 **A date after the status date.** The app refuses an actual start or an actual finish after the status date. In the panel it says under the fields *Actuals cannot be after the status date*; in the table the cell reports *The actual date lies after the status date.* First set the status date later, or correct the date.
 
-**A task that would only start after the status date.** If you enter progress for a task that according to the schedule would not have started yet, the window *Enter the actual start* opens. It asks when the task actually started; the suggestion is the status date. With *Apply progress* you record it, with *Cancel* nothing changes.
+**A task that would only start after the status date.** If you enter progress for a task that according to the schedule would not have started yet, the window *Enter the actual start* opens. It asks when the task actually started; the suggestion is the status date. With *Apply progress* you record it, with *Cancel* nothing changes. The **?** in the header opens this Help article without applying progress. Go back from Help to return to the same question with the date you entered. If the question came from *Edit task*, that draft is also kept and reappears behind the question when you return. Invalid date input and its error message are kept as well. While the question is waiting, you cannot open another project or close the current one from Help; answer or cancel the question first. Undo and Redo (in the title bar and through keyboard shortcuts) and the other background controls also wait until you answer or cancel the question.
 
 **100% without dates.** If you set a task to 100% without an actual finish, the actual finish becomes the status date, even if the task was finished earlier. Then fill in the actual finish yourself.
 

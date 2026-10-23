@@ -100,7 +100,7 @@ test('spookregel: na de naam op de duur van dezelfde regel klikken blijft in die
 });
 
 test('tabel: rechtsklik op lege ruimte → Nieuwe taak, naam meteen typen', async ({ page, ops: _ops }) => {
-  await seedProject(page, [
+  const [first] = await seedProject(page, [
     { name: 'Fundering', start: '2026-09-07', finish: '2026-09-11', durationDays: 5 },
   ]);
   const grid = page.locator(`${ganttGrid} [role="grid"]`);
@@ -110,12 +110,41 @@ test('tabel: rechtsklik op lege ruimte → Nieuwe taak, naam meteen typen', asyn
 
   await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reset zoom' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Paste', exact: true })).toBeDisabled();
   await shot(page, 'tabel-menu');
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   await page.keyboard.type('Ruwbouw');
   await page.keyboard.press('Enter');
 
   await expect.poll(() => state(page).then(s => s.tasks.map(task => task.name))).toEqual(['Fundering', 'Ruwbouw']);
+  // Klembordinhoud is fixture; de te toetsen Plakken-route loopt door het echte lege-ruimtemenu.
+  await page.evaluate(id => window.__OPS__!.store.getState().copyTasks([id]), first);
+  const beforePaste = await state(page);
+  const pasteBox = (await grid.boundingBox())!;
+  await page.mouse.click(pasteBox.x + 60, pasteBox.y + pasteBox.height - 40, { button: 'right' });
+  await expect(page.getByRole('button', { name: 'Paste', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Paste', exact: true }).click();
+  await expect.poll(() => state(page).then(s => s.tasks.map(t => t.name)))
+    .toEqual(['Fundering', 'Ruwbouw', 'Fundering']);
+  const afterPaste = await state(page);
+  expect(new Set(afterPaste.tasks.map(t => t.id)).size).toBe(3);
+  expect(afterPaste.undoDepth).toBe(beforePaste.undoDepth + 1);
+  const freshBox = (await grid.boundingBox())!;
+  await page.mouse.click(freshBox.x + 60, freshBox.y + freshBox.height - 40, { button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await page.keyboard.type('Gewone mijlpaal');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.evaluate(() => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone);
+    return t && [t.taskType, t.milestoneKind, t.parentId, t.mandatory ?? false];
+  })).toEqual(['USERDEFINED', 'FINISH', null, false]);
+  await page.locator(ganttGrid + ' [data-grid-row-key="' + first + '"][data-grid-column-id="task.name"]').click({ button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await expect.poll(() => page.evaluate(parentId => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone && t.parentId === parentId);
+    return t && [t.taskType, t.milestoneKind, t.mandatory ?? false];
+  }, first)).toEqual(['USERDEFINED', 'FINISH', false]);
+
 });
 
 test('Gantt: rechtsklik op lege ruimte → Nieuwe taak begint op de aangeklikte datum', async ({ page, ops: _ops }) => {
@@ -131,6 +160,7 @@ test('Gantt: rechtsklik op lege ruimte → Nieuwe taak begint op de aangeklikte 
   const bar = await barPoint(page, first);
   await page.mouse.click(bar.x, bar.y + 120, { button: 'right' });
   await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Paste', exact: true })).toBeDisabled();
   await shot(page, 'gantt-menu');
   await page.getByRole('button', { name: 'New task', exact: true }).click();
 
@@ -138,4 +168,32 @@ test('Gantt: rechtsklik op lege ruimte → Nieuwe taak begint op de aangeklikte 
   const created = (await state(page)).tasks[1];
   expect(created.scheduleStart.slice(0, 10) >= '2026-09-07').toBe(true);
   expect(created.scheduleStart.slice(0, 10) <= '2026-09-11').toBe(true);
+  await page.evaluate(id => window.__OPS__!.store.getState().copyTasks([id]), first);
+  const beforePaste = await state(page);
+  const pasteBar = await barPoint(page, first);
+  await page.mouse.click(pasteBar.x, pasteBar.y + 160, { button: 'right' });
+  await expect(page.getByRole('button', { name: 'Paste', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Paste', exact: true }).click();
+  await expect.poll(() => state(page).then(s => s.tasks.length)).toBe(3);
+  const afterPaste = await state(page);
+  expect(afterPaste.tasks.at(-1)!.name).toBe('Fundering');
+  expect(new Set(afterPaste.tasks.map(t => t.id)).size).toBe(3);
+  expect(afterPaste.undoDepth).toBe(beforePaste.undoDepth + 1);
+
+  const currentBar = await barPoint(page, first);
+  await page.mouse.click(currentBar.x, currentBar.y + 160, { button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone);
+    return t && [t.taskType, t.milestoneKind, t.parentId, t.mandatory ?? false];
+  })).toEqual(['USERDEFINED', 'FINISH', null, false]);
+
+  // Op een bestaande taak blijft het een subtaak, maar eveneens een gewone eindmijlpaal.
+  const parentBar = await barPoint(page, first);
+  await page.mouse.click(parentBar.x, parentBar.y, { button: 'right' });
+  await page.getByRole('button', { name: 'Add milestone', exact: true }).click();
+  await expect.poll(() => page.evaluate(parentId => {
+    const t = window.__OPS__!.store.getState().tasks.find(t => t.isMilestone && t.parentId === parentId);
+    return t && [t.taskType, t.milestoneKind, t.mandatory ?? false];
+  }, first)).toEqual(['USERDEFINED', 'FINISH', false]);
 });
