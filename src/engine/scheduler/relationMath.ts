@@ -688,7 +688,13 @@ function forwardHour(
         if (succIsFinishMs && pe.isHourMode && elapsedMin() === 0) {
           return landRawInstant(deps, se, target);
         }
-        if (succIsFinishMs && pe.isHourMode && se.isHourMode) return deps.snapOnOrBefore(se, target);
+        if (succIsFinishMs && pe.isHourMode && se.isHourMode) {
+          const back = deps.snapOnOrBefore(se, target);
+          // N1 geldt alleen voor dezelfde blokgrens; ma 18:00 mag niet naar ma 16:00.
+          if (back.getTime() === target.getTime()
+            || (se.nextWorkInstant(back).getTime() === target.getTime()
+              && lagEng.workMinutesBetween(back, target) === 0)) return back;
+        }
         return se.availableStart(target);
       }
       // P6/XER bewaart bij een expliciet bronpatroon de gedeelde finish/startgrens als de
@@ -759,7 +765,13 @@ function forwardHour(
       // zou de aanroep crashen op de non-null assertion. Die combinatie loopt correct via de
       // dag-lag-tak van `shiftLagPred` + `availableStart`.
       if (succIsFinishMs && lagIsZero) return landRawInstant(deps, se, predDone);
-      if (succIsFinishMs && pe.isHourMode && se.isHourMode) return deps.snapOnOrBefore(se, lagged);
+      if (succIsFinishMs && pe.isHourMode && se.isHourMode) {
+        const back = deps.snapOnOrBefore(se, lagged);
+        // Beide kalenders moeten dit als dezelfde grens lezen, ook bij een lead en feestdagen.
+        if (back.getTime() === lagged.getTime()
+          || (se.nextWorkInstant(back).getTime() === lagged.getTime()
+            && lagEng.workMinutesBetween(back, lagged) === 0)) return back;
+      }
       return se.availableStart(lagged);
     }
   }

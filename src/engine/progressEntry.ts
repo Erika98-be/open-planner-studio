@@ -4,7 +4,7 @@ import type { Task, TaskTime } from '@/types/task';
 import { sameValue } from '@/utils/sameValue';
 import {
   applyActualDateEdit, applyCompletionEdit, applyProgressInvariants, isActualFinishBeforeStart,
-  isActualPastStatusDate, normalizeActualDate, normalizeProgressActuals,
+  actualDateSide, isActualPastStatusDate, normalizeActualDate,
 } from '@/engine/taskMutationRules';
 
 /**
@@ -52,13 +52,14 @@ export function applyProgressEdit(
   edit: ProgressEdit,
   statusDate: string | undefined,
   actualStart?: string,
+  calendar?: WorkCalendar,
 ): void {
   if (actualStart) task.time.actualStart = actualStart;
   if (edit.field === 'completion') {
-    applyCompletionEdit(task.time, Math.max(0, Math.min(1, edit.value)), statusDate);
-    applyProgressInvariants(task, statusDate);
+    applyCompletionEdit(task, Math.max(0, Math.min(1, edit.value)), statusDate, calendar);
+    applyProgressInvariants(task, statusDate, calendar);
   } else {
-    applyActualDateEdit(task, edit.field, edit.value, statusDate);
+    applyActualDateEdit(task, edit.field, edit.value, statusDate, calendar);
   }
 }
 
@@ -177,14 +178,18 @@ export function planProgressEntry(task: Task, edit: ProgressEdit, ctx: ProgressE
   if (edit.field !== 'completion') edit = {
     ...edit, value: normalizeActualDate(task, edit.field, edit.value, statusDate, ctx.calendar),
   };
-  for (const date of [edit.field !== 'completion' ? edit.value : undefined, answer]) {
+  for (const [field, date] of [
+    [edit.field === 'completion' ? 'actualStart' : edit.field, edit.field === 'completion' ? undefined : edit.value],
+    ['actualStart', answer],
+  ] as const) {
     if (date && statusDate && isActualPastStatusDate(date, statusDate, isElapsedTask(task) ? undefined : ctx.calendar,
-      date === answer || edit.field !== 'actualFinish' ? 'start' : 'end')) return { ok: false, reason: 'afterStatusDate' };
+      actualDateSide(task, field))) {
+      return { ok: false, reason: 'afterStatusDate' };
+    }
   }
   const run = (date: string | undefined): Task => {
     const next: Task = { ...task, time: { ...task.time } };
-    applyProgressEdit(next, edit, date, answer);
-    normalizeProgressActuals(next, date, ctx.calendar);
+    applyProgressEdit(next, edit, date, answer, ctx.calendar);
     return next;
   };
   let next = run(statusDate);
