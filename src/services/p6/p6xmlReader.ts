@@ -927,7 +927,7 @@ function readP6XmlProject(scope: P6XmlScope): P6XmlProjectRead {
     if (sourceFinish === undefined) missingDates.finish.add(id);
 
     {
-      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, isHour);
+      const recordedDate = (raw: string): string | undefined => importDateTimeOrUndefined(raw, hourDates);
       const floatDays = (raw: string): number | undefined => {
         if (!raw) return undefined;
         const hours = Number.parseFloat(raw);

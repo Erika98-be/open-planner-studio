@@ -177,8 +177,9 @@ const recordedOf = (r: ImportResult, wbs: string): RecordedTime | undefined => {
   S().applyOpenedImport(reopened, { filePath: null, recompute: true });
   eq('6d heropend (ongewijzigd, optie B): weer in de modus', [S().datesAsRecorded, S().recordedDates?.origin], [true, 'ifc-own']);
   eq('6e B houdt na heropenen vier assen "niet vastgelegd"', unrecordedAxes(S().recordedDates?.times[idOf('1.2')]), ['ls', 'lf', 'tf', 'ff']);
+  // T15 maakt de taak urenmaat; de bestaande IFC-lezer vult bij datumloze urentaken 00:00 aan.
   eq('6f A houdt zijn vastgelegde late datums en speling', S().recordedDates?.times[idOf('1.1')], {
-    start: '2026-03-02', finish: '2026-03-06', lateStart: '2026-03-09', lateFinish: '2026-03-13',
+    start: '2026-03-02T00:00', finish: '2026-03-06T00:00', lateStart: '2026-03-09T00:00', lateFinish: '2026-03-13T00:00',
     totalFloat: 5, freeFloat: 0, isCritical: false,
   });
   // Critreview PR #167, bevinding 2: heropenen van het eigen, ongewijzigde IFC gaat automatisch de
@@ -248,7 +249,7 @@ const recordedOf = (r: ImportResult, wbs: string): RecordedTime | undefined => {
   const eigenZonderBron = writeIFC(buildWriteIFCInput(S()));
   truthy('8e0 het eigen bestand zonder bron draagt geen SourceFormat', !eigenZonderBron.includes("'SourceFormat'"));
   const bStart = S().tasks.find(t => t.wbsCode === '1.2')!.time.earlyStart;
-  const verschoven = eigenZonderBron.replace(new RegExp(`'${bStart}T`, 'g'), "'2026-03-23T");
+  const verschoven = eigenZonderBron.replace(new RegExp(`'${bStart.slice(0, 10)}T`, 'g'), "'2026-03-23T");
   truthy('8e1 tegenproef: de fixture verschuift B echt in het bestand', verschoven !== eigenZonderBron);
   S().newProject();
   S().applyOpenedImport(readIFC(verschoven), { filePath: null, recompute: true });
