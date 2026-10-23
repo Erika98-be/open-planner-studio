@@ -1938,9 +1938,13 @@ for (const file of files) {
   const results = cases.map(runCase);
   if (MM_RUN) {
     reportMinuteBattery(name, results);
-    // F2: ongecodeerd rood blijft blokkeren. Een bewust rood doel (B7, F3-lopers) blijft
-    // zichtbaar en exact gepind door het F0-vangnet; het is geen ongecodeerde F2-fout (§7.2).
-    if (MM_RUN === 1 && results.some(result => !result.pass && result.status !== 'BEWUST_ROOD')) anyFail = true;
+    // §7.2, besluit orkestrator 23 oktober: uitsluitend dit eindverschil wacht op de F3-loper.
+    // Ook een tweede fout BINNEN dezelfde gepinde B7-case moet run 1 rood maken.
+    const pendingF3DayRunner = (result: CaseResult): boolean => result.id === 'lagadv-pct-fs50-odd-roundup'
+      && result.status === 'BEWUST_ROOD' && result.reason === 'PCT-LAG-EXACT'
+      && result.diffs.length === 1
+      && result.diffs[0] === 'B.ef: verwacht "2026-06-11T11:00", kreeg "2026-06-10T16:00"';
+    if (MM_RUN === 1 && results.some(result => !result.pass && !pendingF3DayRunner(result))) anyFail = true;
     continue;
   }
   const passed = results.filter((r) => r.pass).length;
