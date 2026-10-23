@@ -14,12 +14,13 @@ import { CalendarEngine } from './CalendarEngine';
 import { resolveCalendar } from './resolveCalendar';
 import { enumerateTaskWorkDays } from './splitWalk';
 import { createTaskEngineCache } from './taskEngineCache';
+import { workPlacement, type PlacementDay, type PlacementMeasure, type PlacementMeasures, type PlacementResult, type WorkPlacement } from './workPlacement';
 import { isPinnedComplete } from './duration';
 import {
   CONTOUR_SHAPE_VALUES, CURVE_TO_SHAPE, matchContoursToAssignments, periodsToWorkDaySlots,
   slotWeightsFromValues,
 } from '@/engine/contour/contourEngine';
-import { parseDate, formatDate, addCalendarDays, addCalendarMonths, getMonthStart, getWeekStart } from '@/utils/dateUtils';
+import { parseDate, parseInstant, formatDate, addCalendarDays, addCalendarMonths, getMonthStart, getWeekStart } from '@/utils/dateUtils';
 import { calendarForEngine } from '@/utils/effectiveWorkTime';
 
 /** Controlepunten per curve: (t ∈ [0,1] = positie in de duur, gewicht). Lineair geïnterpoleerd
@@ -239,6 +240,90 @@ export function taskWorkDayIsos(task: Task, taskEngine: CalendarEngine, duration
     : enumerateTaskWorkDays(task.splitGaps, taskEngine, task.time.earlyStart, durationDays);
 }
 
+export interface AssignmentPlacementLoad {
+  days: PlacementDay[];
+  units: number[];
+}
+
+/**
+ * Gegevenscontract voor histogram, nivelleerder en (F4b) contourdialoog. De plaatsing en effectieve
+ * maat komen van de aanroeper. Bestaande curve-/werkverdeling blijft de bron: haar slots worden
+ * naar rato van overlap op de bezette dagdelen gelegd, zonder nieuwe curvevorm of afronding.
+ * Contourperiodes liggen op de fysieke split-as en worden rechtstreeks met werkblokken gesneden.
+ */
+export function assignmentPlacementLoad(
+  task: Task,
+  assignment: ResourceAssignment,
+  engine: CalendarEngine,
+  placement: WorkPlacement,
+  contour?: TaskTimephasedContour | null,
+  placed?: PlacementResult,
+): AssignmentPlacementLoad {
+  const { days } = placed ?? workPlacement(engine, placement);
+  const mpd = engine.hoursPerDay * 60;
+  const resolved = contour === undefined
+    ? matchContoursToAssignments(task.timephasedContours, [assignment]).get(assignment.id) ?? null : contour;
+  if (resolved && resolved.periods.length > 0) {
+    const units = days.map(() => 0);
+    const ranges = days.flatMap((d, day) => d.ranges.map(r => ({ ...r, day })));
+    for (const p of resolved.periods) {
+      if (!Number.isFinite(p.afterMinutes) || !Number.isFinite(p.minutes) || !Number.isFinite(p.workMinutes)
+        || p.afterMinutes < 0 || p.minutes <= 0 || p.workMinutes <= 0) continue;
+      // Werk in een split schuift, net als bij de bestaande contour-engine, naar het volgende
+      // werkblok. Ook een rest voorbij het laatste blok blijft behouden op de laatste werkdag.
+      let cursor = p.afterMinutes;
+      const end = cursor + p.minutes;
+      for (const r of ranges) {
+        const stop = Math.min(end, r.afterMinutes + r.minutes);
+        if (stop > cursor) {
+          units[r.day] += p.workMinutes * (stop - cursor) / p.minutes / mpd;
+          cursor = stop;
+        }
+        if (cursor >= end) break;
+      }
+      if (cursor < end && days.length > 0) units[days.length - 1] += p.workMinutes * (end - cursor) / p.minutes / mpd;
+    }
+    return { days, units };
+  }
+  const totalShare = days.reduce((sum, d) => sum + d.share, 0);
+  if (!(totalShare > 0)) return { days, units: [] };
+  if (!assignment.curveValues && assignment.remainingWorkMinutes === undefined
+    && (!assignment.curve || assignment.curve === 'UNIFORM')) {
+    return { days, units: days.map(d => d.share * assignment.unitsPerDay) };
+  }
+  const source = assignmentDayUnits(task, assignment, mpd, null);
+  // Bij ontbreken van opgeslagen werk volgt het totaal de effectieve plaatsingsmaat.
+  const scale = assignment.remainingWorkMinutes !== undefined ? 1 : totalShare / task.time.scheduleDuration;
+  let position = 0;
+  const units = days.map(d => {
+    const end = position + d.share / totalShare * source.length;
+    let load = 0;
+    for (let i = Math.floor(position); i < Math.min(source.length, Math.ceil(end)); i++) {
+      load += source[i] * Math.max(0, Math.min(end, i + 1) - Math.max(position, i));
+    }
+    position = end;
+    return load * scale;
+  });
+  return { days, units };
+}
+
+/** Overgang tot F3c: datums zonder tijd houden het bestaande dagslotcontract. Momenten krijgen
+ * standaard de minutenmaat; F3c levert het opgeloste maatbeleid expliciet aan, ook voor dagtaken. */
+export function taskAssignmentLoad(
+  task: Task, assignment: ResourceAssignment, engine: CalendarEngine,
+  contour: TaskTimephasedContour | null, measure: PlacementMeasure = 'minutes',
+): { isos: string[]; units: number[] } {
+  if (task.time.earlyStart.includes('T') && task.time.earlyFinish.includes('T')) {
+    const result = assignmentPlacementLoad(task, assignment, engine, {
+      start: parseInstant(task.time.earlyStart), finish: parseInstant(task.time.earlyFinish),
+      measure, gaps: task.splitGaps,
+    }, contour);
+    return { isos: result.days.map(d => d.iso), units: result.units };
+  }
+  const units = assignmentDayUnits(task, assignment, engine.hoursPerDay * 60, contour);
+  return { isos: taskWorkDayIsos(task, engine, Math.max(task.time.scheduleDuration, units.length)), units };
+}
+
 /** ISO-datum → belaste/beschikbare eenheden. Alleen dagen met >0 belasting of capaciteit
  *  (dag-granulair) — geen volledige-projectspanne-vulling met nul-dagen. */
 export interface DailyLoad {
@@ -322,6 +407,7 @@ export function computeResourceLoad(
   tasks: Task[],
   projectCalendar: WorkCalendar,
   resourceCalendars: WorkCalendar[],
+  placementMeasures?: PlacementMeasures,
 ): ResourceLoadResult {
   const load: Record<string, DailyLoad> = {};
   const capacity: Record<string, DailyLoad> = {};
@@ -353,10 +439,8 @@ export function computeResourceLoad(
   for (const a of validAssignments) {
     const task = taskById.get(a.taskId)!;
     const taskEngine = engineForTask(task);
-    const days = assignmentDayUnits(task, a, taskEngine.hoursPerDay * 60, contourOf(task, a));
+    const { units: days, isos: workDayIsos } = taskAssignmentLoad(task, a, taskEngine, contourOf(task, a), placementMeasures?.[task.id]);
     if (days.length === 0) continue;
-    const durationDays = Math.max(task.time.scheduleDuration, days.length);
-    const workDayIsos = taskWorkDayIsos(task, taskEngine, durationDays);
 
     if (!load[a.resourceId]) load[a.resourceId] = {};
     const bucket = load[a.resourceId];
@@ -434,10 +518,11 @@ export function computeReliableResourceLoad(
   tasks: Task[],
   projectCalendar: WorkCalendar,
   resourceCalendars: WorkCalendar[],
+  placementMeasures?: PlacementMeasures,
 ): ResourceLoadResult | null {
   return cpmResult?.error
     ? null
-    : computeResourceLoad(resources, assignments, tasks, projectCalendar, resourceCalendars);
+    : computeResourceLoad(resources, assignments, tasks, projectCalendar, resourceCalendars, placementMeasures);
 }
 
 /** Vlakke `maxUnits`, tenzij `availabilitySteps` een latere stap ≤ `iso` heeft — dan geldt de
@@ -503,6 +588,7 @@ export interface HistogramReport {
 }
 
 export interface HistogramInput {
+  placementMeasures?: PlacementMeasures;
   tasks: Task[];
   sequences: Sequence[];
   assignments: ResourceAssignment[];
@@ -545,10 +631,8 @@ export function computeHistogramReport(input: HistogramInput): HistogramReport {
     const task = taskById.get(a.taskId);
     if (!task || task.isMilestone || isSummaryTask(task)) continue;
     const taskEngine = engineForTask(task);
-    const dist = assignmentDayUnits(task, a, taskEngine.hoursPerDay * 60, contourOf(task, a));
+    const { units: dist, isos: workDayIsos } = taskAssignmentLoad(task, a, taskEngine, contourOf(task, a), input.placementMeasures?.[task.id]);
     if (dist.length === 0) continue;
-    const durationDays = Math.max(task.time.scheduleDuration, dist.length);
-    const workDayIsos = taskWorkDayIsos(task, taskEngine, durationDays);
     const daily = new Map<string, number>();
     for (let i = 0; i < dist.length && i < workDayIsos.length; i++) {
       const iso = workDayIsos[i];
