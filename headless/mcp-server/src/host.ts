@@ -42,6 +42,9 @@ export interface HostOptions {
   readOnly: boolean;
   /** Ingebedde tekstbestanden, sleutel = pad binnen `public/` (bijv. `agent/planning-guide.md`). */
   assets: Readonly<Record<string, string>>;
+  /** Bestand dat bij de start als document opengaat (pad in de werkmap). Dat is een keuze van wie de
+   *  server start, niet van de agent: het gebeurt vóór `readOnly` ingaat. */
+  open?: string | null;
   /** Slot-haak; standaard `isPathOpenInApp` uit `appLock.ts` (nu altijd `false`). */
   isPathOpenInApp?: IsPathOpenInApp;
 }
@@ -56,8 +59,6 @@ export interface HeadlessHost {
   dataDir: string;
   buildContext: () => McpContext;
   handleMessage: McpMessageHandler;
-  /** Open een bestand als document, via `planner_import_schedule` (dezelfde route als een agent). */
-  openAtStart: (file: string) => Promise<void>;
 }
 
 /**
@@ -111,7 +112,6 @@ export async function createHeadlessHost(opts: HostOptions): Promise<HeadlessHos
 
   // Eén document zonder opslagdoel, zoals een nieuwe app-start. Geen host-events: extensies bestaan hier niet.
   const app = createAppStoreContext({ emitHostEvents: false });
-  if (opts.readOnly) app.store.getState().setUI({ aiReadOnly: true });
 
   const fileFs = createNodeFileFs(root, opts.isPathOpenInApp);
   fileToolDeps.getFs = async () => fileFs;
@@ -129,6 +129,7 @@ export async function createHeadlessHost(opts: HostOptions): Promise<HeadlessHos
   const handleMessage: McpMessageHandler = async (body, ctx) =>
     withHeadlessInstructions(body, await handleMcpMessage(body, ctx), root);
 
+  /** Open een bestand als document, via `planner_import_schedule` (dezelfde route als een agent). */
   async function openAtStart(file: string): Promise<void> {
     const target = path.resolve(root, file);
     const body = JSON.stringify({
@@ -145,5 +146,9 @@ export async function createHeadlessHost(opts: HostOptions): Promise<HeadlessHos
     }
   }
 
-  return { app, root, dataDir: opts.dataDir, buildContext, handleMessage, openAtStart };
+  if (opts.open) await openAtStart(opts.open);
+  // Pas ná het openen bij de start: alleen-lezen begrenst de agent, niet wie de server start.
+  if (opts.readOnly) app.store.getState().setUI({ aiReadOnly: true });
+
+  return { app, root, dataDir: opts.dataDir, buildContext, handleMessage };
 }

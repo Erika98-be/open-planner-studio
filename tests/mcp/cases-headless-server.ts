@@ -48,6 +48,16 @@ const registryList = () => getTools().map((t) => ({
   name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations,
 }));
 
+/** JSON met gesorteerde sleutels: de SDK-client valideert `tools/list` met zod en zet de sleutels van een
+ *  object daarbij in een andere volgorde. De inhoud moet gelijk zijn, de volgorde van sleutels niet. */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value as object).sort().map((k) => [k, canonical((value as Record<string, unknown>)[k])]));
+  }
+  return value;
+}
+
 interface Outcome { isError: boolean; s: Record<string, any> }
 async function call(client: Client, name: string, args: Record<string, unknown> = {}): Promise<Outcome> {
   const res = await client.callTool({ name, arguments: args }, undefined, { timeout: 60_000 });
@@ -216,7 +226,8 @@ test('B stdio: initialize, tools/list gelijk aan de registry (namen, beschrijvin
   assert(instructions.startsWith(MCP_INSTRUCTIONS) && instructions.includes('Headless mode'), 'instructions = app + headless uitleg');
   const { tools } = await stdio.listTools();
   assertEq(tools.length, 41, 'aantal tools');
-  assertEq(tools, registryList(), 'tools/list = registry van de app (geen uitzonderingen)');
+  assertEq(canonical(tools), canonical(registryList()), 'tools/list = registry van de app (geen uitzonderingen)');
+  assertEq(tools.map((t) => t.name), registryList().map((t) => t.name), 'dezelfde volgorde van tools');
 });
 
 test('B stdio: gids en beide skills komen uit de bundel (niets ontbreekt)', async () => {
@@ -240,12 +251,12 @@ test('B stdio: voorbeeld openen via ~/, taken en relatie toevoegen, rekenen, ops
 
   const added = await ok(stdio, 'planner_add_tasks', {
     tasks: [
-      { tempId: 'h-1', name: 'Headless A', duration: 3 },
-      { tempId: 'h-2', name: 'Headless B', duration: 4 },
+      { tempId: 'tmp-h1', name: 'Headless A', duration: 3 },
+      { tempId: 'tmp-h2', name: 'Headless B', duration: 4 },
     ],
   });
-  const a = added.created['h-1'] as string;
-  const b = added.created['h-2'] as string;
+  const a = added.created['tmp-h1'] as string;
+  const b = added.created['tmp-h2'] as string;
   await ok(stdio, 'planner_add_dependencies', {
     dependencies: [
       { predecessorId: firstTaskId, successorId: a, type: 'FINISH_START' },
@@ -307,7 +318,7 @@ test('B stdio: OPS_MCP_READ_ONLY=1 weigert mutaties (READ_ONLY), lezen werkt', a
   try {
     const info = await ok(client, 'planner_get_project_info');
     assert(info.statistics.totalTasks > 0, '--open opende het voorbeeld');
-    await refused(client, 'planner_add_tasks', { tasks: [{ tempId: 'x', name: 'x', duration: 1 }] }, 'READ_ONLY', 'alleen-lezen');
+    await refused(client, 'planner_add_tasks', { tasks: [{ tempId: 'tmp-x', name: 'x', duration: 1 }] }, 'READ_ONLY', 'alleen-lezen');
   } finally {
     await client.close();
     await transport.close();
@@ -338,7 +349,7 @@ test('B HTTP: tools/list, fout token 401, Origin 403, ontbrekende sessie-id 400,
     assert(url.startsWith('http://127.0.0.1:'), `alleen loopback: ${url}`);
     const { client } = await connectClient(url, { Authorization: `Bearer ${TOKEN}` });
     const { tools } = await client.listTools();
-    assertEq(tools, registryList(), 'tools/list over HTTP = registry');
+    assertEq(canonical(tools), canonical(registryList()), 'tools/list over HTTP = registry');
     await ok(client, 'planner_get_project_info');
     await client.close();
     const post = (headers: Record<string, string>) => fetch(url, {

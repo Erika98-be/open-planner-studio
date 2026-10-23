@@ -60,9 +60,8 @@ async function main(): Promise<number> {
 
   const dataDir = opts.dataDir ?? defaultDataDir();
   const host = await createHeadlessHost({
-    root: opts.root, dataDir, backup: opts.backup, readOnly: opts.readOnly, assets: EMBEDDED_ASSETS,
+    root: opts.root, dataDir, backup: opts.backup, readOnly: opts.readOnly, assets: EMBEDDED_ASSETS, open: opts.open,
   });
-  if (opts.open !== null) await host.openAtStart(opts.open);
   log(`version ${MCP_SERVER_VERSION}; working folder ${host.root}; ` +
     `MCP backups ${opts.backup ? `in ${dataDir}` : 'off'}${opts.readOnly ? '; read-only' : ''}`);
 
