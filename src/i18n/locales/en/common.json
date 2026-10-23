@@ -504,7 +504,8 @@
   "project": {
     "untitled": "New schedule",
     "imported": "Imported project",
-    "unassignedResource": "Unassigned"
+    "unassignedResource": "Unassigned",
+    "ifcBuildingModelUnsupported": "This IFC file contains building model objects. Opening is blocked because saving would discard them. Edit the separate planning file and merge it with the building model afterwards."
   },
   "documents": {
     "overviewTitle": "Open projects",

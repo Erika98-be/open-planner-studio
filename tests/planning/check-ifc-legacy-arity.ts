@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
+import { IfcParseError } from '@/services/ifc/ifcErrors';
 import type { ImportResult } from '@/services/importTypes';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -278,7 +279,19 @@ for (const [label, ifc] of [['oud', OLD], ['nieuw', NEW]] as const) {
 // de werkschema's), en de werkende uitzondering wordt een feestdag omdat `WorkingExceptionIds`
 // STEP-nummers bewaart die MergeProjects vernummert (knownbugs).
 {
-  const MERGED = readFileSync(join(HERE, 'fixtures', 'ifc-arity-oude-writer-merged.ifc'), 'utf8');
+  const combined = readFileSync(join(HERE, 'fixtures', 'ifc-arity-oude-writer-merged.ifc'), 'utf8');
+  // Knownbug 110: de echte MergeProjects-fixture bevat een terrein en een muur. Die oorspronkelijke
+  // 4D-invoer moet nu worden geweigerd, niet stil als een planning worden geopend.
+  let blocked = false;
+  try { readIFC(combined); }
+  catch (error) { blocked = error instanceof IfcParseError && error.reason === 'building-model'; }
+  ok('8 voorpoort: oorspronkelijke 4D-fixture wordt geweigerd', blocked);
+  // Behoud ALLE onderstaande ariteits-/kalenderasserties op dezelfde historische planningsregels.
+  // Alleen de twee vastgelegde modelregels verdwijnen uit deze testvariant; geen productiebypass.
+  // Dit is geen exportrecept: resterende modelrelaties kunnen nog naar deze ids verwijzen.
+  const modelLines = combined.split('\n').filter(line => /^#(?:6=IFCSITE|8=IFCWALL)\(/.test(line));
+  eq('8 fixture bevat precies de twee bekende modelregels', modelLines.length, 2);
+  const MERGED = combined.split('\n').filter(line => !modelLines.includes(line)).join('\n');
   const all = lines(MERGED);
   const ofType = (...types: string[]) => all.filter(l => types.includes(l.type));
   eq('8a fixture: elke kalender heeft 9 argumenten en een lijst op Identification (5)',
