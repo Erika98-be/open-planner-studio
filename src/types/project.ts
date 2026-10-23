@@ -528,8 +528,7 @@ export interface Project {
   modifiedAt: string;
   author: string;
   company: string;
-  /** Projectstandaard voor handmatig aangemaakte taken. De urenplanning-hoofdschakelaar blijft de
-   *  capabilitypoort: staat die uit, dan maakt de UI ondanks deze bewaarde voorkeur dagtaken. */
+  /** Standaardmaat voor handmatig aangemaakte taken. */
   defaultTaskDurationUnit?: import('@/types/task').TaskDurationUnit;
   /** Projectstandaard-werkregel voor elke taak zonder eigen `workRule`. Afwezig ⇒ FIXED_DURATION_RATE.
    *  Round-tript via `OPS_ProjectSettings` (`DefaultWorkRule`). */

@@ -61,7 +61,7 @@ function render() {
     rows: st.viewRows, sequences: st.sequences, calendar: st.calendar,
     view: { ...st.view, viewStartDate: '2026-05-28', zoom: 48, scrollX: 0, scrollY: 0 },
     selectedTaskIds: [], canvasWidth: 3000, canvasHeight: 400, rowHeight: 28, headerHeight: 60,
-    enableHourPlanning: true,
+
   });
   renderer.render();
   const summary = rects.find(r => r.fill.toUpperCase() === SUMMARY_FILL);
@@ -71,7 +71,6 @@ function render() {
 // ── 1. Dagkind en urenkind eindigen op dezelfde dag (het gerapporteerde geval) ──
 {
   S().newProject();
-  S().setUI({ enableHourPlanning: true });
   S().setCalendar({ ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [] } as WorkCalendar);
   S().setProject({ startDate: '2026-06-01', name: 'Gemengde fase' });
   const hourCal = S().addCalendar({ name: 'Kraan (uren)', description: '', ...hourCalendarFields } as Omit<WorkCalendar, 'id'>);
@@ -97,7 +96,6 @@ function render() {
 // H (1 werkdag op de uurkalender) op ma 01-06, D (4d) daarna. Fase: ES "…T08:00", EF = einde van D (zonder tijd).
 {
   S().newProject();
-  S().setUI({ enableHourPlanning: true });
   S().setCalendar({ ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [] } as WorkCalendar);
   S().setProject({ startDate: '2026-06-01', name: 'Gemengde fase 2' });
   const hourCal = S().addCalendar({ name: 'Kraan (uren)', description: '', ...hourCalendarFields } as Omit<WorkCalendar, 'id'>);
@@ -118,7 +116,6 @@ function render() {
 // dagkind is dat 5 × 8 = 40 uur, niet 37 (einde urenkind) en niet 32 (dag-einde als middernacht).
 {
   S().newProject();
-  S().setUI({ enableHourPlanning: true });
   S().setCalendar({ ...S().calendar, ...hourCalendarFields } as WorkCalendar);
   S().setProject({ startDate: '2026-06-01', name: 'Gemengde fase 3' });
   const dayCal = S().addCalendar({ name: 'Dagen', description: '', workDays: [1, 2, 3, 4, 5], workStartHour: 8, workEndHour: 16, hoursPerDay: 8, holidays: [] } as Omit<WorkCalendar, 'id'>);

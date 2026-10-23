@@ -168,12 +168,12 @@ eq('los wissen kan de native minutenbron van een urentaak niet verwijderen', mer
 eq('atomair wisselen naar dagen wist de oude minutenbron wel', mergeTaskTime(hourBase, { durationUnit: 'days', scheduleDuration: 2, durationMinutes: undefined }).durationMinutes, undefined);
 
 // Compacte weergave houdt de native uuridentiteit zichtbaar.
-eq('auto toont dagtaak in dagen', formatTaskDurationDisplay(day2, h8, 'auto', true), '2d');
-eq('auto toont 12 uur als uren', formatTaskDurationDisplay(hour12, h8, 'auto', true), '12h');
-eq('auto toont ook een exact volle urentaak in haar gekozen eenheid', formatTaskDurationDisplay(task('hours', 16), h8, 'auto', true), '16h');
+eq('auto toont dagtaak in dagen', formatTaskDurationDisplay(day2, h8, 'auto'), '2d');
+eq('auto toont 12 uur als uren', formatTaskDurationDisplay(hour12, h8, 'auto'), '12h');
+eq('auto toont ook een exact volle urentaak in haar gekozen eenheid', formatTaskDurationDisplay(task('hours', 16), h8, 'auto'), '16h');
 eq('pure helper respecteert urenbron ook na kalenderwissel', taskDurationMinutes(hour12, h10), 720);
-eq('geforceerde dagenweergave houdt uurbron herkenbaar', formatTaskDurationDisplay(hour12, h8, 'days', true), '1.5d(12h)');
-eq('geforceerde urenweergave houdt dagbron herkenbaar', formatTaskDurationDisplay(day2, h8, 'hours', true), '16h(2d)');
+eq('geforceerde dagenweergave houdt uurbron herkenbaar', formatTaskDurationDisplay(hour12, h8, 'days'), '1.5d(12h)');
+eq('geforceerde urenweergave houdt dagbron herkenbaar', formatTaskDurationDisplay(day2, h8, 'hours'), '16h(2d)');
 
 // Dialoog en paneel delen deze ene parser/conversielaag.
 deepEq('suffix d kiest dagen', parseTaskDurationInput('2d', 'hours'), { unit: 'days', scheduleDuration: 2, explicitUnit: true });
@@ -226,7 +226,6 @@ eq('eenheidswissel 12h → dagen op H8 is niet exact en wijzigt niets', convertT
 // Storecontract: projectdefault, normale mutatie, undo/redo, clipboard en documentwissel.
 const context = createAppStoreContext();
 const store = context.store;
-store.getState().setUI({ enableHourPlanning: true });
 store.getState().setCalendar(h8);
 store.getState().setProject({ defaultTaskDurationUnit: 'hours' });
 const storeTaskId = store.getState().addTask({ name: 'Nieuwe urentaak' });
@@ -234,7 +233,6 @@ eq('projectdefault maakt nieuwe handmatige taak uren', store.getState().tasks[0]
 eq('standaardhoeveelheid wordt als vijf uur opgeslagen', store.getState().tasks[0]?.time.durationMinutes, 300);
 eq('vijf uur krijgt op H8 een coherent dagequivalent', store.getState().tasks[0]?.time.scheduleDuration, 0.625);
 const noBandsContext = createAppStoreContext();
-noBandsContext.store.getState().setUI({ enableHourPlanning: true });
 noBandsContext.store.getState().setProject({ defaultTaskDurationUnit: 'hours' });
 noBandsContext.store.getState().addTask({ name: 'Veilige dagtaak zonder werkblokken' });
 eq('urenprojectdefault maakt op de geldige scalaire standaardkalender een urentaak',

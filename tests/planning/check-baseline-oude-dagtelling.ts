@@ -46,7 +46,7 @@ const quiet = async <T>(fn: () => T | Promise<T>): Promise<T> => {
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const IFC = readFileSync(join(ROOT, 'tests', 'browser', 'fixtures', 'ifc', 'oude-baseline.ifc'), 'utf8');
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 const ctx = createAppStoreContext();
 await quiet(async () => ctx.store.getState().applyOpenedImport(
   await parseOpenedFile({ name: 'oude-baseline.ifc', text: IFC }) as OpenedImport, OPEN));

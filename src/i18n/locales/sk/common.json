@@ -431,9 +431,6 @@
     "themeHighContrast": "Vysoký kontrast",
     "themeFollowSystem": "Podľa motívu systému",
     "themeSystemHint": "Riadi sa farebnou schémou vášho systému (teraz: {{theme}}).",
-    "hourPlanningSection": "Plánovanie v hodinách",
-    "enableHourPlanning": "Zapnúť plánovanie v hodinách",
-    "enableHourPlanningHint": "Zapína plánovanie v hodinách a minútach: časová os s hodinami, pracovné zmeny s pásmami pracovného času a pruhy úloh presné na hodinu. Vypnuté ⇒ aplikácia zostane úplne na úrovni dní ako predtým.",
     "showTaskTypes": "Používať typy úloh",
     "showTaskTypesHint": "Vyberte pre každú úlohu, čo sa zmení, keď sa zmení trvanie, jednotky priradenia alebo práca, ako Task Type v MS Project a Duration Type v P6. Vypnuté: trvanie a jednotky priradenia zostanú pevné. Súbor s typmi úloh alebo uloženou prácou ich zobrazí aj vtedy, keď je toto vypnuté.",
     "allowMixedDayHour": "Povoliť zmiešané plánovanie dní/hodín",
@@ -1218,10 +1215,6 @@
     "day": "deň",
     "month": "mesiac",
     "year": "rok"
-  },
-  "hourData": {
-    "notice": "Tento súbor obsahuje plánovanie v hodinách.",
-    "enable": "Zapnúť plánovanie v hodinách"
   },
   "recordedDates": {
     "activeCount_one": "Zobrazujete plán tak, ako ho uložil Primavera; pri prepočítaní sa posunie {{count}} úloha.",

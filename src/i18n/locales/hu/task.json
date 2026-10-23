@@ -181,7 +181,6 @@
       "calendar": "Válasszon egy naptárat a listából.",
       "calendarNotFound": "A kiválasztott naptár nem létezik.",
       "calendarHours": "A tevékenység naptárában nincs napi munkaóra.",
-      "hourPlanningDisabled": "Az óraalapú tervezés ki van kapcsolva a(z) Beállítások részben.",
       "durationConversionNotExact": "Ez az időtartam nem alakítható át pontosan a másik egységre.",
       "milestoneRequired": "Ez a mező csak mérföldkövekre vonatkozik.",
       "milestoneUnavailable": "Egy összefoglaló tevékenység altevékenységekkel nem lehet mérföldkő.",
@@ -329,9 +328,6 @@
     "days": "Napok",
     "hours": "Órák",
     "invalid": "Adjon meg egész számú napot vagy órát, például 2d vagy 12h.",
-    "enableHourPlanningFirst": "Kapcsolja be az óraalapú tervezést, hogy szerkeszthesse ezt az óraalapú tevékenységet.",
-    "enableHourPlanning": "Óraalapú tervezés bekapcsolása",
-    "requiresWorkBlocks": "Ennek a naptárnak nincsenek érvényes munkaidői. Ellenőrizze a munkanapokat és a munkaidőket.",
     "conversionNotExact": "{{value}} ebben a naptárban nem ad ki egész napokat. Az egység nem változott.",
     "unitInfo": "A kiválasztott mértékegység ehhez a tevékenységhez tartozik. A napok munkanapokat, az órák a naptáron belüli munkaórákat jelentenek. Egy másik naptár nem változtatja meg a mértékegységet vagy a megadott időtartamot, de megváltoztathatja a befejezési dátumot."
   },

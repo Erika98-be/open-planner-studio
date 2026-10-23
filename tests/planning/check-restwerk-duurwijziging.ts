@@ -103,13 +103,12 @@ const xer = [
 ].join('\n');
 
 const S = () => useAppStore.getState();
-const OPEN_OPTIONS = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN_OPTIONS = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 function openFixture(): void {
   const opened = readXER(new TextEncoder().encode(xer));
   if (isMultiDocumentImport(opened)) throw new Error('fixture gaf meerdere documenten');
   S().applyOpenedImport(opened, OPEN_OPTIONS);
   useAppStore.setState((s) => { s.ui.notifications = []; });
-  if (!S().ui.enableHourPlanning) S().setUI({ enableHourPlanning: true });
 }
 const byCode = (code: string): Task => {
   const t = S().tasks.find((x) => x.wbsCode === code);

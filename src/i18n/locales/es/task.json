@@ -181,7 +181,6 @@
       "calendar": "Elija un calendario de la lista.",
       "calendarNotFound": "El calendario elegido no existe.",
       "calendarHours": "El calendario de esta tarea no tiene horas de trabajo por día.",
-      "hourPlanningDisabled": "La planificación por horas está desactivada en «Configuración».",
       "durationConversionNotExact": "Esta duración no se puede convertir exactamente a la otra unidad.",
       "milestoneRequired": "Este campo solo se aplica a hitos.",
       "milestoneUnavailable": "Una tarea de resumen con subtareas no puede convertirse en hito.",
@@ -333,9 +332,6 @@
     "days": "Días",
     "hours": "Horas",
     "invalid": "Introduzca un número entero de días u horas, por ejemplo 2d o 12h.",
-    "enableHourPlanningFirst": "Activa la planificación por horas para editar esta tarea horaria.",
-    "enableHourPlanning": "Activar planificación por horas",
-    "requiresWorkBlocks": "Este calendario no tiene horarios de trabajo válidos. Comprueba sus días y horarios laborables.",
     "conversionNotExact": "{{value}} no equivale a días completos en este calendario. La unidad no ha cambiado.",
     "unitInfo": "La unidad elegida pertenece a esta tarea. Los días cuentan días laborables; las horas cuentan horas de trabajo dentro del calendario. Otro calendario no cambia la unidad ni la duración introducida, pero puede cambiar la fecha de fin."
   },

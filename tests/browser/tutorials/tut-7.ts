@@ -1,7 +1,6 @@
 // Tutorial 7 — Rapporteren en delen (`tut-7-rapport`): Variance, Voortgangsrapport, papier, PDF en
 // Bestand › Exporteren. Het project verandert niet: de eindstand is `na-tut-7` (= `na-tut-6`).
 import { l, type Check, type Snap, type TutorialScript } from './dsl';
-import { enableHourPlanningFromNotice } from './tut-5';
 
 const statusBar = { anchor: 'status-bar' } as const;
 const report = { anchor: 'report-panel' } as const;
@@ -18,7 +17,7 @@ export const TUTORIAL_7: TutorialScript = {
   steps: [
     {
       id: 'startpunt',
-      do: [enableHourPlanningFromNotice],
+      do: [],
       expect: [notStale, status('Einde: 31-08-2027', 'End: 31-08-2027'), status('Kritiek pad: 10 taken, 47 werkdagen', 'Critical path: 10 tasks, 47 work days')],
     },
     {

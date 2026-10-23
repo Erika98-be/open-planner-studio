@@ -128,7 +128,7 @@ ok('0a opzet: L is lopend op 100 % zonder werkelijk einde',
   byName(before.tasks, 'L').status === 'STARTED' && byName(before.tasks, 'L').time.completion === 1
   && !byName(before.tasks, 'L').time.actualFinish);
 
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 async function openIfc(text: string): Promise<{ doc: DocumentPayload; resave: () => string }> {
   const store = createAppStoreContext().store;
   store.getState().applyOpenedImport(await parseOpenedFile({ name: 'rondgang.ifc', text }), OPEN);
