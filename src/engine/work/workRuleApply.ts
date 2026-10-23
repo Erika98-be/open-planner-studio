@@ -4,7 +4,7 @@
 // Deze module weet wat de kern niet mag weten: welke regel voor een taak geldt (`Task.workRule`,
 // anders `Project.defaultWorkRule`, anders FIXED_DURATION_RATE), welk deel van de taak het
 // RESTANT is (voortgang), welke toewijzingen de duur sturen (materiaal niet), hoe een restduur in
-// minuten terugvertaalt naar `TaskTime` (hele dagen in dagmodus) en wanneer de regel überhaupt van
+// minuten exact terugvertaalt naar `TaskTime` (ook breuken in werkdagen) en wanneer de regel van
 // toepassing is (alleen gewone bladtaken op werktijd en uurtaken — mijlpalen, hangmatten,
 // samenvattingen en ELAPSEDTIME-taken blijven ongemoeid).
 //
@@ -18,7 +18,7 @@ import type { WorkCalendar } from '@/types/calendar';
 import type { Project } from '@/types/project';
 import type { Resource, ResourceAssignment } from '@/types/resource';
 import type { Task, TaskTime } from '@/types/task';
-import { applyProgressInvariants, applyRemainingDuration, hourRemainingDays } from '@/engine/taskMutationRules';
+import { applyProgressInvariants, hourRemainingDays } from '@/engine/taskMutationRules';
 import { DEFAULT_WORK_RULE, type WorkRule } from '@/types/workRule';
 import { storedWorkDeviates } from '@/engine/work/workDeviation';
 import { contourIndexForAssignment, taskWorkMinutes } from '@/engine/contour/contourEngine';
@@ -72,7 +72,7 @@ export function workRuleApplies(task: Task): boolean {
 
 /** Werkminuten per werkdag van de taak. */
 export function slotMinutesOf(ctx: Pick<WorkRuleContext, 'hoursPerDay'>): number {
-  return Math.max(1, Math.round(ctx.hoursPerDay * 60));
+  return Math.max(1, ctx.hoursPerDay * 60);
 }
 
 /**
@@ -91,10 +91,10 @@ export function remainingMinutesOf(task: Task, ctx: Pick<WorkRuleContext, 'hours
   const t = task.time;
   const slot = slotMinutesOf(ctx);
   if (isHourTask(t)) {
-    const rem = t.remainingMinutes ?? Math.round(t.durationMinutes * (1 - (t.completion ?? 0)));
+    const rem = t.remainingMinutes ?? t.durationMinutes * (1 - (t.completion ?? 0));
     return Math.max(0, rem);
   }
-  const days = t.remainingTime ?? Math.round(t.scheduleDuration * (1 - (t.completion ?? 0)));
+  const days = t.remainingTime ?? t.scheduleDuration * (1 - (t.completion ?? 0));
   return Math.max(0, days) * slot;
 }
 
@@ -137,8 +137,8 @@ export interface TriangleWriteBack {
 /**
  * Stap 3: de uitkomst van de kern terugschrijven. De taakduur wordt ALLEEN aangeraakt wanneer de
  * kern een andere restduur teruggeeft dan hij kreeg (`before`), en dan als
- * `verricht deel + nieuwe rest` — het verrichte deel is een feit. Dagmodus houdt hele
- * dagen (`scheduleDuration` geheel; de kern rondt al naar boven op hele slots), uurmodus minuten.
+ * `verricht deel + nieuwe rest` — het verrichte deel is een feit. Beide maten houden breuken;
+ * dagenmaat schrijft werkdagen, urenmaat schrijft minuten zonder afronding (T14).
  * Een aanwezig `remainingTime`/`remainingMinutes` volgt de nieuwe rest. Toewijzingen: `unitsPerDay`
  * en `remainingWorkMinutes` (aanwezig ⇒ geschreven, afwezig ⇒ verwijderd) exact zoals de kern ze
  * teruggeeft. Muteert in-place; retourneert wat er veranderde.
@@ -160,9 +160,8 @@ export function applyTriangleResult(
       || (next.remainingWorkMinutes !== undefined && a.remainingWorkMinutes !== undefined
         && Math.abs(a.remainingWorkMinutes - next.remainingWorkMinutes) > 1e-6);
     if (!unitsChanged && !workChanged) continue;
-    // Alleen een door de KERN herleide inzet wordt afgerond; een exact geschreven gebruikersinvoer
-    // (de aanroeper schrijft die vóór de settle) blijft staan.
-    if (unitsChanged) a.unitsPerDay = Math.round(next.unitsPerDay * 10000) / 10000;
+    // Ook afgeleide inzet blijft exact: anders zijn W en R × I na terugschrijven ongelijk.
+    if (unitsChanged) a.unitsPerDay = next.unitsPerDay;
     if (next.remainingWorkMinutes === undefined) delete a.remainingWorkMinutes;
     else a.remainingWorkMinutes = next.remainingWorkMinutes;
     changed.push(a.id);
@@ -183,19 +182,20 @@ export function applyTriangleResult(
     // Daarom wordt de rest bij voortgang > 0 (of een al aanwezig restveld) expliciet geschreven, en
     // volgt `completion` daaruit (percentage = verricht ÷ nieuwe duur — zie
     // `syncCompletionToRemaining`). Een ongestarte taak krijgt geen extra veld.
-    const started = (t.completion ?? 0) > 0;
+    const started = (t.completion ?? 0) > 0 || !!t.actualStart;
     if (isHourTask(t)) {
-      t.durationMinutes = Math.round(newTotal);
+      t.durationMinutes = newTotal;
       t.scheduleDuration = t.durationMinutes / slot;
       if (started || t.remainingMinutes !== undefined) {
-        t.remainingMinutes = Math.max(0, Math.round(after.remainingMinutes));
+        t.remainingMinutes = Math.max(0, after.remainingMinutes);
+        t.remainingTime = hourRemainingDays(t, t.remainingMinutes);
         syncCompletionToRemaining(task);
       }
     } else {
-      t.scheduleDuration = Math.max(0, Math.round(newTotal / slot));
+      t.scheduleDuration = Math.max(0, newTotal / slot);
       delete t.durationMinutes;
       if (started || t.remainingTime !== undefined) {
-        t.remainingTime = Math.max(0, Math.round(after.remainingMinutes / slot));
+        t.remainingTime = Math.max(0, after.remainingMinutes / slot);
         syncCompletionToRemaining(task);
       }
     }
@@ -408,7 +408,11 @@ function followRemainingOfUnstartedTask(task: Task, before: TaskTime): void {
   const progressTouched = t.completion !== before.completion
     || t.remainingTime !== before.remainingTime || t.remainingMinutes !== before.remainingMinutes;
   if (progressTouched) return;
-  applyRemainingDuration(task);
+  // B3: de brug schrijft exact. De gedeelde voortgangsregel wordt door F2 aangepast.
+  if (isHourTask(t)) {
+    t.remainingMinutes = t.durationMinutes;
+    t.remainingTime = hourRemainingDays(t, t.remainingMinutes);
+  } else t.remainingTime = t.scheduleDuration;
 }
 
 /** De werkresources van de taak waarvan het BEWAARDE restwerk vóór de bewerking afweek van
@@ -518,20 +522,42 @@ export function settleAssignmentRemoved(
   return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx);
 }
 
+export interface RuleChangeWriteBack extends TriangleWriteBack {
+  /** Feitelijke maatwijziging (B1a). De aanroeper behandelt dit als planningsbewerking:
+   *  modus verlaten, planning verouderd, doorrekenen en undo vallen onder F3c (§5.2, geval 11c). */
+  durationUnitChanged: boolean;
+}
+
 /** Typewissel: schrijft `task.workRule` en legt onder een werkbeschermende regel het
- *  huidige restwerk vast; verder verandert geen getal. `undefined` = terug naar de projectstandaard. */
+ *  huidige restwerk vast. B1a: vast werk maakt een gewone dagenmaat-taak urenmaat, met
+ *  minuten = werkdagen × effectieve werktijd per dag, onafhankelijk van de plaatsing (T14).
+ *  `undefined` = terug naar de projectstandaard. De maatwijziging wordt apart geretourneerd. */
 export function settleRuleChange(
   task: Task,
   assignments: ResourceAssignment[],
   deps: WorkRuleDeps,
   rule: WorkRule | undefined,
-): TriangleWriteBack {
+): RuleChangeWriteBack {
   const captured = captureTriangle(task, assignments, deps);
   if (rule === undefined) delete task.workRule; else task.workRule = rule;
-  if (!captured) return NO_CHANGE;
-  const result = applyRuleChange(captured.state, effectiveWorkRule(task, captured.ctx.defaultWorkRule));
-  if (!result.ok) return NO_CHANGE;
-  return applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx);
+  if (!captured) return { ...NO_CHANGE, durationUnitChanged: false };
+  const effectiveRule = effectiveWorkRule(task, captured.ctx.defaultWorkRule);
+  const durationUnitChanged = effectiveRule === 'FIXED_WORK' && task.time.durationUnit !== 'hours';
+  if (durationUnitChanged) {
+    const t = task.time;
+    t.durationUnit = 'hours';
+    t.durationMinutes = captured.totalMinutes;
+    // Rest uit de blijvende dagenbron van VÓÓR de omzetting, ook bij een voltooide taak.
+    if (t.remainingTime !== undefined || t.completion > 0 || t.actualStart) {
+      t.remainingMinutes = captured.state.remainingMinutes;
+      t.remainingTime = hourRemainingDays(t, t.remainingMinutes);
+    } else delete t.remainingMinutes;
+  }
+  const result = applyRuleChange(captured.state, effectiveRule);
+  const written = result.ok
+    ? applyTriangleResult(task, assignments, captured.state, result.state, captured.ctx)
+    : NO_CHANGE;
+  return { ...written, durationUnitChanged };
 }
 
 /**
@@ -736,7 +762,7 @@ export function durationEditProgress(
   const cap = (value: number) => (value >= 1 - 1e-12 ? 1 : value);
 
   if (unitBefore === 'days' && unitAfter === 'days') {
-    const remaining = (before.remainingTime ?? Math.round(before.scheduleDuration * (1 - c)))
+    const remaining = (before.remainingTime ?? before.scheduleDuration * (1 - c))
       + (after.scheduleDuration - before.scheduleDuration);
     if (remaining < -1e-9) return refusal;
     const completion = after.scheduleDuration > 0 ? cap(doneDays / after.scheduleDuration) : c;
@@ -745,7 +771,7 @@ export function durationEditProgress(
   if (unitBefore === 'hours' && unitAfter === 'hours') {
     const oldMinutes = before.durationMinutes ?? 0;
     const newMinutes = after.durationMinutes ?? 0;
-    const remainingMinutes = (before.remainingMinutes ?? Math.round(oldMinutes * (1 - c))) + (newMinutes - oldMinutes);
+    const remainingMinutes = (before.remainingMinutes ?? oldMinutes * (1 - c)) + (newMinutes - oldMinutes);
     if (remainingMinutes < -1e-9) return refusal;
     const completion = newMinutes > 0 ? cap(doneMinutes / newMinutes) : c;
     const minutes = Math.max(0, remainingMinutes);
@@ -754,10 +780,10 @@ export function durationEditProgress(
   // Eenheidswissel: via de werkminuten; de restduur volgt de gewone regel in de nieuwe eenheid.
   const completion = newWork > 0 ? cap((c * oldWork) / newWork) : c;
   if (unitAfter === 'hours') {
-    const remainingMinutes = Math.round((after.durationMinutes ?? 0) * (1 - completion));
+    const remainingMinutes = (after.durationMinutes ?? 0) * (1 - completion);
     return { refused: false, completion, remainingMinutes, remainingTime: hourRemainingDays(after, remainingMinutes) };
   }
-  return { refused: false, completion, remainingTime: Math.round(after.scheduleDuration * (1 - completion)) };
+  return { refused: false, completion, remainingTime: after.scheduleDuration * (1 - completion) };
 }
 
 function timeUnit(time: TaskTime): 'days' | 'hours' {

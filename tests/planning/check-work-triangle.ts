@@ -6,7 +6,7 @@
 //       undo) horen bij de bedrading en worden hier geteld maar overgeslagen.
 //   (b) eigenschappen die geen enkele case apart toetst: "afwezig ⇒ afgeleid" blijft afwezig onder
 //       de inzetbeschermende regels, de typewissel verandert geen getal, weigeringen laten de
-//       toestand onaangeraakt, materiaal telt nergens mee, en de afronding gaat naar boven.
+//       toestand onaangeraakt, materiaal telt nergens mee, en breuken blijven exact (F3a/T14).
 //
 // Draait via run.sh (esbuild-bundel, Node). Exit 0 = groen. Geen store: alles is puur.
 import { readFileSync } from 'node:fs';
@@ -277,11 +277,11 @@ const sansFlag = (r: TriangleResult): string => JSON.stringify(r.ok ? { ...r.sta
   ok('NaN-inzet in de invoer: resource erbij geweigerd, niet stil NaN-werk', !applyAssignmentAdded(nanUnits, { id: 'c', unitsPerDay: 1 }).ok);
 }
 // FIXED_RATE (E9 25-09, draait F5 terug): een inzetwijziging legt het werk van de bewerkte toewijzing
-// vast — ook bij afronding. Het veld houdt het exacte W (40 u), niet R × I van de afgeronde R (43,2 u).
+// vast. T14: de duur volgt exact uit W / I, zonder afronding.
 {
   const s: TriangleState = { ...base, rule: 'FIXED_RATE', assignments: [{ id: 'a', unitsPerDay: 1, drivesDuration: true }] };
   const r = applyUnitsEdit(s, 'a', 0.6);
-  ok('FIXED_RATE: inzet → 0,6 ⇒ R = 9 d (40 ÷ 4,8 = 8,33), werkveld 40 u vastgelegd', r.ok && r.state.remainingMinutes === 4320
+  ok('FIXED_RATE: inzet → 0,6 ⇒ R = 25/3 d (4000 min), werkveld 40 u vastgelegd', r.ok && r.state.remainingMinutes === 4000
     && r.state.assignments[0].remainingWorkMinutes === 2400);
   // Heen en terug, en een reeks heen-en-weer: nooit oplopen (regel 3).
   let st: TriangleState = s;
@@ -302,12 +302,12 @@ const sansFlag = (r: TriangleResult): string => JSON.stringify(r.ok ? { ...r.sta
   ok('FIXED_RATE, twee toewijzingen: a 1 → 0,5 → 1 ⇒ 10 d (b afgeleid 40 u) — bekende afwijking, MSP: 5 d', r2.ok && r2.state.remainingMinutes === 4800
     && r2.state.assignments[1].remainingWorkMinutes === undefined);
 }
-// Afronding: naar boven, nooit onder één slot; uurmodus op hele minuten.
-near('afronding: 2,5 d → 3 d', roundUpRemaining(1200, base), 1440, 0);
-near('afronding: precies 3 d blijft 3 d', roundUpRemaining(1440, base), 1440, 0);
-near('afronding: 3 d + drijvende-kommaruis blijft 3 d', roundUpRemaining(1440 + 1e-10, base), 1440, 0);
-near('afronding: minimaal één slot', roundUpRemaining(1, base), 480, 0);
-near('afronding: uurmodus 100,2 min → 101', roundUpRemaining(100.2, { slotMinutes: 480, wholeDays: false }), 101, 0);
+// T14 vervangt de oude afrondingsregel: geen dag- of minuutafronding in de werkdriehoek.
+near('T14: 2,5 d blijft 2,5 d', roundUpRemaining(1200, base), 1200, 0);
+near('T14: precies 3 d blijft 3 d', roundUpRemaining(1440, base), 1440, 0);
+near('T14: ook kleine breuken blijven', roundUpRemaining(1440 + 1e-10, base), 1440 + 1e-10, 0);
+near('T14: één minuut blijft één minuut', roundUpRemaining(1, base), 1, 0);
+near('T14: uurmodus 100,2 min blijft 100,2', roundUpRemaining(100.2, { slotMinutes: 480, wholeDays: false }), 100.2, 0);
 // Werk vast + inzet vast tegelijk kan niet: FIXED_RATE met twee toewijzingen — de andere houdt haar inzet en
 // haar (afgeleide) werk groeit met de langere duur (§6.2, beslispunt 10).
 {
