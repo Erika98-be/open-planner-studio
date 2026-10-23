@@ -14,6 +14,9 @@ Besluit: eigenaar, gesprek 2026-10-22.
   Nog geen tag: geen tag die week. Open fix-PR's blijven staan. Al getagd: behoud de release.
   Rapporteer de oorzaak en hervat de volgende zaterdag dezelfde voortgang. Afgeschreven tag: hervat de fix/opvolger.
 - Werkplek: repo `OpenAEC-Foundation/open-planner-studio`; schone eigen worktree vanaf `origin/main`.
+- Besluit 9, eigenaar, 2026-10-23: alleen deze job heeft de Node-uitzondering uit AGENTS.md en
+  [de exacte lijst](referentie.md#node-uitzondering-voor-de-zaterdagjob). Eenmaal `npm ci` per run,
+  uitsluitend in de release-worktree. Geen lokale tests, app-builds, volledige verify of dev-servers.
 - Eén actieve run tegelijk. Volg het hervatpad; alleen afschrijving opent de route naar een opvolgversie.
 - Rode main-/release-PR-/releaseworkflow: eerst eenmaal `gh run rerun <id> --failed`.
   Blijft hij rood: kleinste fix-PR vanaf main, tweede Sol-review via T3 `delegate_task`
@@ -33,7 +36,12 @@ Besluit: eigenaar, gesprek 2026-10-22.
 ```text
 Voer op aia09-mp50 de wekelijkse release van Open Planner Studio uit.
 Lees AGENTS.md, .claude/rules/ci-release.md en .claude/skills/release/SKILL.md.
+Gebruik alleen de Node-uitzondering van besluit 9 (eigenaar, 2026-10-23), met de exacte lijst
+en werkplekgrenzen in referentie.md. Eenmaal npm ci per run in de release-worktree, geen link naar
+node_modules in de hoofdcheckout. Tests, app-builds en volledige verify draaien alleen in CI.
 Volg de release-skill en de gekoppelde referentie en skills volledig.
+Een aangeroepen skill verruimt de lijst niet. Stop bij een vereiste vertaalstap buiten de lijst;
+meld die blokkade en start geen subagent die hier verboden Node-opdrachten moet uitvoeren.
 Het zaterdagmandaat omvat publiceren en gecontroleerd hervatten, zonder menselijk akkoord.
 Rond eerst onafgerond werk voor de laatste tag af. Respecteer alle stopregels.
 Herstel rode CI volgens referentie.md: eenmaal rerun, dan fix-PR met tweede Sol-review.

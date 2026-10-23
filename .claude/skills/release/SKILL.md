@@ -5,6 +5,10 @@ description: Gebruik alleen bij een expliciete /release of een verzoek om een ni
 
 # Wekelijkse release — Open Planner Studio
 
+Besluit 9: eigenaar, gesprek 2026-10-23. Alleen de geplande zaterdagjob heeft de smalle
+Node-uitzondering op [AGENTS.md](../../../AGENTS.md). De [exacte lijst en werkplekgrenzen](referentie.md#node-uitzondering-voor-de-zaterdagjob)
+gelden ook bij aangeroepen skills. Andere agents en onderhoud aan deze skill krijgen geen uitzondering.
+
 Mandaat: eigenaar, gesprek 2026-10-22. De zaterdagjob op aia09-mp50 voert deze skill
 volledig automatisch uit. Er is geen menselijk akkoord vóór de tag. Stel geen vragen.
 Een `v*`-tag is onomkeerbaar: installers, updater en Snap Store leveren aan alle gebruikers.
@@ -18,6 +22,8 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Een andere repo, ontbrekende origin of netwerkfout: stop vóór schrijven of publiceren.
 - Gebruik een schone, eigen release-worktree vanaf vers opgehaalde `origin/main`.
   Neem geen ongecommit werk over. Haal volledige historie en origin-tags op.
+  Alleen de zaterdagjob: eenmaal per run `npm ci` in die worktree vóór de eerste Node-stap.
+  De hoofdcheckout heeft geen `node_modules`; maak geen link daarheen. Zie de exacte lijst hierboven.
 - Harde deadline zaterdagjob: **14:00 Europe/Amsterdam**. Stop dan met herstel/publicatie.
   Vóór de tag: geen tag die week; behoud open fix-PR's en rapporteer de oorzaak.
   Na de tag: behoud tag/draft en hervat de voortgang de volgende zaterdag; sla afgeschreven tags over.
@@ -36,7 +42,7 @@ Alleen deze skill mag een release uitvoeren. Een verzoek om de skill te wijzigen
   Rood: volg [CI herstellen](referentie.md#ci-herstellen): eenmaal rerun, dan een fix-PR
   met tweede Sol-review. Ga pas verder na groene CI op de actuele main-SHA.
 - Geen commits sinds `PREV` en geen onafgerond app-werk: stop zonder bump/tag; meld “niets veranderd”.
-- Falende `verify:translations`, `verify` of ontbrekende/lege releasetekst blokkeert de tag.
+- Falende `verify:translations`, `verify` in CI of ontbrekende/lege releasetekst blokkeert de tag.
   Herstel binnen de deadline volgens de referentie. Omzeil nooit een poort.
 - Geen gelijktijdige release-run. Een bestaande doeltag gaat uitsluitend via het hervatpad;
   verplaats, verwijder of push hem nooit opnieuw. Geen force-push, secretwijziging of ongepoort dispatch.
@@ -88,7 +94,7 @@ Controleer vóór iedere commit `git status -sb`; commit alleen releasebestanden
 Staat de kandidaat al ongewijzigd op main met een gemergde PR, sla dan de PR/merge-stappen over.
 Anders: push de releasebranch en hergebruik de kandidaat-PR; maak alleen zonder bestaande PR
 `Release v<VERSION>`. Registreer hem bij T3 en bewaar daarin het hervatverslag.
-De volledige `npm run verify` draait in CI, niet lokaal vóór de push.
+De volledige `npm run verify`, alle tests en app-builds draaien uitsluitend in CI, ook vóór de tag.
 Wacht op een geslaagde `ci.yml`-run voor de exacte PR-head; bij rood: volg CI herstellen.
 Merge zelf met `gh pr merge <nr> --squash --admin --match-head-commit <head-SHA>`.
 Hiervoor is geen menselijke review nodig. Bewaak de basis en cijfers zoals in de referentie.

@@ -2,6 +2,55 @@
 
 Lees het passende onderdeel tijdens de release. Dit bestand geeft geen zelfstandig publicatiemandaat.
 
+## Node-uitzondering voor de zaterdagjob
+
+**Besluit 9: eigenaar, gesprek 2026-10-23.** Dit is de vaste, smalle uitzondering op de
+[Server restriction in AGENTS.md](../../../AGENTS.md), aangehaald in [SKILL.md](SKILL.md).
+Alleen de geplande wekelijkse releasejob op aia09-mp50 mag onderstaande Node-stappen uitvoeren.
+Onderhoud aan de skill, losse releases, CI-fixagents en vertaal-/reviewsubagents krijgen geen uitzondering.
+
+Gebruik uitsluitend de eigen release-worktree. Houd de Node-stappen daar, ook bij hervatten of
+wisselen van releasecommit. Geen Node in de hoofdcheckout, een CI-fixworktree of een andere checkout.
+Alleen de vier websitegeneratoren draaien in een tijdelijke websitekopie binnen de release-worktree.
+
+De volledige lijst:
+
+- Eenmaal per run `npm ci` in de release-worktree. De hoofdcheckout heeft geen `node_modules`;
+  gebruik geen link daarheen en installeer niet opnieuw per stap of in de websitekopie.
+- `npm run bump` en `node scripts/bump-version.js --check "$VERSION"`.
+- De bestaande kleine inline `node`-blokken in deze skill: afschrijving herkennen,
+  kandidaatselectie, pakketversie lezen en jaar/week/volgnummer numeriek vergelijken.
+- `node scripts/release-notes.mjs "v$VERSION" --format=body` en dezelfde opdracht met `--format=notes`.
+- `npm run gen:release-highlights-json`, `npm run verify:release-highlights -- "$VERSION"`
+  en `npm run verify:release-highlights-json`.
+- `npm run translate -- prepare ui <taal> --missing`, `--stale` of `--avoid`;
+  `npm run translate -- apply ui <taal>` en `npm run translate -- status [taal]`.
+- `npm run verify:translations`.
+- `npm run verify:docs`, `npm run publish:wiki` (dry-run), `npm run publish:wiki -- --push`
+  en `node scripts/run-ts.mjs scripts/check-wiki-links.ts`.
+- Alleen in de tijdelijke websitekopie: `node scripts/generate-release-notes.js`,
+  `node scripts/generate-release-highlights.js`, `node scripts/build-i18n-pages.js`
+  en `node scripts/build-release-notes-static.js`.
+
+Interne helperprocessen van deze opdrachten horen bij die stap; dit staat geen andere losse Node-opdracht toe.
+Tests (`npm test`, alle suites en browsertests), app-builds (`npm run build`, `tauri:*`), de volledige
+`npm run verify` en dev-servers blijven hier verboden. Ook geen andere installatie of `npx`.
+De verplichte volledige verify vóór de tag komt uit `ci.yml` op de exacte main-SHA.
+`release.yml` herhaalt de volledige verify na de tag, vóór publicatie. Bekijk die runs met `gh`.
+Gerichte tests en foutreproducties horen eveneens in PR-CI; sla geen check over en verzwak niets.
+
+### Grenzen bij aangeroepen skills
+
+De [wiki-skill](../wiki/SKILL.md) vraagt alleen Node-stappen uit de lijst hierboven.
+De [update-ui-lang-skill](../update-ui-lang/SKILL.md) bevat daarnaast opdrachten buiten de lijst:
+`translate -- packages ui`, de losse pakketcheck `node build/translate/check.mjs` bij ouder én
+stations, `npm run i18n:add`, `npm run verify:i18n` en termbaseherstel via `apply-terms`.
+Ook zijn Node-padprobe en `node_modules`-link geven geen extra toestemming.
+`verify:i18n` draait al in PR-/main-CI. De overige opdrachten worden met besluit 9 niet toegestaan.
+Is vertaalwerk afhankelijk van deze stappen, stop dan vóór de tag en meld precies welke stap ontbreekt.
+Start geen stations die hier verboden Node-checks moeten draaien. Laat hun pakketpoort niet vervallen.
+Deze beperking vraagt een aparte uitvoeringsroute of aanvullend eigenaarsbesluit; verruim de lijst niet zelf.
+
 ## Hervatten
 
 Doe dit vóór “niets veranderd” en vóór `npm run bump`. Neem de numeriek nieuwste stabiele
@@ -194,8 +243,8 @@ maak geen dubbele PR. Een al verbruikte rerunpoging begint na een weekwissel nie
    Bewaar de poging en wacht binnen de deadline. Groen: hercontroleer de SHA en vervolg de poorten.
    Ontbrekende runs of auth-/netwerkfouten zijn geen rode check; verzin geen succes of nieuwe run.
 2. Nog rood: maak een eigen fixbranch vanaf vers opgehaalde `origin/main` en een fix-PR tegen main.
-   Reproduceer de oorzaak en maak de kleinste fix die haar repareert. Geen test uitzetten of
-   overslaan, geen check verzwakken. Draai gerichte checks; volledige `verify` loopt in PR-CI.
+   Reproduceer de oorzaak in PR-CI en maak de kleinste fix die haar repareert. Geen test uitzetten of
+   overslaan, geen check verzwakken. Gerichte tests en volledige `verify` lopen in PR-CI, nooit lokaal.
    Lees vóór iedere commit `git status -sb`. Geen directe push naar main of force-push.
    Open de fix-PR vroeg, registreer hem bij T3 en leg fout, run en releasekandidaat vast.
 3. Laat een tweede Sol-agent de actuele fix-PR-head reviewen zoals hieronder. Alleen BLOKKEERT
@@ -212,7 +261,7 @@ maak geen dubbele PR. Een al verbruikte rerunpoging begint na een weekwissel nie
 5. Hervat pas daarna de release. Bij een rode release-PR: neem de fix via een gewone merge van
    main op in de bestaande releasebranch. Los conflicten op, behoud de kandidaatversie en vernieuw
    cijfers/JSON volgens [Releasecijfers](#releasecijfers). Ook een fout die alleen in de kandidaat
-   optreedt moet op die kandidaat gereproduceerd en na de fix opnieuw getest worden.
+   optreedt moet in PR-CI op die kandidaat gereproduceerd en na de fix opnieuw getest worden.
    Wacht opnieuw op groene release-PR-CI en main-CI. Geen tweede bump.
    Een lokale releasepoort krijgt dezelfde kleinste fix en review; zonder run valt alleen de rerun weg.
 
@@ -358,14 +407,19 @@ Het highlight-blok `#whats-new` en zijn woordenboeken komen **niet** vanzelf mee
 4. De diff mag alleen die twee blokken, de twee Planner-databestanden en de `whatsnew`-objecten
    bevatten. Geen feature-grid, FAQ, meta-teksten, JSON-LD, screenshots, nieuws, `/md/` of `llms.txt`.
    Laat de dagelijkse Action zijn overige bestaande werk doen.
-5. Draai de websitecheckers uit de actuele repo-instructies. Op onderzoeksdatum:
+5. Lees de websitecheckers uit de actuele repo-instructies. Op onderzoeksdatum:
    ```bash
    node scripts/check-open-pile-plan-studio.js
    node scripts/check-homepage-catalog-product-pages.js
    node scripts/check-release-timeline.js
    node scripts/check-release-notes-generator.js
    ```
-   Beoordeel ook de vijf `#whats-new`-blokken en parseer de vier JSON-woordenboeken.
+   Dit zijn checks buiten de Node-uitzondering, geen toegestane generatoren. Draai ze hier niet;
+   tests horen in CI. Gebruik bestaand CI-bewijs als dat er is. Zonder groen checkerbewijs blijft
+   het websitewerk onafgerond; meld dit en draag het over in het hervatverslag. De volgende
+   app-release wordt daardoor niet geblokkeerd. Er komt geen nieuwe PR-checkeis bij.
+   Beoordeel ook de vijf `#whats-new`-blokken en parseer de vier JSON-woordenboeken zonder Node;
+   behoud de verplichte diff- en livecontrole hieronder.
 6. Commit, push de websitebranch, open een PR tegen `main` en registreer die bij de T3-thread.
    Merge direct: `gh pr merge <nr> --repo OpenAEC-Foundation/website --merge --admin`.
    Nozzit heeft een bypass in `required_pull_request_reviews.bypass_pull_request_allowances.users`

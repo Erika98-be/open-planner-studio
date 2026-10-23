@@ -14,6 +14,12 @@ installation, builds, tests, dev servers and scripts that launch Node indirectly
 GitHub CI and inspect the results with `gh`. This rule takes precedence over all local execution,
 testing and self-testing instructions below and in skills or area-specific rules.
 
+Exception: the scheduled weekly release job on aia09-mp50 may run only the narrowly listed Node
+steps in its own release worktree (website generators in a temporary copy there); see
+[`.claude/skills/release/SKILL.md`](.claude/skills/release/SKILL.md) and its exact list in `referentie.md`.
+Owner decision 9, conversation 2026-10-23. This does not cover other agents or maintenance of the skill.
+Tests, app builds, the full `npm run verify` and dev servers remain CI-only.
+
 ## Commands
 
 ```bash
