@@ -1158,7 +1158,7 @@
     "nav": {
       "reportTab": "Naar rapport-tabblad",
       "switchDocument": "Wissel van document",
-      "scrollToToday": "Spring naar vandaag",
+      "scrollToToday": "Spring naar statusdatum of vandaag",
       "help": "Help openen"
     },
     "grid": {

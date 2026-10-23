@@ -1158,7 +1158,7 @@
     "nav": {
       "reportTab": "Go to Report tab",
       "switchDocument": "Switch document",
-      "scrollToToday": "Jump to today",
+      "scrollToToday": "Jump to status date or today",
       "help": "Open help"
     },
     "grid": {
