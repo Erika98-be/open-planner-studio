@@ -2,7 +2,9 @@ import type { Task, TaskTimeComputed, TaskTimeInput } from '@/types/task';
 import { rollupSummaryTasks } from './applyCpmResult';
 import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import type { WorkCalendar } from '@/types/calendar';
-import type { CPMResult, CPMTaskResult } from './CPMSolver';
+import { engineForTaskCalendar, type CPMResult, type CPMTaskResult } from './CPMSolver';
+import { deadlineBound } from './deadlineBound';
+import { resolveCalendar } from './resolveCalendar';
 import { writeSummaryProgress, type SummaryProgress } from './summaryProgress';
 import { CalendarEngine } from './CalendarEngine';
 import { parseInstant } from '@/utils/dateUtils';
@@ -344,18 +346,12 @@ export function shiftedTaskIds(tasks: Task[], times: Record<string, RecordedTime
  * bestand) en hier bewust niet gedicht — dichten vraagt een derde presence-registratie
  * (`scheduleDuration`) die deze module niet heeft.
  *
- * ÉÉN SCHERP AFGEBAKENDE AFWIJKING van `scheduleAnalysis.ts`: `missedDeadlineTaskIds` vergelijkt hier met simpele stringvergelijking
- * (`rec.finish > task.deadline`); de solver rekent i.p.v. daarvan met instants en met
- * `cal.prevWorkDay(deadline)`, over de KALENDER VAN DIE TAAK (`calendarFor(task)`). Met ÉÉN kalender
- * (de enige die deze functie kent — haar `calendar`-parameter) lopen de twee BEWIJSBAAR NOOIT uiteen:
- * `prevWorkDay(dl) ≤ dl`, en er bestaat op diezelfde kalender geen werkdag strikt tussen
- * `prevWorkDay(dl)` en `dl`. Divergentie vereist dus een taak op een ANDERE kalender dan de
- * meegegeven kalender (`task.calendarId` wijst naar een resource-/bibliotheekkalender) — een geval
- * dat deze pure reconstructiefunctie sowieso niet kan zien, want ze krijgt maar één kalender mee.
- * Dichttrekken vraagt per-taak-kalenders die ze bewust niet heeft (ze reconstrueert — ze solvet niet).
- * Er is wél één echte extra divergentie die BINNEN één kalender kan optreden: uur-modus met
- * `rec.finish` exact op `'…T00:00'` van de deadline-dag — de stringvergelijking hier meldt "gemist",
- * de solver niet (middernacht hoort bij de vorige werkdag, `prevWorkDay`-semantiek).
+ * `missedDeadlineTaskIds` gebruikt dezelfde deadlinegrens als de solver (`deadlineBound.ts`), op de
+ * engine die de solver voor die taak kiest: eerst de taakkalender (`resolveCalendar` op
+ * `task.calendarId` en de kalenderregistratie `calendars`, terugval de projectkalender), dan de
+ * uur-/dagregel (`engineForTaskCalendar`) — zoals `CPMSolver.calendarFor`. Zo spreken de melding na
+ * een berekening en de melding in de opgeslagen-datumsmodus elkaar niet tegen, ook niet voor een taak
+ * op een eigen kalender (review PR #402 ronde 2).
  *
  * `projectStart`/`projectEnd` worden hieronder met stringvergelijking
  * (`<`/`>`) bepaald. Bij GEMENGDE dag/uur-formaten binnen dezelfde taakset (bv. `'2026-03-09T17:00'`
@@ -369,10 +365,12 @@ export function cpmResultFromRecorded(
   times: Record<string, RecordedTime>,
   tasks: Task[],
   calendar: WorkCalendar,
+  calendars: WorkCalendar[],
 ): CPMResult {
   const out = new Map<string, CPMTaskResult>();
   const criticalPath: string[] = [];
   const missedDeadlineTaskIds: string[] = [];
+  const engines = new Map<string, CalendarEngine>();
   let projectEnd = '';
   let projectStart = '';
 
@@ -394,7 +392,12 @@ export function cpmResultFromRecorded(
       isCritical: rec.isCritical ?? false,
     });
     if (rec.isCritical) criticalPath.push(task.id);
-    if (task.deadline && rec.finish > task.deadline) missedDeadlineTaskIds.push(task.id);
+    if (task.deadline) {
+      const eng = engineForTaskCalendar(engines, resolveCalendar(task.calendarId, calendars, calendar), task);
+      const bound = deadlineBound(task.deadline, eng);
+      const finish = parseInstant(rec.finish);
+      if (bound && !isNaN(finish.getTime()) && finish > bound) missedDeadlineTaskIds.push(task.id);
+    }
     if (!projectStart || rec.start < projectStart) projectStart = rec.start;
     if (rec.finish > projectEnd) projectEnd = rec.finish;
   }
@@ -466,7 +469,7 @@ export function cpmResultFromRecorded(
  * Schrijf de vastlegging in de taken en lever het gereconstrueerde `CPMResult` — ÉÉN implementatie
  * voor de laadroute (`enterRecordedDatesMode` in `documentActivation.ts`). Muteert `tasks` IN-PLACE (een Immer-draft óf een
  * payload-kloon — de aanroeper bepaalt welke) en geeft daarna hetzelfde `CPMResult` terug als
- * `cpmResultFromRecorded(times, tasks, calendar)` op diezelfde, nu-bijgewerkte taken zou geven.
+ * `cpmResultFromRecorded(times, tasks, calendar, calendars)` op diezelfde, nu-bijgewerkte taken zou geven.
  *
  * DE TERUGVALLEN BINNEN DEZE KERN ZIJN BEWUST: `TaskTime.lateStart` is een
  * verplichte `string`, `totalFloat`/`freeFloat` verplichte `number`s (`TaskTimeComputed`,
@@ -487,6 +490,7 @@ export function applyRecordedTimesToTasks(
   tasks: Task[],
   times: Record<string, RecordedTime>,
   calendar: WorkCalendar,
+  calendars: WorkCalendar[],
 ): CPMResult {
   for (const task of tasks) {
     const rec = times[task.id];
@@ -524,5 +528,5 @@ export function applyRecordedTimesToTasks(
     task.time.isNearCritical = undefined;
     task.time.floatPath = undefined;
   }
-  return cpmResultFromRecorded(times, tasks, calendar);
+  return cpmResultFromRecorded(times, tasks, calendar, calendars);
 }

@@ -16,6 +16,7 @@ import {
   taskDurationUnit, writeDerivedSpan, isPinnedComplete, isPinnedInProgress, isElapsedTask,
 } from './duration';
 import { computeScheduleResults } from './scheduleAnalysis';
+import { deadlineBound } from './deadlineBound';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
 import {
   explainP6CompletedDataDateWindowResolved,
@@ -2280,6 +2281,14 @@ export class CPMSolver {
         const taskElapsedForSnap = isElapsedTask(task);
         if (!taskElapsedForSnap && task.levelingDelayElapsed) {
           earlyStart = this.snapOnOrAfter(cal, earlyStart);
+        } else if (!taskElapsedForSnap && cal.isHourMode) {
+          // Een WERKTIJD-vertraging telt werkminuten op (`addWorkingMinutesSigned`) en kan exact op
+          // een blokeinde landen (di 16:00). Als start is dat het volgende blokbegin (wo 08:00);
+          // zonder deze snap gaf `addDurationChecked`s band-eind-wacht (voor een rauw wortel-anker)
+          // een vroeg einde gelijk aan de start: duur nul (knownbugs 140 van het ontwerp "alleen
+          // uren"). `snapSuccessorEarlyStart` laat een eindmijlpaal op het blokeinde staan, net als na
+          // een relatie. Binnen een blok is dit een no-op. `bg140-*` in `cases-hours-blokgrenzen.json`.
+          earlyStart = this.snapSuccessorEarlyStart(cal, earlyStart, task);
         }
       }
 
@@ -3021,7 +3030,15 @@ export class CPMSolver {
     const finishSide = rel === 'FS' || rel === 'FF';   // eerste teken F ⇒ mijn finish; S ⇒ mijn start
     if (eng.isHourMode) {
       const shifted = eng.addWorkingMinutesSigned(anchor, -this.externalLagMinutes(link, eng));
-      return finishSide ? shifted : this.finishFromStart(eng, shifted, task);
+      if (!finishSide) return this.finishFromStart(eng, shifted, task);
+      // FS/FF: de grens is een EINDmoment. `addWorkingMinutesSigned` normaliseert vooruit
+      // (`nextWorkInstant`) en kan op een blokbegin landen (anker wo 08:00 ⇒ late finish wo 08:00).
+      // Als eindmoment is dat het vorige blokeinde (di 16:00): zelfde punt op de tijdas, dus de
+      // speling verandert niet, maar de getoonde late finish en de dag die een dagtaak eruit leest
+      // wel (knownbugs 141 van het ontwerp "alleen uren"). Mijlpaal en ELAPSEDTIME-taak blijven
+      // ongemoeid. `bg141-*` in `cases-hours-blokgrenzen.json`.
+      if (isZeroDurationMilestone(task) || isElapsedTask(task)) return shifted;
+      return this.snapOnOrBefore(eng, shifted);
     }
     const lag = this.externalLagDays(link, eng);
     const base = rel === 'FS' ? eng.prevWorkDayBefore(anchor) : eng.prevWorkDay(anchor);
@@ -3090,13 +3107,8 @@ export class CPMSolver {
         if (bound && bound < lf) lf = bound;
       }
     }
-    if (task.deadline) {
-      const dl = parseDate(task.deadline);
-      if (!isNaN(dl.getTime())) {
-        const dlW = eng.prevWorkDay(dl);
-        if (dlW < lf) lf = dlW;
-      }
-    }
+    const dlW = deadlineBound(task.deadline, eng);
+    if (dlW && dlW < lf) lf = dlW;
     return lf;
   }
 

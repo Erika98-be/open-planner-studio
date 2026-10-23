@@ -416,6 +416,7 @@
     "project.untitled": "91b4e6ef56b3e6db",
     "project.imported": "802c6ebd9f4a7ab2",
     "project.unassignedResource": "b5d423233c1c2f8f",
+    "project.ifcBuildingModelUnsupported": "ba42f0838ff8d18f",
     "documents.overviewTitle": "2f57f21ffec1816a",
     "documents.openBadge": "0de97ec385590067",
     "documents.switchHint": "621915322cb69830",
@@ -1335,8 +1336,7 @@
     "notifications.p6xmlImportUnassignedActivities_one": "19b2ef64150a3f72",
     "notifications.p6xmlImportUnassignedActivities_other": "34a478771a3daf6f",
     "notifications.exportP6Truncated_one": "95e5a50366fdaaa3",
-    "notifications.exportP6Truncated_other": "ae64ca54c96c61a4",
-    "project.ifcBuildingModelUnsupported": "ba42f0838ff8d18f"
+    "notifications.exportP6Truncated_other": "ae64ca54c96c61a4"
   },
   "task": {
     "contourDialog.title": "2c88619a7af281e3",

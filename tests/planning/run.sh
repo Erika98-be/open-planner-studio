@@ -70,7 +70,7 @@ if [ "$HARNESS_OK" -eq 1 ]; then unset 'BUNDLES[-1]'; fi
 # lijst stil achter en bewaakt hij niets meer). Nieuwe batterij ⇒ naam hieronder bijzetten.
 EXPECTED_BATTERIES=(
   advanced-cpm baselines boundary calendar calibration constraints driving edge float
-  hours hours-relations kalenders lag-advanced milestone-kinds milestones move-project
+  hours hours-blokgrenzen hours-relations kalenders lag-advanced milestone-kinds milestones move-project
   msp-pariteit probes progress relations resource-leveling resource-load view
 )
 

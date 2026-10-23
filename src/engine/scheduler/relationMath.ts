@@ -2,7 +2,7 @@ import type { Task } from '@/types/task';
 import type { Sequence, LagUnit } from '@/types/sequence';
 import type { CalendarEngine } from './CalendarEngine';
 import { addCalendarDays, MS_PER_DAY } from '@/utils/dateUtils';
-import { isElapsedTask, isZeroDurationMilestone } from './duration';
+import { isElapsedTask, isZeroDurationMilestone, taskDurationUnit } from './duration';
 
 /**
  * Relatie-wiskunde (FS/SS/FF/SF) voor `CPMSolver.ts`, forward/backward × dag-/uur-modus.
@@ -522,6 +522,43 @@ function backwardDay(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Een dagtaak die in een uur-engine rekent: een dagtaak (geen urentaak, geen 0-duurmijlpaal, geen
+ * ELAPSEDTIME) op een kalender met werkblokken. Haar duur-aftrek (`startFromFinish`/`subDuration`)
+ * leest een eindmoment als kalenderdag (`utcDayStart`), zonder eerst achteruit naar een werkmoment
+ * te zetten zoals `subtractWorkMinutes` dat voor een urentaak doet.
+ */
+function isDayTaskOnBands(task: Task, eng: CalendarEngine): boolean {
+  return eng.isHourMode && taskDurationUnit(task) !== 'hours'
+    && !isZeroDurationMilestone(task) && !isElapsedTask(task);
+}
+
+/**
+ * Knownbugs 142: een eindmoment `moment` op een blokbegin van `lagEng` als het vorige blokeinde,
+ * maar ALLEEN als dat voor de dagtaak die het leest (`readerEng`) werkelijk dezelfde grens is: daar
+ * een geldig eindmoment (`(start,end]`) en geen werktijd tussen beide. Anders blijft `moment`
+ * staan (het gedrag van vóór de fix). Voorbeeld waar het NIET mag: de opvolger heeft op dat
+ * blokeinde een vrije dag; dan zou ze vóór haar voorganger eindigen.
+ * `floor` (optioneel): een eis die niet vóór dit rauwe moment lag, niet tot vóór dit moment terugzetten
+ * — de rauwe voorgangerfinish bij een FF-ondergrens, die voor een ELAPSEDTIME- of werkelijke finish
+ * buiten werktijd kan liggen (A eindigt di 08:00 ⇒ B niet ma 16:00). Een lead ligt al vóór de finish
+ * en valt hier niet onder.
+ */
+function previousBlockEndIfSame(
+  deps: RelationDeps,
+  lagEng: CalendarEngine,
+  readerEng: CalendarEngine,
+  moment: Date,
+  floor?: Date,
+): Date {
+  const back = deps.snapOnOrBefore(lagEng, moment);
+  if (back.getTime() === moment.getTime()) return moment;
+  if (floor && moment.getTime() >= floor.getTime() && back.getTime() < floor.getTime()) return moment;
+  if (readerEng.prevWorkInstant(back).getTime() !== back.getTime()) return moment;
+  if (readerEng.workMinutesBetween(back, moment) !== 0) return moment;
+  return back;
+}
+
+/**
  * Landing van een rauwe voorganger-instant op de opvolger, gedeeld door `forwardHour` en
  * `sfReqFinishHour`: de rauwe instant is een uur-precisie `Date` uit de
  * VOORGANGER-kalender. Is de opvolger zelf ook uur-modus, dan is dat instant al geldig — gewoon
@@ -607,6 +644,17 @@ function forwardHour(
         if ((succIsFinishMs || succElapsed) && pe.isHourMode
           && lagged.getTime() === deps.snapOnOrAfter(lagEng, predResult.ef).getTime()) {
           reqFinish = landRawInstant(deps, se, predResult.ef, succElapsed);
+        } else if (pe.isHourMode && lagEng.isHourMode && !predEndsBeginOfDay
+          && isDayTaskOnBands(successor, se)) {
+          // Knownbugs 142 van het ontwerp "alleen uren": `shiftLagPred` normaliseert vooruit, dus een
+          // geëiste finish op een blokeinde (vr 16:00) wordt bij lag 0 het volgende blokbegin
+          // (ma 07:00), en een lead kan op een blokbegin landen. `startFromFinish` leest die finish
+          // voor een dagtaak als kalenderdag (`utcDayStart`): één werkdag te laat. Als eindmoment
+          // hoort een blokbegin bij het vorige blokeinde, mits dat voor de opvolger dezelfde grens is
+          // en niet vóór de rauwe voorgangerfinish ligt (`previousBlockEndIfSame`). Een urentaak
+          // trekt zelf al achteruit af (`subtractWorkMinutes`), dus alleen de dagtaak.
+          // `bg142-*` in `cases-hours-blokgrenzen.json`.
+          reqFinish = previousBlockEndIfSame(deps, lagEng, se, lagged, predResult.ef);
         } else {
           reqFinish = lagged;
         }
@@ -780,7 +828,14 @@ function backwardHour(
       if (elapsed) {
         return deps.snapOnOrBefore(pe, new Date(succLf.getTime() - elapsedMin()));
       }
-      return deps.shiftLagPred(lagEng, succLf, seq, predTask, -1);       // pred.LF
+      const predLf = deps.shiftLagPred(lagEng, succLf, seq, predTask, -1);       // pred.LF
+      // Spiegel van de forward-FF hierboven (knownbugs 142): een late finish op een blokbegin leest
+      // een dagtaak-voorganger in `subDuration` als de dag erna. Alleen een dagtaak op werkblokken;
+      // een urentaak houdt het bestaande gedrag (bij P6 regelt `p6BackwardLagFinishBoundary` dit).
+      if (se.isHourMode && lagEng.isHourMode && isDayTaskOnBands(predTask, pe)) {
+        return previousBlockEndIfSame(deps, lagEng, pe, predLf);
+      }
+      return predLf;
     }
     case 'START_FINISH': {
       const shifted = elapsed
