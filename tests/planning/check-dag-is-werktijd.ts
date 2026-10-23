@@ -140,7 +140,6 @@ const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, li
 function openInStore(parsed: OpenedImport) {
   const ctx = createAppStoreContext();
   quiet(() => ctx.store.getState().applyOpenedImport(parsed, OPEN));
-  ctx.store.setState((s) => {  });
   return ctx;
 }
 type Ctx = ReturnType<typeof openInStore>;

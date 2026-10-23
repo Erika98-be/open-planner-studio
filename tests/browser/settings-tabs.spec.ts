@@ -70,6 +70,12 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
         schedulingProfile: { baseId: 'ops', id: 'ops', name: '', overrides: {} },
       }));
       await expect(duration).toBeDisabled();
+      if (container.locator('.modal-close-btn') && await container.locator('.modal-close-btn').count()) {
+        for (const uiTheme of ['light', 'dark'] as const) {
+          await page.evaluate(theme => window.__OPS__!.store.getState().setUI({ uiTheme: theme }), uiTheme);
+          await duration.locator('xpath=..').screenshot({ path: `artifacts/uren-f4a/duurweergave-ops-${uiTheme}.png` });
+        }
+      }
       await expect(container.getByText(/^(In the OPS profile, each task shows its own unit\.|In het OPS-profiel toont elke taak zijn eigen maat\.)$/)).toBeVisible();
       await page.evaluate(() => window.__OPS__!.store.getState().setProject({
         schedulingProfile: { baseId: 'p6', id: 'p6', name: '', overrides: {} },

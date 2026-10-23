@@ -246,7 +246,7 @@ export function useSplitGesture({
     };
 
     return listenWindowDrag({ onMove: handleMouseMove, onUp: handleMouseUp, onKeyDown: handleKeyDown });
-  }, [state?.dragging, canvasRef, axis, snapAt, setTaskSplits, undo, stop]);
+  }, [state?.dragging, canvasRef, axis, snapAt, setTaskSplits, undo, stop, hourSnapMinutes]);
 
   // Geleidelijn op het gedeelde overlay-canvas — dezelfde laag waarop `useDependencyDraw` zijn
   // sleeplijn tekent. Dat kan omdat de twee modi elkaar uitsluiten (`setUI`), dus er staat nooit

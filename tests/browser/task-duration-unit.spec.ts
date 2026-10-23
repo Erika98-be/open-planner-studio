@@ -124,7 +124,7 @@ test('duurwaarde blijft de brede primaire invoer met controls op normale, gelijk
   expect(Math.abs(dialogGeometry.info.height - dialogGeometry.unit.height)).toBeLessThanOrEqual(2);
 });
 
-test('de app-brede uren- en gemengde-planningpoorten regelen beide gedeelde duurvelden zonder taakdata te herschrijven', async ({ page, ops: _ops }) => {
+test('de gemengde voorkeur regelt beide gedeelde duurvelden zonder taakdata te herschrijven', async ({ page, ops: _ops }) => {
   const taskId = await seedDurationTask(page, 'hours', 12);
   const panelDuration = page.locator('[data-ops-task-duration]').first();
   await openDialog(page, taskId);

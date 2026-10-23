@@ -692,7 +692,7 @@ export function CalendarForm({
         </>
       )}
 
-      {/* Werktijden / ploegen — met Urenplanning aan, én altijd bij een kalender met werkblokken. */}
+      {/* Werktijden en ploegen zijn bij elke kalender beschikbaar. */}
       {showWorkTimeSection && (
         <div className="flex flex-col gap-2" data-ops-worktime-section>
           <label className="text-text-secondary font-medium">{tCommon('calendar.worktime.section')}</label>

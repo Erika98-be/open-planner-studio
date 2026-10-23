@@ -572,9 +572,8 @@ export function hasConcreteWorkBlocks(calendar: WorkCalendar): boolean {
 
 /**
  * True als een geladen project urenplanning-data draagt: minstens één kalender met
- * `workTime` (uur-kalender) of minstens één taak met `durationMinutes`. Gebruikt om de
- * niet-blokkerende uur-data-melding te tonen wanneer de hoofdschakelaar Urenplanning uit staat —
- * nooit stil wegronden.
+ * `workTime` (uur-kalender) of minstens één taak met `durationMinutes`.
+ * Het rekenprofiel gebruikt deze detectie bij het openen.
  */
 export function fileHasHourData(tasks: Task[], calendars: WorkCalendar[]): boolean {
   if (calendars.some(isHourModeCalendar)) return true;

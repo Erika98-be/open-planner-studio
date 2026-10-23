@@ -158,11 +158,11 @@ eq('Niet-exacte uur-naar-dagconversie wordt geweigerd', plan(
   'task.time.durationUnit', 'task-schedule', 'days',
   { ...baseTask, time: { ...baseTask.time, durationUnit: 'hours', scheduleDuration: 0.1875, durationMinutes: 90 } },
 ).ok, false);
-eq('Ureninvoer volgt de urenplanningpoort', plan(
+eq('Ureninvoer is altijd beschikbaar', plan(
   'task.time.scheduleDuration', 'task-schedule',
   { unit: 'hours', durationMinutes: 90, explicitUnit: true }, baseTask,
   { },
-).ok, false);
+).ok, true);
 
 const steered = {
   ...baseTask,

@@ -213,7 +213,6 @@ function setup(): { a: string; b: string } {
 {
   S().newProject();
   S().setProject({ startDate: '2026-06-01', name: 'Uren' });
-  useAppStore.setState(state => {  });
   S().setCalendar({
     ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [], hoursPerDay: 8, workStartHour: 8, workEndHour: 16,
     workTime: { byWeekday: { 1: [{ start: 480, end: 960 }], 2: [{ start: 480, end: 960 }], 3: [{ start: 480, end: 960 }], 4: [{ start: 480, end: 960 }], 5: [{ start: 480, end: 960 }] } },

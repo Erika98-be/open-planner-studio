@@ -1081,7 +1081,7 @@ export function TimeScaleGroupContent() {
         { value: 'month', label: tMenu('ribbon.month') },
         { value: 'week', label: tMenu('ribbon.week') },
         { value: 'day', label: tMenu('ribbon.day') },
-        // De uur-schaal is alleen bereikbaar met Urenplanning aan.
+        // De uurschaal is altijd beschikbaar.
         { value: 'hour', label: tMenu('ribbon.hour') },
       ]}
       onChange={v => setTimeScale(v as TimeScale)}

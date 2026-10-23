@@ -3,7 +3,6 @@ import { l, type Action, type Check, type L, type Snap, type TutorialScript } fr
 import { T, taskIs } from './project';
 
 const statusBar = { anchor: 'status-bar' } as const;
-const dialog = { dialog: true } as const;
 const notStale: Check = { state: (s: Snap) => (s.stale ? ['planning nog verouderd'] : []) };
 const status = (nl: string, en: string): Check => ({ see: statusBar, text: l(nl, en) });
 const END_AND_PATH: Check[] = [status('Einde: 01-09-2027', 'End: 01-09-2027'), status('Kritiek pad: 8 taken, 48 werkdagen', 'Critical path: 8 tasks, 48 work days')];

@@ -254,7 +254,7 @@ export function useBarDrag({
     const taskStart = startIso.includes('T') ? parseInstant(startIso) : parseDate(startIso);
     const arrayIndex = pieces0.indexOf(base);
     const before = pieces0.slice(0, arrayIndex).reduce((sum, p) => sum + p.minutes, 0);
-    const pieceStart = hourMode ? eng.addWorkMinutes(taskStart, before) : eng.addWorkingDaysSigned(taskStart, before / (eng.hoursPerDay * 60));
+    const pieceStart = hourMode ? eng.nextWorkInstant(eng.addWorkMinutes(taskStart, before)) : eng.addWorkingDaysSigned(taskStart, before / (eng.hoursPerDay * 60));
     return {
       kind, index, pieces0, baseMinutes: base.minutes,
       dayZoom, pieceStart,
@@ -323,9 +323,8 @@ export function useBarDrag({
     // past de taak-kalender in het gesleepte bereik).
     const axisCalEngine = new CalendarEngine(calendar);
     const compressed = isCompressedEffective(axisCalEngine, compressNonWorkdays);
-    // Snap-quantum: zie `hourSnapMinutesFor`. Met urenplanning uit blijft de as voor nieuwe gebaren
-    // dag-granulair, maar bestaande urentaken behouden hun eigen werkminuten en worden nooit naar
-    // dagen omgezet.
+    // De zoom bepaalt de kloksnap: hele dagen onder 400, daarna uren of kwartieren.
+    // De taak behoudt haar eigen werkminuten.
     const quantumMin = hourSnapMinutesFor(zoom, enableQuarterHourZoom);
 
     // De constraint bij een gesleepte start `start` (dezelfde regel als typen): een SNET, of — terug

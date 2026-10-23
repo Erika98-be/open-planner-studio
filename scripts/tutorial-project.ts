@@ -10,7 +10,7 @@
 //   na-tut-2       + relaties (FS, twee met lag), berekend
 //   tussen-tut-3-bouwvak  na-tut-2 + bouwvak in de projectkalender, berekend
 //   na-tut-3       + bouwvak in de projectkalender, één constraint (SNET), één deadline
-//   na-tut-4       + urenplanning aan; stort, kanaalplaatvloer en dakelementen in uren
+//   na-tut-4       + stort, kanaalplaatvloer en dakelementen in uren
 //   tussen-tut-5-resources   na-tut-4 + de vijf resources (nog niets toegewezen)
 //   tussen-tut-5-toegewezen  + alle toewijzingen, berekend
 //   tussen-tut-5-werkregel   + werkregel "Vast werk" op het stucwerk met 2 stukadoors, berekend
@@ -536,7 +536,7 @@ export function buildTutorialProject(lang: TutorialLang): TutorialBuild {
   if ((S().cpmResult?.missedDeadlineTaskIds ?? []).length !== 0) fail(lang, 'tut-3: motor meldt gemiste deadline');
   stages.push(b.snapshot('na-tut-3'));
 
-  // ── Tutorial 4: Instellingen › Urenplanning inschakelen; duur in uren (Duur-veld "6h") ──
+  // ── Tutorial 4: Duur in uren (Duur-veld "6h") ──
   S().setUI({ allowMixedDayHour: true });
   const calForHours = S().calendar;
   for (const h of HOUR_TASKS) {

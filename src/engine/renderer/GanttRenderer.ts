@@ -428,7 +428,6 @@ export class GanttRenderer {
       task,
       cal,
       this.opts.durationDisplay ?? 'auto',
-
       this.opts.durationSuffixes,
     );
   }

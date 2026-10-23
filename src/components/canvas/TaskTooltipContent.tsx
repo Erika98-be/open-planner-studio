@@ -44,7 +44,6 @@ export function TaskTooltipContent({ task }: { task: Task }) {
     task,
     effectiveCalendarOf(task, projectCalendar, calendars),
     durationDisplay,
-
     suffixes,
     i18n.language,
   );

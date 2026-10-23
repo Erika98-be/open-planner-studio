@@ -8,7 +8,7 @@ Een kraan huur je per uur, een stort duurt zes uur en een nachtploeg werkt buite
 
 ## Stappen
 
-### Een taak in uren plannen
+### De duur invoeren
 
 1. Selecteer de taak en open bij *Eigenschappen › Tijd* het veld *Duur*.
 2. Typ bijvoorbeeld `12u` of `1u 30m` en druk op Enter. Ook `h` is een urenafkorting.

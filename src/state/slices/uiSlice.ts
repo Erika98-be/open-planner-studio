@@ -155,7 +155,7 @@ export function createDefaultUI(): UIState {
     constructionMode: true,
     dateNotation: 'dmy',
     timeNotation: '24h',
-    // Urenplanning-defaults — hoofdschakelaar uit, gemengd toegestaan,
+    // Duurinstellingen — gemengd toegestaan,
     // duurweergave automatisch, balk-opsplitsing bij selectie.
     allowMixedDayHour: true,
     durationDisplay: 'auto',

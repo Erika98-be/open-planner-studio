@@ -398,3 +398,97 @@ test('Paneel: een mijlpaal krijgt geen sectie Onderbrekingen', async ({ page, op
   await expect(page.locator('[data-ops-dependency-add]')).toBeVisible();
   await expect(page.locator('[data-ops-split-add]')).toHaveCount(0);
 });
+
+// F4a/T24: kalenderafhankelijke pointer en afstand, apart van het minimum.
+// Eén route met een andere kalenderfixture per stap; alle bewerkingen zijn echte muisgebaren.
+test('F4a: splitsen en stukslepen bij dagzoom volgen de werkdag van de taakkalender', async ({ page, ops: _ops }) => {
+  test.setTimeout(120_000);
+  const [taskId] = await seedProject(page, [{ name: 'Kalendersplit', start: START, finish: '2026-06-30', durationDays: 20 }]);
+  const seed = async (kind: 'eight' | 'short' | 'half' | 'midday' | 'night', minutes = 4800) => {
+    await page.evaluate(({ id, kind, minutes }) => {
+      const s = window.__OPS__!.store.getState();
+      const normal = [{ start: 420, end: 720 }, { start: 780, end: 960 }];
+      const bands = kind === 'night' ? [{ start: 1320, end: 1800 }]
+        : kind === 'half' ? [{ start: 420, end: 930 }] : normal;
+      s.setCalendar({ ...s.calendar, workDays: [1, 2, 3, 4, 5], holidays: [], hoursPerDay: 8,
+        workStartHour: 7, workEndHour: 16, workTime: { byWeekday: {
+          1: bands, 2: bands, 3: bands, 4: bands,
+          5: kind === 'short' ? [{ start: 420, end: 780 }] : bands, 6: [], 7: [],
+        } } });
+      s.setUI({ compressNonWorkdays: false, showPropertiesPanel: false, rightPanelCollapsed: true, barSplitMode: 'never', showSplitMode: false });
+      const start = kind === 'night' ? '2026-06-01T22:00' : kind === 'midday' ? '2026-06-01T13:00' : '2026-06-01T07:00';
+      const task = window.__OPS__!.store.getState().tasks.find(t => t.id === id)!;
+      s.updateTask(id, { manuallyScheduled: false, splitGaps: undefined, time: { ...task.time,
+        durationUnit: 'hours', durationMinutes: minutes, scheduleDuration: minutes / 480,
+        scheduleStart: start, earlyStart: start, scheduleFinish: '2026-06-30T16:00', earlyFinish: '2026-06-30T16:00',
+      } });
+      s.setViewStartDate('2026-06-01');
+      s.setZoom(100);
+      s.setScroll(1400, 0);
+    }, { id: taskId, kind, minutes });
+    await expect.poll(() => page.evaluate(id => window.__OPS__!.gantt.taskSegmentCount(id), taskId)).toBe(1);
+  };
+  const pointAt = async (day: string, hour = 12) => {
+    const canvas = await page.getByTestId('gantt-primary-canvas').boundingBox();
+    if (!canvas) throw new Error('Gantt ontbreekt');
+    const x = await page.evaluate(date => window.__OPS__!.gantt.dateX(date), day);
+    if (x === null) throw new Error('Datum ontbreekt op de as');
+    return { x: canvas.x + x + hour / 24 * 100, y: (await barPoint(page, taskId)).y };
+  };
+  const split = async (day: string, hour = 12) => {
+    await enableSplitMode(page);
+    const p = await pointAt(day, hour);
+    await page.mouse.click(p.x, p.y);
+    await page.keyboard.press('Escape');
+  };
+  const gaps = () => splitGapsOf(page, taskId);
+  await seed('eight', 960);
+  await split('2026-06-02');
+  await expect.poll(gaps).toEqual([{ afterMinutes: 480, gapMinutes: 480, source: 'user' }]);
+  // Stuk 2 van woensdag naar donderdag: pauze 480 → 960; daarna naar dinsdag: nul → samenvoegen.
+  let p = await pointAt('2026-06-03', 10);
+  await drag(page, p, (await pointAt('2026-06-04', 10)).x);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 480, gapMinutes: 960, source: 'user' }]);
+  p = await pointAt('2026-06-04', 10);
+  await drag(page, p, (await pointAt('2026-06-02', 10)).x);
+  await expect.poll(gaps).toBeNull();
+
+  // Werkstuk van één naar twee werkdagen; grijp twee pixels binnen het eerste blokeinde.
+  await seed('eight', 1920);
+  await split('2026-06-02');
+  p = await pointAt('2026-06-01', 16);
+  await drag(page, { x: p.x - 2, y: p.y }, (await pointAt('2026-06-02', 16)).x - 2);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 960, gapMinutes: 480, source: 'user' }]);
+
+  await seed('short');
+  await split('2026-06-05');
+  await expect.poll(gaps).toEqual([{ afterMinutes: 1920, gapMinutes: 360, source: 'user' }]);
+  // Een pauze die op donderdag begint, groeit over de korte vrijdag met precies 360 minuten.
+  await seed('short');
+  await split('2026-06-04');
+  p = await pointAt('2026-06-05', 9);
+  await drag(page, p, (await pointAt('2026-06-08', 9)).x);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 1440, gapMinutes: 840, source: 'user' }]);
+
+  await seed('half');
+  await split('2026-06-02');
+  await expect.poll(gaps).toEqual([{ afterMinutes: 510, gapMinutes: 510, source: 'user' }]);
+
+  await seed('midday');
+  await page.evaluate(() => window.__OPS__!.store.getState().setScroll(1100, 0));
+  await split('2026-06-02');
+  await expect.poll(gaps).toEqual([{ afterMinutes: 180, gapMinutes: 480, source: 'user' }]);
+  p = await pointAt('2026-06-01', 16);
+  await drag(page, { x: p.x - 2, y: p.y }, (await pointAt('2026-05-29', 15)).x);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 180, gapMinutes: 480, source: 'user' }]);
+
+  await seed('night');
+  await split('2026-06-02');
+  await expect.poll(gaps).toEqual([{ afterMinutes: 480, gapMinutes: 480, source: 'user' }]);
+  await seed('night');
+  await split('2026-06-06', 2);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 1920, gapMinutes: 480, source: 'user' }]);
+  await seed('night');
+  await split('2026-06-06', 10);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 2400, gapMinutes: 480, source: 'user' }]);
+});

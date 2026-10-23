@@ -378,8 +378,6 @@ export interface ApplyLoadedProjectOpts {
   recompute?: boolean;
   /** Canvas op het hele project passen (requestFitToProject). Open-paden: true; loadState: false. */
   fit?: boolean;
-  /** Uur-data-melding berekenen en zetten. Open-paden: true; loadState: false. */
-
   /** True = een echt open-pad (`openAsDocument`: openFile/openRecentFile/MCP-import): behoud
    *  bedrijfsbinding + stempels en draai de grens-1-check. False (default) = een volledig-
    *  vervangende load (loadState: Backstage/extensie-import): laad LOS — strip
@@ -1104,7 +1102,6 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         siteFileVersion: target.siteFileId ? source.siteFileVersion ?? null : null,
         recompute: true,
         fit: true,
-
         linkedOpen: true,
       });
     },
@@ -1585,7 +1582,6 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           siteFileId: null,
           recompute: true,
           fit: true,
-
         });
         const archiveNotice = withOpenNoticeSticky(withXerArchiveIssueNotice(undefined, [parsed.xerArchiveIssue]));
         if (archiveNotice) get().notify(archiveNotice);

@@ -8,7 +8,7 @@ A crane is hired by the hour, a pour takes six hours and a night crew works outs
 
 ## Steps
 
-### Plan a task in hours
+### Enter the duration
 
 1. Select the task and open *Properties › Time › Duration*.
 2. Type, for example, `12h` or `1h 30m` and press Enter. `u` is also accepted for hours.

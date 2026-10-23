@@ -374,9 +374,6 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
         // Alleen de ÉCHT gewijzigde metadata (afwezige eenheid ≡ 'days', geen
         // modifiedAt), en samen met het rekenprofiel in ÉÉN undo-stap ("Projectinfo"). Toepassen
         // zonder wijziging doet dan niets: geen undo-stap, niet vuil, "datums zoals opgeslagen" blijft.
-        // Een tijdelijk verborgen of momenteel onbruikbare uurdefault blijft documentdata: nieuwe
-        // taken vallen in taskSlice veilig terug op dagen zolang de capability of concrete
-        // werkblokken ontbreken; hem hier stil terugzetten zou dataverlies zijn.
         applyProjectInfo(
           projectInfoPatch(project, { name, description, author, company, startDate, endDate, defaultTaskDurationUnit, ifcSchema }),
           calcTouched ? scheduling : undefined,
