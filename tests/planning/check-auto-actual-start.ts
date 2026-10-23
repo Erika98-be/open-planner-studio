@@ -159,11 +159,11 @@ for (const { kind, statusDate } of SCENARIOS) {
 
   // 6. Taakdialoog-draft: dezelfde `applyCompletionEdit` als de store, op een losse kopie.
   {
-    const { ids, time$ } = setup(kind, statusDate);
-    const draft = { ...time$(ids[0]!) };
+    const { S, ids, time$ } = setup(kind, statusDate);
+    const draft = { ...S().tasks.find(t => t.id === ids[0])!, time: { ...time$(ids[0]!) } };
     applyCompletionEdit(draft, 1, statusDate);
     eq(`${tag} dialoog-draft 100%: afgeleide start = het einde dat de invariant straks zet`,
-      draft.actualStart, statusDate);
+      draft.time.actualStart, statusDate);
   }
 
   // 7. Het blok van 3 rijen × (naam, 100%). Vóór de fix liet stap (a) een omgekeerd paar achter en
@@ -250,8 +250,9 @@ for (const { kind, statusDate } of SCENARIOS) {
   {
     // Op helperniveau: een aanwezige start, zelfs een die ná het (afgeleide) einde ligt, wordt
     // nooit stil verplaatst — alleen een ONTBREKENDE start wordt ingevuld.
+    const { S, ids } = setup(kind, statusDate);
     const time = { ...createDefaultTaskTime('2026-07-08', 5), actualStart: '2026-07-01' };
-    applyCompletionEdit(time, 1, '2026-06-10');
+    applyCompletionEdit({ ...S().tasks.find(t => t.id === ids[0])!, time }, 1, '2026-06-10');
     eq(`${tag} helper: aanwezige start blijft staan`, time.actualStart, '2026-07-01');
   }
 }
@@ -268,6 +269,7 @@ for (const { kind, statusDate } of SCENARIOS) {
     { as: time$(t).actualStart, af: time$(t).actualFinish },
     { as: '2026-06-10T08:00', af: '2026-06-10T17:00' });
   eq('uur zelfde dag: voltooid', status$(t), 'COMPLETED');
+  eq('uur zelfde dag: percentage 100%', time$(t).completion, 1);
 }
 {
   // Dagtaak op dezelfde dag: start = einde was al zo, er valt niets te klemmen.

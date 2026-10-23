@@ -59,7 +59,7 @@ export function TaskDialog() {
   const setTaskWorkRule = useAppStore(s => s.setTaskWorkRule);
   const project = useAppStore(s => s.project);
   const constructionMode = useAppStore(s => s.ui.constructionMode);
-  const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
+
 
   const editingTask = editingTaskId ? tasks.find(t => t.id === editingTaskId) : null;
 
@@ -68,7 +68,7 @@ export function TaskDialog() {
   // `onChange(patch)` — commit pas op Save. De RELATIONELE secties (afhankelijkheden/toewijzingen/
   // codes&velden/CPM-resultaat) werken rechtstreeks op de store via `taskId` (identiek aan het
   // paneel) en raken de draft niet.
-  const newTaskUnit = enableHourPlanning ? (project.defaultTaskDurationUnit ?? 'days') : 'days';
+  const newTaskUnit = project.defaultTaskDurationUnit ?? 'days';
   const [draft, setDraft] = useState<Task>(() => blankDraft(project.startDate, constructionMode, newTaskUnit));
   const onChange = (patch: Partial<Task>) => setDraft(d => ({ ...d, ...patch }));
 

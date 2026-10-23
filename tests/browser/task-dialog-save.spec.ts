@@ -173,6 +173,34 @@ test('Taak bewerken: voortgang opslaan volgt dezelfde regels als het eigenschapp
     await recalculate(page);
     expect((await readTask(page, dialogId)).earlyFinish).toBe(finish);
   }
+  // Review #563: bij 100% blijft de eerder vastgelegde start op de statusdag om 10:00 staan.
+  await page.evaluate((ids) => {
+    const s = window.__OPS__!.store.getState();
+    s.setProject({ startDate: '2026-06-01', statusDate: '2026-06-03' });
+    for (const id of ids) {
+      const task = window.__OPS__!.store.getState().tasks.find(t => t.id === id)!;
+      s.updateTask(id, { status: 'STARTED', time: {
+        ...task.time, scheduleStart: '2026-06-03T08:00', durationUnit: 'hours',
+        durationMinutes: 480, scheduleDuration: 1, completion: 0.5,
+        actualStart: '2026-06-03T10:00', actualFinish: undefined,
+      } });
+    }
+    const after = window.__OPS__!.store.getState();
+    after.runCPM();
+    after.setViewStartDate('2026-06-01');
+    after.setScroll(0, 0);
+  }, [panelId, dialogId]);
+  const actualPanelPoint = await barPoint(page, panelId);
+  await page.mouse.click(actualPanelPoint.x, actualPanelPoint.y);
+  await pressSlider(page, page.locator('[data-ops-progress-slider]').first(), { end: true });
+  await expect.poll(() => readTask(page, panelId).then(t => t.completion)).toBe(1);
+  dialog = await openDialogByDoubleClick(page, dialogId);
+  await pressSlider(page, dialog.locator('[data-ops-progress-slider]'), { end: true });
+  await dialog.locator('[data-ops-task-save]').click();
+  await expect(dialog).toBeHidden();
+  for (const id of [panelId, dialogId]) expect(await readTask(page, id)).toMatchObject({
+    completion: 1, status: 'COMPLETED', actualStart: '2026-06-03T10:00', actualFinish: '2026-06-03T16:00',
+  });
   await page.screenshot({ path: 'qa/uren-f1b-status.png' });
 });
 

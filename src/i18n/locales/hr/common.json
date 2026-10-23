@@ -376,9 +376,6 @@
     "themeHighContrast": "Visoki kontrast",
     "themeFollowSystem": "Prati sustavnu temu",
     "themeSystemHint": "Prati shemu boja vašeg sustava (trenutno: {{theme}}).",
-    "hourPlanningSection": "Planiranje u satima",
-    "enableHourPlanning": "Uključi planiranje u satima",
-    "enableHourPlanningHint": "Uključuje raspored u satima i minutama: vremensku ljestvicu sati, smjene s trakama radnog vremena i trake zadataka točne do sata. Isključeno ⇒ aplikacija radi potpuno po danima, kao prije.",
     "showTaskTypes": "Koristi vrste zadataka",
     "showTaskTypesHint": "Odaberite za svaki zadatak što se mijenja kad se promijeni trajanje, jedinice dodjele ili rad, kao Task Type u MS Project i Duration Type u P6. Isključeno: trajanje i jedinice dodjele ostaju isti. Datoteka s vrstama zadataka ili spremljenim radom ih prikazuje i kad je ovo isključeno.",
     "allowMixedDayHour": "Dopusti mješoviti raspored po danima i satima",
@@ -1156,10 +1153,6 @@
     "day": "dan",
     "month": "mjesec",
     "year": "godina"
-  },
-  "hourData": {
-    "notice": "Ova datoteka sadrži planiranje u satima.",
-    "enable": "Uključi planiranje u satima"
   },
   "recordedDates": {
     "activeCount_one": "Prikazujete raspored onako kako ga je Primavera spremila; pri ponovnom izračunavanju pomaknut će se {{count}} zadatak.",

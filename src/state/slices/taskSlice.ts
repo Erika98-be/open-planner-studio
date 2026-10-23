@@ -51,7 +51,6 @@ import type { WorkRule } from '@/types/workRule';
 import type { AppSlice, AppSliceFactory, NotifyInput, PhaseAssignmentQuestion, SiblingDirection } from './types';
 import type { AppState } from '../appStore';
 import type { StoreRuntime } from '../runtime/storeRuntime';
-import { hasConcreteWorkBlocks } from '@/services/subdayIo';
 import { effHoursPerDay } from '@/utils/taskDuration';
 import { buildTaskEditPlanEnvironment } from '../gridTransaction';
 import { planTaskCellEdits } from '@/engine/taskGrid/taskEditPlan';
@@ -1015,11 +1014,7 @@ export const createTaskSlice: AppSliceFactory<TaskSlice> = (runtime) => (set, ge
 
       const now = s.project.startDate || localTodayIso();
       const effectiveNewTaskCalendar = resolveCalendar(partial.calendarId, s.calendars, s.calendar);
-      const defaultDurationUnit = s.ui.enableHourPlanning
-        && s.project.defaultTaskDurationUnit === 'hours'
-        && hasConcreteWorkBlocks(effectiveNewTaskCalendar)
-        ? 'hours'
-        : 'days';
+      const defaultDurationUnit = s.project.defaultTaskDurationUnit ?? 'days';
       const initialTime = mergeTaskTime(createDefaultTaskTime(
         now,
         partial.isMilestone ? 0 : 5,

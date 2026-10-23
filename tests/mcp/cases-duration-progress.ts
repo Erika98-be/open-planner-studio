@@ -39,7 +39,6 @@ function setup(kind: 'dag' | 'uur', size: number, completion: number): string {
   S().newProject();
   S().setProject({ startDate: '2026-06-01', statusDate: '2026-06-03' });
   if (kind === 'uur') {
-    S().setUI({ enableHourPlanning: true });
     S().setCalendar({
       ...S().calendar, hoursPerDay: 8, workStartHour: 8, workEndHour: 16,
       workTime: { byWeekday: { 1: BAND, 2: BAND, 3: BAND, 4: BAND, 5: BAND, 6: [], 7: [] } },

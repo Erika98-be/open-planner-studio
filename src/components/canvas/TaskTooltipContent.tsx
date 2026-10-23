@@ -37,14 +37,13 @@ export function TaskTooltipContent({ task }: { task: Task }) {
   const projectCalendar = useAppStore((s) => s.calendar);
   const calendars = useAppStore((s) => s.calendars);
   const durationDisplay = useAppStore((s) => s.ui.durationDisplay);
-  const enableHourPlanning = useAppStore((s) => s.ui.enableHourPlanning);
+
   const dd = useDisplayDate();
   const suffixes = durationSuffixesFrom(tCommon);
   const duration = formatTaskDurationDisplay(
     task,
     effectiveCalendarOf(task, projectCalendar, calendars),
     durationDisplay,
-    enableHourPlanning,
     suffixes,
     i18n.language,
   );

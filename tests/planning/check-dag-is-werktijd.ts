@@ -136,11 +136,10 @@ const imported = quiet(() => single(readXER(XER_BYTES)));
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // §3 De echte openroute, een rasterbewerking, opslaan als IFC en heropenen
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 function openInStore(parsed: OpenedImport) {
   const ctx = createAppStoreContext();
   quiet(() => ctx.store.getState().applyOpenedImport(parsed, OPEN));
-  ctx.store.setState((s) => { s.ui.enableHourPlanning = true; });
   return ctx;
 }
 type Ctx = ReturnType<typeof openInStore>;

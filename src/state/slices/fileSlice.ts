@@ -36,7 +36,6 @@ import { applyRecordedDatesOnLoad, materializeLibraryBoundary, prepareLoadedPayl
 import { notifyCalendarLibrarySettle } from '../calendarTasks';
 import { unrecordedExportGate } from '../recordedDatesSelectors';
 import { buildExportIFCInput, buildWriteIFCInput, sameIFCSource } from '../ifcSaveInput';
-import { fileHasHourData } from '@/services/subdayIo';
 import { documentFileBase } from '@/utils/documents';
 import { documentProjectCode } from '@/utils/documentProjectCode';
 import { refreshExternalAnchors, type ExternalSourceDoc } from '@/engine/externalLinks';
@@ -382,8 +381,6 @@ export interface ApplyLoadedProjectOpts {
   recompute?: boolean;
   /** Canvas op het hele project passen (requestFitToProject). Open-paden: true; loadState: false. */
   fit?: boolean;
-  /** Uur-data-melding berekenen en zetten. Open-paden: true; loadState: false. */
-  hourDataNotice?: boolean;
   /** True = een echt open-pad (`openAsDocument`: openFile/openRecentFile/MCP-import): behoud
    *  bedrijfsbinding + stempels en draai de grens-1-check. False (default) = een volledig-
    *  vervangende load (loadState: Backstage/extensie-import): laad LOS — strip
@@ -914,14 +911,6 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         s.resourceLoadResult = activation.resourceLoadResult;
         s.ui.showLibraryLinkDialog = activation.signals.showLibraryLinkDialog;
         s.ui.libraryRefreshNotice = activation.signals.libraryRefreshNotice;
-        if (opts.hourDataNotice) {
-          const showNotice = !s.ui.enableHourPlanning && fileHasHourData(s.tasks, [s.calendar, ...s.calendars]);
-          // De melding hoort bij één document: het laatst geopende bestand met uur-data. Een ander
-          // bestand zonder uur-data laat hem staan; opent u er twee met uur-data, dan houdt alleen
-          // het laatste de strook.
-          if (showNotice) s.ui.hourDataNotice = s.activeDocumentId;
-          else if (s.ui.hourDataNotice === s.activeDocumentId) s.ui.hourDataNotice = null;
-        }
         if (editing) runtime.finishMutation(s);
       });
       for (const cal of [payload.calendar, ...payload.calendars].filter((cal, i, all) => all.findIndex(c => c.id === cal.id) === i)) {
@@ -1131,7 +1120,6 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
         siteFileVersion: target.siteFileId ? source.siteFileVersion ?? null : null,
         recompute: true,
         fit: true,
-        hourDataNotice: true,
         linkedOpen: true,
       });
     },
@@ -1612,7 +1600,6 @@ export const createFileSlice: AppSliceFactory<FileSlice> = (runtime) => (set, ge
           siteFileId: null,
           recompute: true,
           fit: true,
-          hourDataNotice: true,
         });
         const archiveNotice = withOpenNoticeSticky(withXerArchiveIssueNotice(undefined, [parsed.xerArchiveIssue]));
         if (archiveNotice) get().notify(archiveNotice);

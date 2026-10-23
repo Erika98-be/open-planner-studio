@@ -155,7 +155,7 @@ eq('1e R6 draagt een niet-ronde float (241 min / 480 min-per-dag)', originalTime
 
 store().newProject();
 const applied = store().applyOpenedImport(original, {
-  filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+  filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
 });
 void applied;
 const basePayload = store().getOpenDocumentPayloads()[0]!.payload;
@@ -216,7 +216,7 @@ expect('4y het buiten de modus opgeslagen IFC draagt de vlag als pset',
   ifcOutsideMode.includes("'OPS_ImportProvenance'") && reopenedOutside.importPristine === true);
 store().newProject();
 store().applyOpenedImport(reopenedOutside, {
-  filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+  filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
 });
 const reopenedOutsidePayload = store().getOpenDocumentPayloads()[0]!.payload;
 expect('4a heropenen van een ongewijzigd, buiten-de-modus opgeslagen IFC gaat automatisch de modus in (optie B)',
@@ -225,7 +225,7 @@ expect('4a heropenen van een ongewijzigd, buiten-de-modus opgeslagen IFC gaat au
 
 store().newProject();
 store().applyOpenedImport(reopenedInMode, {
-  filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+  filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
 });
 const reopenedInModePayload = store().getOpenDocumentPayloads()[0]!.payload;
 expect('4b heropenen van een ongewijzigd, ín-de-modus opgeslagen IFC gaat óók automatisch de modus in',
@@ -244,7 +244,7 @@ expect('4f het bewerkte bestand draagt "ongewijzigd sinds import" niet meer', !i
 const reopenedEdited = readXerArchiveIFC(ifcEdited);
 store().newProject();
 store().applyOpenedImport(reopenedEdited, {
-  filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+  filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
 });
 const reopenedEditedPayload = store().getOpenDocumentPayloads()[0]!.payload;
 expect('4g heropenen van een IN de modus opgeslagen, bewerkt IFC: weer in de modus, vlag blijft uit',
@@ -261,7 +261,7 @@ expect('4i0 voorwaarde: de planningsbewerking verliet de modus', store().datesAs
 const ifcEditedOutside = writeIFC(buildWriteIFCInput(store().getOpenDocumentPayloads()[0]!.payload));
 store().newProject();
 store().applyOpenedImport(readXerArchiveIFC(ifcEditedOutside), {
-  filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+  filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
 });
 const reopenedEditedOutside = store().getOpenDocumentPayloads()[0]!.payload;
 expect('4i buiten de modus opgeslagen, bewerkt IFC: geen modus, opgeslagen datums vergeten',
@@ -329,7 +329,7 @@ expect('6f ... en vergeet de opgeslagen datums (geen aanbod-stand meer, eigenaar
 {
   store().newProject();
   store().applyOpenedImport(original, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   expect('6h voorwaarde: de verse import opent ín de modus',
     store().getOpenDocumentPayloads()[0]!.payload.datesAsRecorded === true);
@@ -359,12 +359,12 @@ expect('6f ... en vergeet de opgeslagen datums (geen aanbod-stand meer, eigenaar
 {
   store().newProject();
   store().applyOpenedImport(original, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   const firstId = store().activeDocumentId!;
   store().newDocument();
   store().applyOpenedImport(original, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   const secondId = store().activeDocumentId!;
   const before = store().getOpenDocumentPayloads();
@@ -429,13 +429,13 @@ function chainOf(mutate: boolean): { times: Record<string, RecordedTime>; cpm: s
   const parsed = single(fixtureBytes(mutate));
   store().newProject();
   store().applyOpenedImport(parsed, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   const payload = store().getOpenDocumentPayloads()[0]!.payload;
   const reopened = readXerArchiveIFC(writeIFC(buildWriteIFCInput(payload)));
   store().newProject();
   store().applyOpenedImport(reopened, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   store().runCPM();
   const result = store().cpmResult;
@@ -496,7 +496,7 @@ expect('9a tweeprojectenfixture opent als multi-document', isMultiDocumentImport
 if (isMultiDocumentImport(twoProject)) {
   store().newProject();
   store().applyOpenedImport(twoProject, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   const docs = store().getOpenDocumentPayloads();
   eq('9b twee documenten geopend', docs.length, 2);
@@ -536,7 +536,7 @@ function corpusRoundTrip(label: string, path: string): void {
   const tRead = Date.now();
   store().newProject();
   store().applyOpenedImport(parsed, {
-    filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: false,
+    filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: false,
   });
   const payload = store().getOpenDocumentPayloads().find(d => d.payload.xerSourceProjectId === parsed.xer?.sourceProjectId)!.payload;
   const ifc = writeIFC(buildWriteIFCInput(payload));

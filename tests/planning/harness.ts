@@ -1465,7 +1465,7 @@ function evaluateCase(c: Case, exp: CaseExpect, built: Built, cmp: Comparer): st
         const got = scaleFromZoom(TIMESCALE_ZOOM[s]);
         if (got !== s) diffs.push(`timescale: scaleFromZoom(${TIMESCALE_ZOOM[s]})=${got}, verwacht ${s}`);
       }
-      const gotHour = scaleFromZoom(TIMESCALE_ZOOM.hour, true);
+      const gotHour = scaleFromZoom(TIMESCALE_ZOOM.hour);
       if (gotHour !== 'hour') diffs.push(`timescale: scaleFromZoom(${TIMESCALE_ZOOM.hour}, true)=${gotHour}, verwacht hour`);
     }
 

@@ -376,9 +376,6 @@
     "themeHighContrast": "Alto contrasto",
     "themeFollowSystem": "Segui il tema di sistema",
     "themeSystemHint": "Segue lo schema di colori del sistema (ora: {{theme}}).",
-    "hourPlanningSection": "Pianificazione oraria",
-    "enableHourPlanning": "Attiva pianificazione oraria",
-    "enableHourPlanningHint": "Attiva la pianificazione ora/minuto: una scala temporale oraria, turni con fasce orarie di lavoro e barre attività precise all'ora. Disattivato ⇒ l'app resta completamente granulare per giorni, come prima.",
     "showTaskTypes": "Usa tipi di attività",
     "showTaskTypesHint": "Scegli per ogni attività cosa cambia quando cambiano durata, unità o lavoro, come Task Type in MS Project e Duration Type in P6. Disattivato: durata e unità restano fisse. Un file con tipi di attività o lavoro salvato li mostra anche se è disattivato.",
     "allowMixedDayHour": "Consenti pianificazione mista giorno/ora",
@@ -1156,10 +1153,6 @@
     "day": "giorno",
     "month": "mese",
     "year": "anno"
-  },
-  "hourData": {
-    "notice": "Questo file contiene una pianificazione oraria.",
-    "enable": "Attiva pianificazione oraria"
   },
   "recordedDates": {
     "activeCount_one": "Stai visualizzando la pianificazione come registrata da Primavera; un ricalcolo sposterebbe {{count}} attività.",

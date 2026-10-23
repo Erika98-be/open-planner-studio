@@ -181,7 +181,6 @@
       "calendar": "Wählen Sie einen Kalender aus der Liste.",
       "calendarNotFound": "Der gewählte Kalender existiert nicht.",
       "calendarHours": "Der Kalender dieses Vorgangs hat keine Arbeitsstunden pro Tag.",
-      "hourPlanningDisabled": "Die Stundenplanung ist in den Einstellungen ausgeschaltet.",
       "durationConversionNotExact": "Diese Dauer lässt sich nicht exakt in die andere Einheit umrechnen.",
       "milestoneRequired": "Dieses Feld gilt nur für Meilensteine.",
       "milestoneUnavailable": "Ein Sammelvorgang mit Teilvorgängen kann kein Meilenstein werden.",
@@ -329,9 +328,6 @@
     "days": "Tage",
     "hours": "Stunden",
     "invalid": "Geben Sie eine ganze Anzahl Tage oder Stunden ein, zum Beispiel 2d oder 12h.",
-    "enableHourPlanningFirst": "Aktivieren Sie die Stundenplanung, um diesen Stundenvorgang zu bearbeiten.",
-    "enableHourPlanning": "Stundenplanung aktivieren",
-    "requiresWorkBlocks": "Dieser Kalender hat keine gültigen Arbeitszeiten. Prüfen Sie Arbeitstage und Arbeitszeiten.",
     "conversionNotExact": "{{value}} ergibt in diesem Kalender keine ganzen Tage. Die Einheit wurde nicht geändert.",
     "unitInfo": "Die gewählte Einheit gehört zu diesem Vorgang. Tage zählen Arbeitstage; Stunden zählen Arbeitsstunden innerhalb des Kalenders. Ein anderer Kalender ändert weder Einheit noch eingegebene Dauer, kann aber das Enddatum ändern."
   },

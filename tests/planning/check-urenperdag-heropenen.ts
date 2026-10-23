@@ -215,7 +215,7 @@ for (const fmt of [P6, MSPDI]) {
 }
 
 // ── §5 De echte openroute (store, herberekenen) na export: samenloop met #363 ──────────────────────
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 for (const fmt of [P6, MSPDI]) {
   const xml = quiet(() => fmt.write(CAL, TASKS, []));
   const parsed = await parseOpenedFile({ name: 'heropenen.xml', text: xml } as never);

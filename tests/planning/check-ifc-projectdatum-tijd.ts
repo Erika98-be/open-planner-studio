@@ -97,7 +97,7 @@ function contractDates(ifc: string): { start?: string; end?: string } {
   return { start: value('ProjectStartDate'), end: value('ProjectEndDate') };
 }
 
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 function openInStore(parsed: OpenedImport): DocumentPayload {
   const store = createAppStoreContext().store;
   store.getState().applyOpenedImport(parsed, OPEN);

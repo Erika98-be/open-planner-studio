@@ -523,7 +523,7 @@ export function buildTaskEditPlanEnvironment(state: AppState, task: Task): TaskE
     hourMode: isHourModeCalendar(effectiveCalendar) === true,
     effectiveCalendar,
     calendarFor: (calendarId) => resolveCalendar(calendarId, state.calendars, state.calendar),
-    enableHourPlanning: state.ui.enableHourPlanning,
+
     customTaskTypeIds: new Set(state.customTaskTypes.map(type => type.id)),
     activityCodeTypes: state.activityCodeTypes,
     customFieldDefs: state.customFieldDefs,

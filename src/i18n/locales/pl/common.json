@@ -431,9 +431,6 @@
     "themeHighContrast": "Wysoki kontrast",
     "themeFollowSystem": "Zgodnie z motywem systemu",
     "themeSystemHint": "Zgodnie ze schematem kolorów systemu (teraz: {{theme}}).",
-    "hourPlanningSection": "Planowanie godzinowe",
-    "enableHourPlanning": "Włącz planowanie godzinowe",
-    "enableHourPlanningHint": "Włącza planowanie godzinowo-minutowe: skalę czasu w godzinach, zmiany z pasmami czasu pracy i paski zadań z dokładnością do godziny. Wyłączone ⇒ aplikacja pozostaje w pełni dniowa, tak jak wcześniej.",
     "showTaskTypes": "Używaj typów zadań",
     "showTaskTypesHint": "Wybierz dla każdego zadania, co się zmienia, gdy zmieni się czas trwania, jednostki lub praca, jak Task Type w MS Project i Duration Type w P6. Wyłączone: czas trwania i jednostki pozostają bez zmian. Plik z typami zadań lub zapisaną pracą pokazuje je także wtedy, gdy to jest wyłączone.",
     "allowMixedDayHour": "Zezwól na mieszane planowanie dniowo-godzinowe",
@@ -1218,10 +1215,6 @@
     "day": "dzień",
     "month": "miesiąc",
     "year": "rok"
-  },
-  "hourData": {
-    "notice": "Ten plik zawiera planowanie godzinowe.",
-    "enable": "Włącz planowanie godzinowe"
   },
   "recordedDates": {
     "activeCount_one": "Widzisz harmonogram tak, jak zapisał go Primavera; ponowne przeliczenie przesunęłoby {{count}} zadanie.",

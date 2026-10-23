@@ -1547,6 +1547,7 @@ nodig heeft. B2, B4 en B8 zijn besloten (2026-10-20) en bepalen F4. B9 = optie 1
   breuken (§5.4); migratiemelding over de voorbeelden en het corpus; `measure:profiles` met corpus.
 
 **F4 — UI op momenten en maten (B2, B4, B8 en B9 besloten).**
+- Stand: F4a verwijdert de schakelaar en meldingen (B2/T25), maakt zoom en splitbediening vast (T24), maakt Duurweergave grijs in OPS (B9) en past gidsen en tutorials aan. F4b volgt na F3: datumweergave en datuminvoer, maatnotatie en -invoer, breuken, lag zonder afronding en de controlestap voor de eigenaar.
 - Werkwijze: een fase-PR op `claude/uren-integratie`, net als F0–F3 en F5a. De PR naar `main` komt pas als F4 daar
   staat (§7.3).
 - Inhoud: datuminvoer volgens §3.6 (de store normaliseert al sinds F2); de datumweergave volgens B4 (een tijd alleen
