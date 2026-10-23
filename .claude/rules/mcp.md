@@ -68,3 +68,11 @@ sessieheader), pas dan `bridgeMirror.ts` mee aan. Dezelfde controles (`tests/mcp
 `.github/workflows/mcp-real-app.yml` tegen de echte Rust-bridge in een Tauri-dev-build; die job draait ook de
 Rust-unit-tests van de bridge (`cargo test … mcp_bridge`), die geen andere workflow draait. Wat geleverd is en wat
 niet: `docs/mcp-verificatie.md`.
+
+**Ontdekkingsbestanden voor de MCP-plugin** (issue #570). `runtime.json` (zolang de bridge draait) en
+`open-files.json` (zolang de desktop-app draait, ook met de MCP-koppeling uit) in `<appDataDir>/mcp/`. Contract
+in `discoveryContract.ts` (importeert niets; de plugin bundelt hem), schrijver in `discoveryFiles.ts` (één
+wachtrij, atomair, `0600`), meldingen via `onBridgeStarted`/`onBridgeStopped` in `createBridgeController`,
+register via `src/hooks/useMcpDiscovery.ts`, opruimen bij afsluiten in `useAppCloseGuard`. Het proces-id komt
+uit het initialisatiescript `ops-process-info` in `main.rs` (geen command). Detail: `docs/mcp-ontdekking.md`;
+test `tests/mcp/cases-discovery.ts` en de echte-app-run.

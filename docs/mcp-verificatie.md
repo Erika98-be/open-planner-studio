@@ -123,6 +123,12 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
      `localhost` als `127.0.0.1`, zonder `--allow-http`. Claude Desktop zelf is niet getest (geen Desktop op
      Linux in deze omgeving).
 
+## Ontdekking door de MCP-plugin
+
+Zolang de bridge draait, schrijft de desktop-app poort en token in `<appDataDir>/mcp/runtime.json`; zolang de app
+draait, houdt hij in `<appDataDir>/mcp/open-files.json` bij welke bestanden open staan (issue #570). Contract,
+paden per OS, leesregels en toetsen: [MCP-ontdekking](mcp-ontdekking.md).
+
 ## Claude Code en Claude Desktop
 
 - **Claude Code**: koppelt direct over HTTP. Het fragment uit de app is het `.mcp.json`-formaat van Claude Code.
