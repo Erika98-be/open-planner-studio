@@ -108,6 +108,53 @@ Fixtures die door MEER DAN ÉÉN suite gebruikt worden staan in `tests/fixtures/
 Eén bron, zodat de batterijen niet uit elkaar lopen over wat het geval precies ís. Fixtures die
 maar één batterij dient horen gewoon in die batterij thuis.
 
+## Minutenmodel: twee extra runs en de voorbeeldensnapshot
+
+Fase F0 van "alleen uren" (spec `docs/superpowers/specs/2026-10-20-alleen-uren-design.md` §6.1 en §6.3).
+De volledige `run.sh` draait de harness daarna nog twee keer, niet in de tijdzone-matrix:
+
+- `OPS_MINUTE_MODEL_RUN=1`: run 1, de dagenmaat. Taken, lags en nivelleervertraging blijven in dagen.
+- `OPS_MINUTE_MODEL_RUN=2`: run 2, de urenmaat. Duur en lag gaan bij de invoer naar minuten.
+
+Beide runs zetten elke dagcase om naar de tijdas in minuten, met de productiefunctie
+`migrateToMinuteModel` (`src/state/migrations/minuteModel.ts`), en vergelijken op dagniveau met de
+werkdag van een moment (`src/engine/calendar/workdayRules.ts`). Een urencase telt niet mee. Per batterij
+staat een regel `MM …` in de uitvoer, en per case die niet gelijk is een regel `MMCASE`.
+
+**Redencodes.** Een case die bewust anders uitkomt, krijgt een sleutel `minuteModel` met een code uit
+§6.1 (`CONV-SF`, `PCT-LAG-EXACT`, `REST-EXACT`, `KALENDERTIJD-EINDE`, `PROFIEL-URENMAAT`), een `note` en
+een `expect` met het doel. Alleen de velden die de code verandert, staan in die `expect`. Een datum
+zonder tijd leest de vergelijker met de regel van het veld; een datum met tijd vergelijkt hij exact.
+Een fout krijgt nooit een code. Verander de gewone `expect` van een case hiervoor niet.
+
+**Het vangnet `minute-model-runs.json`.** Per run en per batterij staan daar de dagcases die na de
+redencodes niet gelijk zijn. De run is rood als er een case bijkomt of afgaat. Heb je een fout in het
+urenpad opgelost, haal de case dan uit de lijst. Bijwerken na een bewuste wijziging:
+
+```bash
+bash tests/planning/run.sh   # eerst: zie welke cases erbij komen of afgaan (regels "XX  minutenmodel")
+# daarna de lijst opnieuw laten schrijven, met de harness-bundel die run.sh achterlaat
+# (zonder cases-p6-verified.json, zoals run.sh):
+CASES=$(ls tests/planning/cases-*.json | grep -v cases-p6-verified.json)
+OPS_MINUTE_MODEL_UPDATE=1 OPS_MINUTE_MODEL_RUN=1 node tests/planning/.harness.mjs $CASES
+OPS_MINUTE_MODEL_UPDATE=1 OPS_MINUTE_MODEL_RUN=2 node tests/planning/.harness.mjs $CASES
+```
+
+Analyseren:
+`OPS_MINUTE_MODEL_VERBOSE=1` toont de verschillen per case, `OPS_MINUTE_MODEL_DEBUG=1` daarbij de
+datums van alle taken uit de motor.
+
+**De voorbeeldensnapshot.** `check-minute-model-examples.ts` laadt elk IFC-voorbeeld uit `examples/`,
+rekent het en vergelijkt per taak (WBS-code plus naam) vroege en late start, vroeg en laat einde en de
+speling met `fixtures/minute-model-examples.json`, op dagniveau. F2 en F3 moeten die snapshot halen.
+Bijwerken alleen na een bewuste wijziging, met de reden in de commit:
+
+```bash
+OPS_MINUTE_MODEL_EXAMPLES_UPDATE=1 bash tests/planning/run.sh check-minute-model-examples.ts
+```
+
+`check-minute-model.ts` toetst de dagregels (werkdag van een moment, D1–D7) en de migratiefunctie los.
+
 ## Een geval toevoegen
 
 Voeg een object toe aan de `cases`-array van het passende bestand (schema in `BRIEF.md`). Geef alléén de

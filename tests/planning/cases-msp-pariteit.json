@@ -361,6 +361,17 @@
         { "name": "B", "dur": 2, "durationType": "ELAPSEDTIME" }
       ],
       "links": [{ "pred": "A", "succ": "B", "type": "FINISH_FINISH" }],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16: FF+0 legt het einde van B op het eindmoment van A (wo 16:00). Het dagpad schreef dezelfde datum als exclusief einde, dus B eindigde daar een dag eerder dan A.",
+        "expect": {
+          "tasks": {
+            "B": {
+              "ef": "2026-07-08T16:00"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-06", "ef": "2026-07-08", "tf": 0, "ff": 0, "crit": true },
@@ -400,6 +411,23 @@
         { "name": "B", "dur": 1 }
       ],
       "links": [{ "pred": "A", "succ": "B", "type": "FINISH_START" }],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16: A eindigt zo 00:00 (exclusief), B begint ma 07:00. A krijgt de speling in kalendertijd: 31 u = 1,29 d. Spec §4.5 noemt 1 d; de meting liet A om 07:00 beginnen, D3 zet het begin op 00:00.",
+        "expect": {
+          "tasks": {
+            "A": {
+              "ls": "2026-07-11",
+              "lf": "2026-07-13",
+              "tf": 1.2916666666666667,
+              "crit": false
+            }
+          },
+          "criticalPathSet": [
+            "B"
+          ]
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-10", "ef": "2026-07-12", "ls": "2026-07-10", "lf": "2026-07-12", "tf": 0, "ff": 0, "crit": true },
@@ -442,6 +470,25 @@
         { "pred": "A", "succ": "B", "type": "FINISH_FINISH" },
         { "pred": "B", "succ": "C", "type": "FINISH_START" }
       ],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16: B eindigt met A op wo 16:00 (FF), C begint do 07:00. B krijgt de nacht als speling: 15 u = 0,625 d. A.lf (do 07:00, een blokbegin) staat hier bewust niet in: N1 dekt dit eindmoment niet; open punt voor F1.",
+        "expect": {
+          "tasks": {
+            "B": {
+              "ef": "2026-07-08T16:00",
+              "ls": "2026-07-07",
+              "lf": "2026-07-09",
+              "tf": 0.625,
+              "crit": false
+            }
+          },
+          "criticalPathSet": [
+            "A",
+            "C"
+          ]
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-06", "ef": "2026-07-08", "ls": "2026-07-06", "lf": "2026-07-08", "tf": 0, "ff": 0, "crit": true },
@@ -466,6 +513,19 @@
         { "pred": "A", "succ": "C", "type": "FINISH_START" },
         { "pred": "A2", "succ": "C", "type": "FINISH_START" }
       ],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16: A eindigt za 00:00 (exclusief), C begint di 07:00. Speling in kalendertijd 79 u = 3,29 d. Spec §4.5 noemt 3; de meting liet A om 07:00 beginnen, D3 zet het begin op 00:00.",
+        "expect": {
+          "tasks": {
+            "A": {
+              "ls": "2026-07-13",
+              "lf": "2026-07-14",
+              "tf": 3.2916666666666665
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-10", "ef": "2026-07-11", "ls": "2026-07-12", "lf": "2026-07-13", "tf": 2, "ff": 1, "crit": false },
@@ -502,6 +562,17 @@
         { "name": "B", "dur": 6, "durationType": "ELAPSEDTIME" }
       ],
       "links": [{ "pred": "A", "succ": "B", "type": "FINISH_FINISH" }],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16: FF+0 legt het einde van B op het eindmoment van A (vr 16:00); zie msp-16.",
+        "expect": {
+          "tasks": {
+            "B": {
+              "ef": "2026-07-10T16:00"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-06", "ef": "2026-07-10" },
@@ -541,6 +612,17 @@
         { "name": "B", "dur": 3, "durationType": "ELAPSEDTIME" }
       ],
       "links": [{ "pred": "A", "succ": "B", "type": "START_FINISH" }],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16 met T8: SF+0 legt het einde van B op het startmoment van A (wo 07:00). Het dagpad schreef de startdatum van A als exclusief einde (wo 00:00).",
+        "expect": {
+          "tasks": {
+            "B": {
+              "ef": "2026-07-08T07:00"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-08", "ef": "2026-07-08" },
@@ -667,6 +749,17 @@
         { "name": "B", "dur": 6, "durationType": "ELAPSEDTIME", "milestone": true }
       ],
       "links": [{ "pred": "A", "succ": "B", "type": "FINISH_FINISH" }],
+      "minuteModel": {
+        "reason": "KALENDERTIJD-EINDE",
+        "note": "T16: FF+0 legt het einde van B op het eindmoment van A (vr 16:00); zie msp-16.",
+        "expect": {
+          "tasks": {
+            "B": {
+              "ef": "2026-07-10T16:00"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "A": { "es": "2026-07-06", "ef": "2026-07-10" },

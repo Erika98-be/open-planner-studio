@@ -95,6 +95,21 @@
         { "pred": "A", "succ": "B", "type": "START_FINISH", "lag": 6, "lagUnit": "ELAPSEDTIME" },
         { "pred": "A", "succ": "C", "type": "START_FINISH", "lag": 6 }
       ],
+      "minuteModel": {
+        "reason": "CONV-SF",
+        "note": "T8: B eindigt op ma 07:00 (start A plus 6 kalenderdagen, naar werktijd), dus B werkt do en vr; C eindigt op start A plus 6 werkdagen (ma 16:00).",
+        "expect": {
+          "tasks": {
+            "B": {
+              "es": "2026-06-04"
+            },
+            "C": {
+              "es": "2026-06-05",
+              "ef": "2026-06-08"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": {
           "B": { "es": "2026-06-05", "ef": "2026-06-08" },
@@ -166,6 +181,17 @@
       "title": "FS+50% van duur 5 = 2,5 dag, afgerond naar 3 (Math.round, halven omhoog)",
       "tasks": [{ "name": "A", "dur": 5 }, { "name": "B", "dur": 1 }],
       "links": [{ "pred": "A", "succ": "B", "type": "FINISH_START", "lagPercent": 50 }],
+      "minuteModel": {
+        "reason": "PCT-LAG-EXACT",
+        "note": "B7: 50 % van 5 d is 2,5 d (20 u), niet afgerond. B begint wo 11:00 en eindigt do 11:00.",
+        "expect": {
+          "tasks": {
+            "B": {
+              "es": "2026-06-10"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": { "B": { "es": "2026-06-11", "ef": "2026-06-11" } }
       }
@@ -199,6 +225,17 @@
       "title": "KANDIDAAT afrondingsconventie: FS-50% van duur 5 = -2,5 -> Math.round rondt halven naar +oneindig, dus lead 2 (niet 3)",
       "tasks": [{ "name": "A", "dur": 5 }, { "name": "B", "dur": 1 }],
       "links": [{ "pred": "A", "succ": "B", "type": "FINISH_START", "lagPercent": -50 }],
+      "minuteModel": {
+        "reason": "PCT-LAG-EXACT",
+        "note": "B7: -50 % van 5 d is -2,5 d (-20 u), niet afgerond. B begint wo 11:00.",
+        "expect": {
+          "tasks": {
+            "B": {
+              "es": "2026-06-03"
+            }
+          }
+        }
+      },
       "expect": {
         "tasks": { "B": { "es": "2026-06-04" } }
       }
