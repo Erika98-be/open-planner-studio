@@ -192,20 +192,22 @@ export function parseExternalLagInput(input: string): ExternalLag | null {
   const value = Number.parseFloat(match[1].replace(',', '.'));
   if (!Number.isFinite(value) || Math.abs(value) > MAX_LAG_ABS) return null;
   const suffix = match[2] ?? 'd';
-  const storedValue = Math.round(suffix === 'u' || suffix === 'h' ? value * 60 : value);
+  // Daginvoer gebruikt dezelfde symmetrische afronding als interne relaties.
+  const storedValue = suffix === 'u' || suffix === 'h'
+    ? Math.round(value * 60)
+    : (Math.sign(value) * Math.round(Math.abs(value)) || 0);
   if (!Number.isSafeInteger(storedValue) || Math.abs(storedValue) > MAX_LAG_ABS) return null;
   return suffix === 'u' || suffix === 'h' ? { lagMinutes: storedValue } : { lagDays: storedValue };
 }
 
 /** De lag van een externe relatie is óf minuten óf dagen, nooit beide: minuten winnen zodra ze
- *  gezet zijn (ook 0), anders de dagen (standaard 0). Let op: `canonicalLag` hieronder, voor de
- *  WEERGAVE, behandelt 0 minuten juist als afwezig en rondt af. */
+ *  gezet zijn (ook 0), anders de dagen (standaard 0). De weergave hieronder volgt dezelfde voorrang. */
 export function exclusiveExternalLag(lag: ExternalLagFields): ExternalLag {
   return lag.lagMinutes !== undefined ? { lagMinutes: lag.lagMinutes } : { lagDays: lag.lagDays ?? 0 };
 }
 
 function canonicalLag(lag: ExternalLagFields): ExternalLag {
-  if (isFiniteNumber(lag.lagMinutes) && lag.lagMinutes !== 0) {
+  if (isFiniteNumber(lag.lagMinutes)) {
     return { lagMinutes: Math.round(lag.lagMinutes) };
   }
   if (isFiniteNumber(lag.lagDays)) {

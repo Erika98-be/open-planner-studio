@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { readIFC } from '@/services/ifc/ifcReader';
+import { IfcParseError } from '@/services/ifc/ifcErrors';
 import type { ImportResult } from '@/services/importTypes';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -125,7 +126,8 @@ const rOld = readIFC(OLD);
   eq('1e bibliotheek: werkende uitzondering op de tweeploegenkalender', lib('Tweeploegen')?.workingExceptions?.map(e => e.name), ['Zaterdagdienst']);
   eq('1f baselines', (rOld.baselines ?? []).map(b => b.name), ['Baseline plan', 'Herplanning']);
   eq('1g vijf resourcesoorten', [...new Set(rOld.resources.map(r => r.type))].sort(), ['CREW', 'EQUIPMENT', 'LABOR', 'MATERIAL', 'SUBCONTRACTOR']);
-  ok('1h projectdatums uit het pset', rOld.project.startDate === '2027-05-06');
+  eq('1h contractuele projectinvoer uit het pset, inclusief leeg einde',
+    [rOld.project.startDate, rOld.project.endDate], ['2027-05-06', '']);
 }
 
 // ── 2. Lezen → schrijven (nieuwe ariteit) → lezen: identiek ────────────────────────────────────────
@@ -144,13 +146,28 @@ same('3b zelfde inhoud in oude en nieuwe ariteit leest identiek', readIFC(conver
 
 // ── 4. Projectstart en -einde uit IfcWorkPlan (zonder OPS-pset) ────────────────────────────────────
 {
+  // Dit toetst de LEZER met dezelfde slotwaarden. De huidige writer berekent de planomvang
+  // uit getoonde datums (109), dus NEW heeft terecht een ander FinishTime dan de oude writer.
+  // Zet uitsluitend het werkplan van deze lezersfixture op de twee waarden uit het oude bestand.
+  const oldPlan = lines(OLD).find(l => l.type === 'IFCWORKPLAN')!.args;
+  const samePlan = rewrite(NEW, type => type === 'IFCWORKPLAN', a =>
+    [...a.slice(0, 11), oldPlan[12], oldPlan[13], ...a.slice(13)]);
+  eq('4a fixture: nieuwe ariteit blijft behouden', arities(samePlan, ['IFCWORKPLAN']), { IFCWORKPLAN: [14] });
   const fromOld = readIFC(withoutProjectDates(OLD)).project;
-  const fromNew = readIFC(withoutProjectDates(NEW)).project;
+  const fromNew = readIFC(withoutProjectDates(samePlan)).project;
   const fromConverted = readIFC(withoutProjectDates(converted)).project;
   ok('4a controle: de pset-namen zijn echt weg', !withoutProjectDates(OLD).includes("'ProjectStartDate'"));
   eq('4b oud: start/einde uit het WORKPLAN-slot', [fromOld.startDate, fromOld.endDate], ['2027-05-06', '2027-05-13']);
   eq('4c nieuw: zelfde start/einde', [fromNew.startDate, fromNew.endDate], [fromOld.startDate, fromOld.endDate]);
   eq('4d omgezet: zelfde start/einde', [fromConverted.startDate, fromConverted.endDate], [fromOld.startDate, fromOld.endDate]);
+  // Het echte, ongewijzigde nieuwe bestand bewaart het lege contractuele einde, maar zonder
+  // projectpset leest het zijn nieuwe getoonde planomvang (de laatste Handover op 7 juli).
+  const nativeProject = readIFC(NEW).project;
+  eq('4e nieuw met pset: contractuele projectinvoer blijft staan',
+    [nativeProject.startDate, nativeProject.endDate], ['2027-05-06', '']);
+  const shownPlan = readIFC(withoutProjectDates(NEW)).project;
+  eq('4f nieuw zonder pset: getoonde planomvang uit het werkplan',
+    [shownPlan.startDate, shownPlan.endDate], ['2027-05-06', '2027-07-07']);
 }
 
 // ── 5. Het baselinewerkschema wordt herkend, ook als het vóór het gewone werkschema staat ──────────
@@ -262,7 +279,19 @@ for (const [label, ifc] of [['oud', OLD], ['nieuw', NEW]] as const) {
 // de werkschema's), en de werkende uitzondering wordt een feestdag omdat `WorkingExceptionIds`
 // STEP-nummers bewaart die MergeProjects vernummert (knownbugs).
 {
-  const MERGED = readFileSync(join(HERE, 'fixtures', 'ifc-arity-oude-writer-merged.ifc'), 'utf8');
+  const combined = readFileSync(join(HERE, 'fixtures', 'ifc-arity-oude-writer-merged.ifc'), 'utf8');
+  // Knownbug 110: de echte MergeProjects-fixture bevat een terrein en een muur. Die oorspronkelijke
+  // 4D-invoer moet nu worden geweigerd, niet stil als een planning worden geopend.
+  let blocked = false;
+  try { readIFC(combined); }
+  catch (error) { blocked = error instanceof IfcParseError && error.reason === 'building-model'; }
+  ok('8 voorpoort: oorspronkelijke 4D-fixture wordt geweigerd', blocked);
+  // Behoud ALLE onderstaande ariteits-/kalenderasserties op dezelfde historische planningsregels.
+  // Alleen de twee vastgelegde modelregels verdwijnen uit deze testvariant; geen productiebypass.
+  // Dit is geen exportrecept: resterende modelrelaties kunnen nog naar deze ids verwijzen.
+  const modelLines = combined.split('\n').filter(line => /^#(?:6=IFCSITE|8=IFCWALL)\(/.test(line));
+  eq('8 fixture bevat precies de twee bekende modelregels', modelLines.length, 2);
+  const MERGED = combined.split('\n').filter(line => !modelLines.includes(line)).join('\n');
   const all = lines(MERGED);
   const ofType = (...types: string[]) => all.filter(l => types.includes(l.type));
   eq('8a fixture: elke kalender heeft 9 argumenten en een lijst op Identification (5)',

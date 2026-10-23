@@ -138,7 +138,7 @@
   "barColorMode_auto": "За завданням — автоматично",
   "barColorMode_category": "За категорією",
   "barColorFieldLabel": "Поле категорії",
-  "barColorMissingField": "Цього поля немає в цьому проєкті. Тимчасово використовується тип завдання.",
+  "barColorMissingField": "Цього поля немає в цьому проєкті. Тимчасово використовується вид робіт.",
   "statusLineLabel": "Лінія статусу:",
   "statusLine_none": "Немає",
   "statusLine_statusDate": "Лінія дати звітування про стан",

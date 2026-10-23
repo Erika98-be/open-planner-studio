@@ -7,7 +7,7 @@ Je zet één stukadoor op het stucwerk en de taak duurt vier dagen. Zet je er ee
 Drie grootheden hangen aan elkaar:
 
 - **Duur**: hoe lang de taak loopt, in werkdagen of in uren.
-- **Inzet**: hoeveel van een resource er per werkdag aan de taak werkt. In de app heet dit *Eenh./dag*. Een inzet van 1 is één stukadoor de hele dag, 2 zijn er twee en 0,5 is een halve dag.
+- **Inzet**: hoeveel van een resource er per werkdag aan de taak werkt. In het paneel *Eigenschappen* heet dit *Inzet*, in andere vensters *Eenh./dag*. Een inzet van 1 is één stukadoor de hele dag, 2 zijn er twee en 0,5 is een halve dag.
 - **Werk**: het aantal uren dat de resource in totaal aan de taak besteedt.
 
 De som is: werk = duur × inzet × uren per werkdag. De uren per werkdag komen uit de kalender van de taak. Het stucwerk van vier werkdagen met één stukadoor is bij een werkdag van 8 uur dus 4 × 1 × 8 = 32 uur werk.
@@ -49,7 +49,7 @@ Een voorbeeld: twee resources hebben elk 32 uur werk en inzet 1, samen 4 werkdag
 
 ### Voortgang
 
-Heeft de taak al voortgang, dan werkt het taaktype op het resterende deel: de restduur en het resterende werk. In de app heet dat werk *Werk (rest)*. Wat al gedaan is, blijft staan.
+Heeft de taak al voortgang, dan werkt het taaktype op het resterende deel: de restduur en het resterende werk. In het paneel *Eigenschappen* staat dat werk in de kolom *Werk (u)*. Wat al gedaan is, blijft staan.
 
 ### Uurtaken
 
@@ -65,33 +65,33 @@ Het stucwerk duurt 4 werkdagen. Eén stukadoor is er aan toegewezen, met een inz
 
 - Je maakt de duur 6 werkdagen: het werk groeit naar 48 uur, de inzet blijft 1.
 - Je zet de inzet op 2: de duur blijft 4 werkdagen, het werk wordt 64 uur.
-- Je typt bij *Werk (rest)* 48 uur: de duur blijft 4 werkdagen, de inzet wordt 1,5.
+- Je typt bij *Werk (u)* 48 uur: de duur blijft 4 werkdagen, de inzet wordt 1,5.
 - Je wijst een tweede resource toe, bijvoorbeeld *Stukadoor 2*, met inzet 1: de duur blijft 4 werkdagen en die tweede brengt 32 uur werk mee, samen 64 uur.
 
 ### Vaste duur en werk
 
 - Je maakt de duur 6 werkdagen: het werk blijft 32 uur, de inzet zakt naar 0,67.
 - Je zet de inzet op 2: de duur blijft 4 werkdagen. Omdat de duur vaststaat, groeit het werk mee naar 64 uur.
-- Je typt bij *Werk (rest)* 16 uur: de duur blijft 4 werkdagen, de inzet wordt 0,5.
+- Je typt bij *Werk (u)* 16 uur: de duur blijft 4 werkdagen, de inzet wordt 0,5.
 - Je wijst een tweede resource toe, bijvoorbeeld *Stukadoor 2*, met inzet 1: de 32 uur worden verdeeld, 16 uur voor elk, en de inzet wordt voor allebei 0,5. De duur blijft 4 werkdagen.
 
 ### Vast werk
 
 - Je maakt de duur 6 werkdagen: het werk blijft 32 uur, de inzet zakt naar 0,67.
 - Je zet de inzet op 2: het werk blijft 32 uur en de duur wordt 2 werkdagen. Dit is de stap die je in tutorial 5 zet.
-- Je typt bij *Werk (rest)* 48 uur: de inzet blijft 1 en de duur wordt 6 werkdagen.
+- Je typt bij *Werk (u)* 48 uur: de inzet blijft 1 en de duur wordt 6 werkdagen.
 - Je wijst een tweede resource toe, bijvoorbeeld *Stukadoor 2*, met inzet 1: de 32 uur worden verdeeld, 16 uur voor elk, en de duur wordt 2 werkdagen. Haal je die tweede resource weer weg, dan is de duur weer 4 werkdagen.
 
 ### Vaste inzet
 
 - Je maakt de duur 6 werkdagen: de inzet blijft 1, het werk groeit naar 48 uur.
 - Je zet de inzet op 2: het werk blijft 32 uur en de duur wordt 2 werkdagen.
-- Je typt bij *Werk (rest)* 48 uur: de inzet blijft 1 en de duur wordt 6 werkdagen.
+- Je typt bij *Werk (u)* 48 uur: de inzet blijft 1 en de duur wordt 6 werkdagen.
 - Je wijst een tweede resource toe, bijvoorbeeld *Stukadoor 2*, met inzet 1: de 32 uur worden verdeeld, 16 uur voor elk, en de duur wordt 2 werkdagen.
 
 ### Wanneer de som niet uitkomt
 
-Onder Vast werk zet je de inzet op 3. Het werk is 32 uur, dus de duur wordt 32 ÷ (3 × 8) = 1,33 werkdagen. De app rondt dat naar boven af op 2 werkdagen. Werk (32 uur) en inzet (3) blijven staan, maar 2 × 3 × 8 is 48 uur. Het histogram verdeelt daarom de 32 uur over de 2 werkdagen: 2 eenheden per dag, niet 3. Naast *Werk (rest)* staat een waarschuwingsteken, *Wijkt af van inzet × duur*, om dat te laten zien.
+Onder Vast werk zet je de inzet op 3. Het werk is 32 uur, dus de duur wordt 32 ÷ (3 × 8) = 1,33 werkdagen. De app rondt dat naar boven af op 2 werkdagen. Werk (32 uur) en inzet (3) blijven staan, maar 2 × 3 × 8 is 48 uur. Het histogram verdeelt daarom de 32 uur over de 2 werkdagen: 2 eenheden per dag, niet 3. In het veld *Werk (u)* staat een waarschuwingsteken, *Wijkt af van inzet × duur*, om dat te laten zien.
 
 Met twee resources met verschillende inzet werkt het net zo. Zet je onder Vast werk een tweede resource, bijvoorbeeld *Stukadoor 2*, met inzet 2 bij de stukadoor met inzet 1, dan verdeelt de app de 32 uur in de verhouding 1 : 2, dus 10,7 en 21,3 uur. Beide hebben dan 1,33 werkdagen nodig. De duur wordt 2 werkdagen.
 
@@ -109,7 +109,7 @@ Het binnenspouwblad duurt 5 werkdagen en is voor 40% klaar: 2 werkdagen zijn ged
 
 **"Vast werk betekent dat de duur vaststaat."** Nee, precies andersom. Bij *Vaste duur en inzet* en *Vaste duur en werk* staat de duur vast. Bij *Vast werk* en *Vaste inzet* volgt de duur uit de andere twee.
 
-**"Als ik een taaktype kies, verandert mijn planning."** Nee. Het kiezen verandert geen getal. Alleen bij een volgende wijziging beslist het taaktype wat meebeweegt. Onder een taaktype dat werk beschermt, legt de app op het moment van kiezen het werk vast, zodat er een getal is om te beschermen. Zo'n taak heeft dan een opgeslagen *Werk (rest)*.
+**"Als ik een taaktype kies, verandert mijn planning."** Nee. Het kiezen verandert geen getal. Alleen bij een volgende wijziging beslist het taaktype wat meebeweegt. Onder een taaktype dat werk beschermt, legt de app op het moment van kiezen het werk vast, zodat er een getal is om te beschermen. Zo'n taak heeft dan een opgeslagen *Werk (u)*.
 
 **"De duur veranderde zonder dat ik hem aanraakte."** Dat kan na een wijziging van de inzet, het werk, het aantal resources of de uren per dag, onder Vast werk of Vaste inzet. Dan meldt de statusbalk dat de planning verouderd is. Druk op **Bereken** (F5) om de nieuwe datums te zien.
 

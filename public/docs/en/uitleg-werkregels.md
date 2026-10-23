@@ -7,7 +7,7 @@ You put one plasterer on the plastering and the task takes four days. If you add
 Three quantities are tied together:
 
 - **Duration**: how long the task runs, in work days or in hours.
-- **Units**: how much of a resource works on the task per work day. In the app this is called *Units/day*. Units of 1 is one plasterer for the whole day, 2 is two of them and 0.5 is half a day.
+- **Units**: how much of a resource works on the task per work day. In the *Properties* panel this is called *Units*, in other windows *Units/day*. Units of 1 is one plasterer for the whole day, 2 is two of them and 0.5 is half a day.
 - **Work**: the total number of hours the resource spends on the task.
 
 The sum is: work = duration × units × hours per work day. The hours per work day come from the task's calendar. Plastering of four work days with one plasterer is, with an 8-hour work day, 4 × 1 × 8 = 32 hours of work.
@@ -49,7 +49,7 @@ An example: two resources each have 32 hours of work and units of 1, 4 work days
 
 ### Progress
 
-If the task already has progress, the task type works on the remaining part: the remaining duration and the remaining work. In the app that work is called *Work (rem.)*. What has been done stays.
+If the task already has progress, the task type works on the remaining part: the remaining duration and the remaining work. In the *Properties* panel that work is in the column *Work (h)*. What has been done stays.
 
 ### Tasks in hours
 
@@ -65,33 +65,33 @@ The plastering takes 4 work days. One plasterer is assigned to it, with units of
 
 - You make the duration 6 work days: the work grows to 48 hours, the units stay 1.
 - You set the units to 2: the duration stays 4 work days, the work becomes 64 hours.
-- You type 48 hours in *Work (rem.)*: the duration stays 4 work days, the units become 1.5.
+- You type 48 hours in *Work (h)*: the duration stays 4 work days, the units become 1.5.
 - You assign a second resource, for example *Plasterer 2*, with units of 1: the duration stays 4 work days and that second one brings 32 hours of work, 64 hours together.
 
 ### Fixed duration and work
 
 - You make the duration 6 work days: the work stays 32 hours, the units drop to 0.67.
 - You set the units to 2: the duration stays 4 work days. Because the duration is fixed, the work grows along to 64 hours.
-- You type 16 hours in *Work (rem.)*: the duration stays 4 work days, the units become 0.5.
+- You type 16 hours in *Work (h)*: the duration stays 4 work days, the units become 0.5.
 - You assign a second resource, for example *Plasterer 2*, with units of 1: the 32 hours are divided, 16 hours each, and the units become 0.5 for both. The duration stays 4 work days.
 
 ### Fixed work
 
 - You make the duration 6 work days: the work stays 32 hours, the units drop to 0.67.
 - You set the units to 2: the work stays 32 hours and the duration becomes 2 work days. This is the step you take in tutorial 5.
-- You type 48 hours in *Work (rem.)*: the units stay 1 and the duration becomes 6 work days.
+- You type 48 hours in *Work (h)*: the units stay 1 and the duration becomes 6 work days.
 - You assign a second resource, for example *Plasterer 2*, with units of 1: the 32 hours are divided, 16 hours each, and the duration becomes 2 work days. Remove that second resource again and the duration is 4 work days again.
 
 ### Fixed units
 
 - You make the duration 6 work days: the units stay 1, the work grows to 48 hours.
 - You set the units to 2: the work stays 32 hours and the duration becomes 2 work days.
-- You type 48 hours in *Work (rem.)*: the units stay 1 and the duration becomes 6 work days.
+- You type 48 hours in *Work (h)*: the units stay 1 and the duration becomes 6 work days.
 - You assign a second resource, for example *Plasterer 2*, with units of 1: the 32 hours are divided, 16 hours each, and the duration becomes 2 work days.
 
 ### When the sum does not come out
 
-Under Fixed work you set the units to 3. The work is 32 hours, so the duration becomes 32 ÷ (3 × 8) = 1.33 work days. The app rounds that up to 2 work days. Work (32 hours) and units (3) stay, but 2 × 3 × 8 is 48 hours. The histogram therefore spreads the 32 hours over the 2 work days: 2 units per day, not 3. Next to *Work (rem.)* a warning sign appears, *Differs from units × duration*, to show this.
+Under Fixed work you set the units to 3. The work is 32 hours, so the duration becomes 32 ÷ (3 × 8) = 1.33 work days. The app rounds that up to 2 work days. Work (32 hours) and units (3) stay, but 2 × 3 × 8 is 48 hours. The histogram therefore spreads the 32 hours over the 2 work days: 2 units per day, not 3. In the *Work (h)* field a warning sign appears, *Differs from units × duration*, to show this.
 
 With two resources with different units it works the same way. If, under Fixed work, you add a second resource, for example *Plasterer 2*, with units of 2 to the plasterer with units of 1, the app divides the 32 hours in the ratio 1 : 2, so 10.7 and 21.3 hours. Both then need 1.33 work days. The duration becomes 2 work days.
 
@@ -109,7 +109,7 @@ The inner cavity leaf takes 5 work days and is 40% done: 2 work days are done an
 
 **"Fixed work means the duration is fixed."** No, quite the opposite. With *Fixed duration and units* and *Fixed duration and work* the duration is fixed. With *Fixed work* and *Fixed units* the duration follows from the other two.
 
-**"If I choose a task type, my schedule changes."** No. Choosing changes no number. Only at your next change does the task type decide what moves along. Under a task type that protects work, the app fixes the work at the moment you choose, so there is a number to protect. Such a task then has a stored *Work (rem.)*.
+**"If I choose a task type, my schedule changes."** No. Choosing changes no number. Only at your next change does the task type decide what moves along. Under a task type that protects work, the app fixes the work at the moment you choose, so there is a number to protect. Such a task then has a stored *Work (h)*.
 
 **"The duration changed without me touching it."** That can happen after a change to the units, the work, the number of resources or the hours per day, under Fixed work or Fixed units. The status bar then says the schedule is out of date. Press **Calculate** (F5) to see the new dates.
 

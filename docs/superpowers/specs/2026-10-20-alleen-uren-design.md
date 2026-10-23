@@ -1484,7 +1484,7 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
 - Toets: 138 urencases groen (op `msp-28` na, bewust); de vijf `z13-*`-cases groen; een nieuwe case per knownbug
   en per grensplek, met mutatiebewijs; de regressiegevallen van de statusregel in dialoog, raster en MCP; volledige
   planningssuite.
-- Stand (2026-10-20): PR #402 (`claude/uren-f1a-urenpadfouten`, naar `main`) is open (niet gemerged), concept. Hij
+- Stand (2026-10-23): PR #402 (`claude/uren-f1a-urenpadfouten`) is op 2026-10-23 gemerged in `main` (mergecommit `b811a21c2bad6dc2352f1f6767e30180fd4907d1`). Hij
   pakt knownbugs 138–142 aan. Volgens de bouwer blijven daarna open, en ze horen bij F1: knownbugs 145 (een dagtaak op
   werkblokken met SNLT/MSO op een blokbegin, één werkdag te vroeg; groep 12, dus de fix voor 139 geldt daar alleen
   voor urentaken), 146 (late finish op een blokbegin bij FF tussen urentaken; in P6 dekt conventie B2

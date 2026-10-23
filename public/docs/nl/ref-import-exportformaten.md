@@ -28,11 +28,15 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 
 **Wat meegaat** — alles wat bij het project hoort: taken met structuur, duur, datums en voortgang; relaties met lag; constraints en deadlines; kalenders; resources en toewijzingen, ook de urenverdeling; baselines; activiteitcodes en eigen velden; aantekeningen; externe koppelingen naar andere projecten; onderbrekingen; taaktypes en eigen werksoorten; de projectinstellingen zoals de statusdatum, de voortgangsmodus, het rekenprofiel en de reken-opties; de koppeling met een resourcebibliotheek. Bij een project uit een `.xer` gaat ook het oorspronkelijke bronbestand mee. Een eigen werksoort staat erin als het IFC-type `USERDEFINED` met de naam in het veld ObjectType, zodat andere IFC-programma's de taak gewoon lezen; daarnaast bewaart de app het vaste id van de werksoort, zodat hernoemen de koppeling niet breekt. Opent iemand het bestand op een andere computer, dan staat de werksoort daar onder *Uit dit project*, niet in diens eigen *Mijn werksoorten*.
 
-**Wat niet meegaat** — hoe je het scherm hebt ingesteld (zoom, scrollpositie, geselecteerde taak, ingeklapte fasen, gekozen filter en groepering) en de app-instellingen ([App-instellingen](docs://ref-instellingen)). Het tabblad *IFC* is een editor met de IFC-tekst van je project. *Genereer IFC* ververst haar, *Kopieer* zet haar op het klembord en *Toepassen* laadt de tekst als je project, ter vervanging van het project in dat tabblad.
+**Planomvang in andere IFC-programma’s.** Het werkplan en werkschema bevatten de vroegste getoonde taakstart en het laatste getoonde taakeinde, ook van fasen. Een gestarte taak telt vanaf haar werkelijke start; een voltooide taak tot haar werkelijke einde. Anders gelden de berekende datums, of vóór berekenen de invoerdatums. In *Datums zoals opgeslagen* geldt de planning die je op dat moment ziet. Opslaan rekent niet opnieuw. De start- en einddatum die je zelf in *Projectinstellingen* hebt ingevuld, blijven apart bewaard, ook als ze leeg zijn.
+
+**Wat niet meegaat** — hoe je het scherm hebt ingesteld (zoom, scrollpositie, geselecteerde taak, ingeklapte fasen, gekozen filter en groepering) en de app-instellingen ([App-instellingen](docs://ref-instellingen)). Het tabblad *IFC* is een editor met de IFC-tekst van je project. *Genereer IFC* ververst haar en *Kopieer* zet haar op het klembord. *Toepassen* vervangt de inhoud van het huidige project als één stap voor *Ongedaan maken*. De bibliotheekkoppeling en het bestand waarnaar je opslaat blijven behouden. De bewerking staat op *Niet opgeslagen* totdat je opslaat.
 
 ## MS Project XML (MSPDI)
 
 **Openen** — ja. De app herkent een `.xml`-bestand als MS Project XML aan het hoofdelement `Project` in de namespace van MS Project (of zonder namespace). Rekenprofiel: *Open Planner Studio*. Na het openen zegt de app in één melding wat ze niet heeft overgenomen; zie [Een MS Project-bestand (.mpp) openen](docs://howto-mpp-openen).
+
+**Onleesbare taakdatums.** Een waarde zoals `NA` geldt als een ontbrekende datum. De rest van het bestand opent gewoon. Een ontbrekende geplande start gebruikt de projectstart, of anders de vroegste leesbare taakstart. Voor een ontbrekend einde gelden dezelfde regels als bij een leeg datumveld. Een onleesbare werkelijke datum, constraintdatum, deadline of datum in de opgeslagen rekenuitvoer wordt niet als datum overgenomen.
 
 **Opslaan** — nee. Zo'n project krijgt geen opslagdoel.
 
@@ -63,6 +67,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 ## Primavera P6 XML
 
 **Openen** — ja. De app herkent een `.xml`-bestand als P6 XML aan het hoofdelement `APIBusinessObjects`. Rekenprofiel: *Open Planner Studio*.
+
+**Onleesbare taakdatums.** Hiervoor gelden dezelfde regels als bij MS Project XML: een onleesbare datum geldt als ontbrekend en breekt het openen niet af.
 
 **Meerdere projecten in één bestand.** Elk project met activiteiten opent in een eigen tabblad, met de naam *Projectnaam (Project-ID)*. Een project zonder activiteiten slaat de app over. Het actieve tabblad is het project met de meeste activiteiten. Een relatie naar een ander project neemt de app niet mee, en ook geen activiteit die bij geen project hoort. Na het openen meldt de app hoeveel projecten ze opende.
 
@@ -109,6 +115,8 @@ Per bestandsformaat: of je het kunt openen, opslaan en exporteren, wat er wel en
 ## CSV
 
 **Openen** — ja. De app leest `;` en `,` als scheidingsteken. Kolomkoppen herkent ze in het Engels en het Nederlands (bijvoorbeeld `Name` of `Naam`, `Duration` of `Duur`, `Predecessors` of `Voorgangers`). Datums mogen als *jjjj-mm-dd*, *dd-mm-jjjj* of *dd/mm/jjjj*. Een voorganger schrijf je als WBS-code, relatietype en lag, bijvoorbeeld `1.2FS+2d`. Rekenprofiel: *Open Planner Studio*. Het project heet *CSV Import*. De kolom `Task Type` bevat de werksoort, niet het taaktype; de koppen `Werksoort` en `Work category` leest de app ook. Een `Task Type` dat geen van de vaste codes is (zoals `CONSTRUCTION` of `INSTALLATION`, die de app zelf schrijft), wordt een eigen werksoort onder *Uit dit project*, niet in *Mijn werksoorten*; met `OPS Custom Task Type ID` blijft het id van een eigen werksoort behouden.
+
+Een gevulde datumcel in een onherkende vorm stopt het openen van de hele CSV. De foutmelding noemt de CSV-rij, kolomkop en celwaarde; pas die cel aan naar een van de drie vormen en open het bestand opnieuw. De rijtelling telt de kop mee, slaat lege records over en telt een cel met regeleinden als één record. Dit geldt voor Start, Einde, Werkelijke start en Werkelijk einde. Een ontbrekende of lege datum blijft toegestaan: de geplande start valt terug op de vroegste aanwezige taakstart (zonder enige start op vandaag), en het geplande einde wordt waar mogelijk uit start en duur afgeleid. Lege werkelijke datums volgen de gewone voortgangsregels.
 
 **Opslaan** — nee.
 

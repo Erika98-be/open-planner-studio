@@ -1,12 +1,15 @@
 // Headless store-batterij voor de bedrijfsbibliotheek (spec B1). Draait de ECHTE Zustand-store op
 // Node (patroon tests/planning/check-move-assignment.ts). Persistentie (saveLibrary) valt in Node
 // stil terug (geen IndexedDB/Tauri) — we asserten alleen de in-memory state. Exitcode = poort.
+import i18next from 'i18next';
+import nlCommon from '@/i18n/locales/nl/common.json';
+import enCommon from '@/i18n/locales/en/common.json';
 import { createAppStore, useAppStore } from '@/state/appStore';
 import { writeIFC } from '@/services/ifc/ifcWriter';
 import { buildWriteIFCInput } from '@/state/ifcSaveInput';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
 import { normalizeLoadedLibrary, persistLibrary } from '@/state/slices/librarySlice';
-import { computeCalendarHash, computeResourceHash, diffCalendarVsPool, isResourceFieldLocked } from '@/services/library/libraryOps';
+import { computeCalendarHash, computeResourceHash, diffCalendarVsPool, isResourceFieldLocked, resolveUniqueCompanyName } from '@/services/library/libraryOps';
 import { PoolImportDialog } from '@/components/dialogs/PoolImportDialog';
 import { DEFAULT_COMPANY_ID, createDefaultLibrary } from '@/types/library';
 import { DEMO_COMPANY_ID } from '@/services/library/demoLibrary';
@@ -19,6 +22,69 @@ let checks = 0; let fails = 0;
 function assert(cond: boolean, msg: string): void {
   checks++;
   if (!cond) { fails++; console.log(`   XX ${msg}`); }
+}
+
+// Knownbug 125: de naam volgt de UI-taal bij AANMAAK, ook via de echte initLibrary-route.
+// Gebruik de echte locale-JSON's en i18next-singleton, zonder de DOM-afhankelijke UI-config.
+{
+  await i18next.init({
+    lng: 'nl', fallbackLng: 'en', ns: ['common'], defaultNS: 'common',
+    resources: { nl: { common: nlCommon }, en: { common: enCommon } },
+    interpolation: { escapeValue: false },
+    initImmediate: false,
+  });
+  for (const [lng, defaultName, newName] of [
+    ['nl', 'Mijn resourcebibliotheek', 'Nieuwe resourcebibliotheek'],
+    ['en', 'My resource library', 'New resource library'],
+  ]) {
+    await i18next.changeLanguage(lng);
+    const isolated = createAppStore();
+    const S = () => isolated.getState();
+    assert(S().companies[0].name === defaultName, `${lng}: verse store gebruikt de vertaalde standaardnaam`);
+    assert(S().pools[DEFAULT_COMPANY_ID].companyName === defaultName, `${lng}: verse pool gebruikt dezelfde standaardnaam`);
+
+    // Node heeft geen IndexedDB: dit doorloopt loadLibrary's echte tak zonder opgeslagen data.
+    await S().initLibrary();
+    assert(S().libraryLoaded, `${lng}: initLibrary voltooit de echte laadroute`);
+    assert(S().companies[0].name === defaultName, `${lng}: initLibrary behoudt de vertaalde standaardnaam`);
+    assert(S().defaultCompanyId === DEFAULT_COMPANY_ID && S().pools[DEFAULT_COMPANY_ID].companyName === defaultName,
+      `${lng}: initialisatie behoudt de vaste identiteit en overeenkomende poolnaam`);
+    assert(normalizeLoadedLibrary({}).companies[0].name === defaultName, `${lng}: lege opgeslagen data krijgt dezelfde standaardnaam`);
+
+    const addedId = S().addCompany('   ');
+    assert(S().companies.find(c => c.id === addedId)?.name === newName, `${lng}: lege nieuwe naam krijgt het vertaalde label`);
+    assert(S().pools[addedId].companyName === newName, `${lng}: nieuwe pool neemt het vertaalde label over`);
+    assert(resolveUniqueCompanyName('   ', []) === newName, `${lng}: lege importnaam gebruikt hetzelfde vertaalde label`);
+    assert(resolveUniqueCompanyName('\u200B', [newName]) === `${newName} (2)`, `${lng}: onzichtbare importnaam behoudt de botsingsafhandeling`);
+    assert(resolveUniqueCompanyName(' Eigen naam ', []) === 'Eigen naam', `${lng}: opgegeven importnaam blijft behouden`);
+
+    await i18next.changeLanguage(lng === 'nl' ? 'en' : 'nl');
+    assert(S().companies[0].name === defaultName && S().pools[DEFAULT_COMPANY_ID].companyName === defaultName,
+      `${lng}: taalwissel hernoemt de aangemaakte standaardbibliotheek niet`);
+    S().renameCompany(DEFAULT_COMPANY_ID, 'Projectbureau Één');
+    const reloaded = normalizeLoadedLibrary({
+      companies: S().companies, defaultCompanyId: S().defaultCompanyId, pools: S().pools,
+    });
+    assert(reloaded.companies[0].name === 'Projectbureau Één' && reloaded.pools[DEFAULT_COMPANY_ID].companyName === 'Projectbureau Één',
+      `${lng}: laden behoudt de opgeslagen gebruikersnaam, ook bij het standaard-id`);
+  }
+
+  // Ook de oude Nederlandse standaardnaam is opgeslagen gebruikersdata: geen migratie naar Engels.
+  await i18next.changeLanguage('nl');
+  const legacy = createDefaultLibrary();
+  await i18next.changeLanguage('en');
+  const preserved = normalizeLoadedLibrary(legacy);
+  assert(preserved.companies[0].name === 'Mijn resourcebibliotheek'
+    && preserved.pools[DEFAULT_COMPANY_ID].companyName === 'Mijn resourcebibliotheek',
+    'en: bestaande Nederlandse standaardnaam wordt niet gemigreerd');
+
+  // Zoals bij opstarten: de store kan al bestaan voordat initLocale de UI-taal heeft gekozen.
+  const bootstrapped = createAppStore();
+  await i18next.changeLanguage('nl');
+  await bootstrapped.getState().initLibrary();
+  assert(bootstrapped.getState().companies[0].name === 'Mijn resourcebibliotheek',
+    'initLibrary gebruikt de inmiddels gekozen UI-taal, niet de taal bij store-aanmaak');
+  await i18next.changeLanguage('en');
 }
 
 // Issue #76: een mislukte achtergrondopslag van de bedrijfsbibliotheek mag niet

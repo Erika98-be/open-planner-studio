@@ -15,7 +15,9 @@
     "openFailed": "No se pudo abrir el archivo",
     "extGuideCallbackFailed": "Un paso de la extensión {{name}} ha fallado. La guía continúa.",
     "extHelpProjectOpenFailed": "No se pudo abrir el archivo de proyecto {{file}} de la extensión {{name}}.",
+    "extImportFailed": "La importación con {{name}} ha fallado.",
     "extensionMessage": "Extensión {{name}}: {{message}}",
+    "extensionInstallFailed": "No se pudo instalar la extensión. Compruebe el archivo e inténtelo de nuevo.",
     "xerInvalidInput": "La importación XER requiere los bytes originales del archivo.",
     "xerInvalidFile": "Este archivo XER no es válido o compatible.",
     "xerInvalidEncoding": "La codificación de texto de este archivo XER es inválida o está truncada.",
@@ -66,9 +68,9 @@
     "xerImportEnumFallbacks_one": "{{count}} alternativa de enumeración.",
     "xerImportEnumFallbacks_many": "{{count}} alternativas de enumeración.",
     "xerImportEnumFallbacks_other": "{{count}} alternativas de enumeración.",
-    "xerImportMissingPlannedStarts_one": "{{count}} actividad no tenía inicio planificado y ahora empieza en la fecha de datos o el inicio del proyecto del archivo.",
-    "xerImportMissingPlannedStarts_many": "{{count}} de actividades no tenían inicio planificado y ahora empiezan en la fecha de datos o el inicio del proyecto del archivo.",
-    "xerImportMissingPlannedStarts_other": "{{count}} actividades no tenían inicio planificado y ahora empiezan en la fecha de datos o el inicio del proyecto del archivo.",
+    "xerImportMissingPlannedStarts_one": "{{count}} tarea no tenía inicio planificado y ahora empieza en la fecha de estado o en el inicio del proyecto del archivo.",
+    "xerImportMissingPlannedStarts_many": "{{count}} de tareas no tenían inicio planificado y ahora empiezan en la fecha de estado o en el inicio del proyecto del archivo.",
+    "xerImportMissingPlannedStarts_other": "{{count}} tareas no tenían inicio planificado y ahora empiezan en la fecha de estado o en el inicio del proyecto del archivo.",
     "xerImportUnsupportedSemantics_one": "{{count}} ajuste de planificación P6 usó una alternativa segura.",
     "xerImportUnsupportedSemantics_many": "{{count}} ajustes de planificación P6 usaron alternativas seguras.",
     "xerImportUnsupportedSemantics_other": "{{count}} ajustes de planificación P6 usaron alternativas seguras.",
@@ -82,6 +84,7 @@
     "mppLegacy": "Este archivo .mpp usa un formato antiguo (Project 2007 o anterior). Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "mppEncrypted": "Este archivo .mpp está protegido con contraseña. Expórtalo en MS Project como XML (Archivo → Guardar como → XML) y abre ese archivo.",
     "saveFailed": "No se pudo guardar",
+    "ambiguousThousands": "«{{text}}» es ambiguo: ¿número decimal o miles? Escriba los decimales con «{{separator}}» (1{{separator}}5) y los miles sin separador (1500). El valor no se ha cambiado.",
     "siteSaveConflict": "No guardado: '{{name}}' fue modificado en el sitio por otra persona mientras tanto. Sus cambios siguen en la aplicación. Elija Guardar como para conservarlos como un archivo nuevo.",
     "siteFileGone": "'{{name}}' ya no está en el sitio. El archivo se ha quitado de Recientes.",
     "savedViaDownload": "Guardado como descarga: '{{name}}' está ahora en tu carpeta de descargas. Este entorno no permite que la aplicación escriba directamente en la ubicación elegida.",
@@ -114,6 +117,9 @@
     "exportSplitsLost_one": "{{count}} tarea con interrupciones se ha exportado sin sus interrupciones: MS Project/P6 solo las conocen como distribución del trabajo.",
     "exportSplitsLost_many": "{{count}} tareas con interrupciones se han exportado sin sus interrupciones: MS Project/P6 solo las conocen como distribución del trabajo.",
     "exportSplitsLost_other": "{{count}} tareas con interrupciones se han exportado sin sus interrupciones: MS Project/P6 solo las conocen como distribución del trabajo.",
+    "exportP6Truncated_one": "{{count}} nombre o código se ha acortado a la longitud que permite P6.",
+    "exportP6Truncated_many": "{{count}} nombres o códigos se han acortado a la longitud que permite P6.",
+    "exportP6Truncated_other": "{{count}} nombres o códigos se han acortado a la longitud que permite P6.",
     "projectStartAnchorsClamped_one": "{{count}} tarea se movió con el inicio del proyecto.",
     "projectStartAnchorsClamped_many": "{{count}} tareas se movieron con el inicio del proyecto.",
     "projectStartAnchorsClamped_other": "{{count}} tareas se movieron con el inicio del proyecto.",
@@ -121,12 +127,12 @@
     "mppTimephasedSteeringLost_many": "La distribución de horas de MS Project ya no controla {{count}} tareas después de esta edición; la distribución original se conserva en el archivo.",
     "mppTimephasedSteeringLost_other": "La distribución de horas de MS Project ya no controla {{count}} tareas después de esta edición; la distribución original se conserva en el archivo.",
     "readMore": "Leer más",
-    "taskTypesUnlocked": "Este archivo contiene trabajo guardado o reglas de trabajo propias; la regla de trabajo y el trabajo restante se muestran para este proyecto.",
-    "taskTypesUnlockedDetail": "Este archivo contiene trabajo guardado o reglas de trabajo propias; la regla de trabajo y el trabajo restante se muestran para este proyecto.",
-    "workRulesReadMore": "Reglas de trabajo explicadas",
-    "workRuleDurationsChanged_one": "Tras el cambio de calendario, la regla de trabajo ajustó la duración de {{count}} tarea (el trabajo se mantiene, cambiaron las horas por día).",
-    "workRuleDurationsChanged_many": "Tras el cambio de calendario, la regla de trabajo ajustó la duración de {{count}} tareas (el trabajo se mantiene, cambiaron las horas por día).",
-    "workRuleDurationsChanged_other": "Tras el cambio de calendario, la regla de trabajo ajustó la duración de {{count}} tareas (el trabajo se mantiene, cambiaron las horas por día).",
+    "taskTypesUnlocked": "Este archivo contiene trabajo guardado o tipos de tarea; el tipo de tarea y el trabajo restante se muestran para este proyecto.",
+    "taskTypesUnlockedDetail": "Este archivo contiene trabajo guardado o tipos de tarea; el tipo de tarea y el trabajo restante se muestran para este proyecto.",
+    "workRulesReadMore": "Tipos de tarea explicados",
+    "workRuleDurationsChanged_one": "Tras el cambio de calendario, el tipo de tarea ajustó la duración de {{count}} tarea (el trabajo se mantiene, cambiaron las horas por día).",
+    "workRuleDurationsChanged_many": "Tras el cambio de calendario, el tipo de tarea ajustó la duración de {{count}} de tareas (el trabajo se mantiene, cambiaron las horas por día).",
+    "workRuleDurationsChanged_other": "Tras el cambio de calendario, el tipo de tarea ajustó la duración de {{count}} tareas (el trabajo se mantiene, cambiaron las horas por día).",
     "pasteSkippedReadOnly_one": "Se omitió {{count}} celda: es de solo lectura (por ejemplo, un código WBS numerado automáticamente o una columna calculada).",
     "pasteSkippedReadOnly_many": "Se omitieron {{count}} celdas: son de solo lectura (por ejemplo, un código WBS numerado automáticamente o una columna calculada).",
     "pasteSkippedReadOnly_other": "Se omitieron {{count}} celdas: son de solo lectura (por ejemplo, un código WBS numerado automáticamente o una columna calculada).",
@@ -146,27 +152,26 @@
     "startBlockedByConstraintMany_other": "Los nuevos comienzos de {{count}} tareas no se aplicaron: tienen una predecesora y una restricción distinta de No comenzar antes del (SNET). Cambie esas restricciones para mover los comienzos.",
     "dragStartIsActual": "«{{name}}» ha comenzado: su comienzo es el comienzo real y no se mueve. Cámbielo mediante el progreso.",
     "dragDatesAreActual": "«{{name}}» está completada: su comienzo y su fin son las fechas reales y no se mueven. Cámbielas mediante el progreso.",
-    "referencesClearedOnPaste_one": "{{count}} referencia no existía en este documento y se ha borrado (un calendario de tarea, tipo de tarea personalizado, código de actividad o campo personalizado del documento de origen).",
-    "referencesClearedOnPaste_many": "{{count}} referencias no existían en este documento y se han borrado (calendarios de tarea, tipos de tarea personalizados, códigos de actividad o campos personalizados del documento de origen).",
-    "referencesClearedOnPaste_other": "{{count}} referencias no existían en este documento y se han borrado (calendarios de tarea, tipos de tarea personalizados, códigos de actividad o campos personalizados del documento de origen).",
-    "milestoneRefusedAssignments_one": "«{{task}}» tiene asignaciones de recursos y no puede convertirse en hito. Elimine primero las asignaciones.",
-    "milestoneRefusedAssignments_many": "{{count}} tareas tienen asignaciones de recursos y no pueden convertirse en hitos. Elimine primero las asignaciones.",
-    "milestoneRefusedAssignments_other": "{{count}} tareas tienen asignaciones de recursos y no pueden convertirse en hitos. Elimine primero las asignaciones.",
-    "milestoneRefusedSummary_one": "«{{task}}» es una tarea de resumen con subtareas y no puede convertirse en hito.",
-    "milestoneRefusedSummary_many": "{{count}} tareas son tareas de resumen con subtareas y no pueden convertirse en hitos.",
-    "milestoneRefusedSummary_other": "{{count}} tareas son tareas de resumen con subtareas y no pueden convertirse en hitos.",
+    "referencesClearedOnPaste_one": "{{count}} referencia no existía en este documento y se ha borrado (un calendario de tarea, una categoría de trabajo personalizada, un código de actividad o un campo personalizado del documento de origen).",
+    "referencesClearedOnPaste_many": "{{count}} de referencias no existían en este documento y se han borrado (calendarios de tarea, categorías de trabajo personalizadas, códigos de actividad o campos personalizados del documento de origen).",
+    "referencesClearedOnPaste_other": "{{count}} referencias no existían en este documento y se han borrado (calendarios de tarea, categorías de trabajo personalizadas, códigos de actividad o campos personalizados del documento de origen).",
+    "milestoneRefusedAssignments": "«{{task}}» tiene asignaciones de recursos y no puede convertirse en hito. Elimine primero las asignaciones.",
+    "milestoneRefusedSummary": "«{{task}}» es una tarea de resumen con subtareas y no puede convertirse en hito.",
     "assignmentsMovedToSubtask_one": "Asignación movida a la subtarea «{{child}}».",
     "assignmentsMovedToSubtask_many": "{{count}} asignaciones movidas a la subtarea «{{child}}».",
     "assignmentsMovedToSubtask_other": "{{count}} asignaciones movidas a la subtarea «{{child}}».",
     "assignmentsMovedToSubtasks_one": "Asignaciones de {{count}} tarea movidas a una subtarea.",
     "assignmentsMovedToSubtasks_many": "Asignaciones de {{count}} tareas movidas a subtareas.",
     "assignmentsMovedToSubtasks_other": "Asignaciones de {{count}} tareas movidas a subtareas.",
-    "milestoneClearedOnPhase_one": "«{{phase}}» ya no es un hito.",
-    "milestoneClearedOnPhase_many": "{{count}} tareas ya no son hitos.",
-    "milestoneClearedOnPhase_other": "{{count}} tareas ya no son hitos.",
+    "milestoneClearedOnPhase": "«{{phase}}» ya no es un hito.",
     "phaseRefusedNoAssignableChild": "«{{phase}}» no puede convertirse en tarea de resumen: sus asignaciones no tienen adónde ir, porque ninguna de las nuevas subtareas puede llevar asignaciones (un hito o una tarea de resumen). No se ha cambiado nada.",
     "phaseRefusedDuplicateResource": "«{{phase}}» no puede convertirse en tarea de resumen: la asignación de {{resource}} no puede pasar a la nueva subtarea «{{child}}», porque ya tiene {{resource}}. No se ha cambiado nada.",
-    "schedulingProfileApplied": "Este proyecto calcula como {{profile}}. Cámbialo en Archivo → Info del proyecto → Perfil de cálculo y opciones.",
+    "phaseQuestionOutdated": "Las tareas o asignaciones han cambiado mientras la pregunta estaba abierta. No se ha modificado nada; vuelva a intentarlo.",
+    "schedulingProfileApplied": "Este proyecto calcula como {{profile}}. Cámbielo en Archivo → Información del proyecto → Perfil de cálculo y opciones.",
+    "schedulingTemplateSaved": "Plantilla “{{name}}” guardada.",
+    "schedulingTemplateLimit": "Plantilla no guardada: ya hay {{max}} plantillas. Elimine primero una plantilla.",
+    "schedulingTemplateStorageFailed": "Plantilla no guardada: el almacenamiento de la aplicación está lleno o no está disponible.",
+    "schedulingTemplateDeleteFailed": "Plantilla no eliminada: el almacenamiento de la aplicación está lleno o no está disponible.",
     "schedulingProfileShifted_one": "Tras aplicar, se movió {{count}} tarea.",
     "schedulingProfileShifted_many": "Tras aplicar, se movieron {{count}} tareas.",
     "schedulingProfileShifted_other": "Tras aplicar, se movieron {{count}} tareas.",
@@ -185,12 +190,83 @@
     "xerArchiveReasonStructure": "Motivo: la estructura del archivo en el IFC no es correcta (duplicada, reordenada o mal vinculada).",
     "statusDateSetToday": "Fecha de estado fijada en hoy ({{date}}).",
     "durationBelowDoneWork": "«{{name}}» ya está hecha en un {{percent}} %: una duración menor que el trabajo ya realizado no es posible. La duración no se ha cambiado.",
+    "refusedTaskNames": "No se ha modificado: {{names}}.",
+    "refusedTaskNamesMore_one": "No se ha modificado: {{names}} y {{count}} tarea más.",
+    "refusedTaskNamesMore_many": "No se ha modificado: {{names}} y {{count}} tareas más.",
+    "refusedTaskNamesMore_other": "No se ha modificado: {{names}} y {{count}} tareas más.",
+    "notAppliedTaskNames": "No aplicado a: {{names}}.",
+    "notAppliedTaskNamesMore_one": "No aplicado a: {{names}} y {{count}} tarea más.",
+    "notAppliedTaskNamesMore_many": "No aplicado a: {{names}} y {{count}} tareas más.",
+    "notAppliedTaskNamesMore_other": "No aplicado a: {{names}} y {{count}} tareas más.",
+    "refusedRelationNames": "No se ha creado: {{names}}.",
+    "refusedRelationNamesMore_one": "No se ha creado: {{names}} y {{count}} relación más.",
+    "refusedRelationNamesMore_many": "No se ha creado: {{names}} y {{count}} relaciones más.",
+    "refusedRelationNamesMore_other": "No se ha creado: {{names}} y {{count}} relaciones más.",
     "remainingWorkRecomputed": "Trabajo restante de «{{name}}» recalculado: {{before}} h → {{after}} h (el valor venía del archivo). Ctrl+Z lo restablece.",
     "remainingWorkRecomputedMany_one": "Trabajo restante de {{count}} tarea recalculado (el valor venía del archivo). Ctrl+Z lo restablece.",
     "remainingWorkRecomputedMany_many": "Trabajo restante de {{count}} tareas recalculado (los valores venían del archivo). Ctrl+Z los restablece.",
     "remainingWorkRecomputedMany_other": "Trabajo restante de {{count}} tareas recalculado (los valores venían del archivo). Ctrl+Z los restablece.",
     "tutorialOfferLater": "Siempre encontrarás los tutoriales en Ayuda › Tutoriales.",
-    "tutorialOfferUnavailable": "Ahora no se han podido instalar ni iniciar los tutoriales. Puedes volver a intentarlo más tarde en Ayuda › Tutoriales."
+    "tutorialOfferUnavailable": "Ahora no se han podido instalar ni iniciar los tutoriales. Puedes volver a intentarlo más tarde en Ayuda › Tutoriales.",
+    "taskAddedAtEnd": "La nueva tarea se ha añadido al final. Durante el filtrado, la agrupación o la ordenación, la aplicación no puede colocarla debajo de su selección.",
+    "p6xmlImportEmpty": "Este archivo no contiene actividades que la aplicación pueda leer.",
+    "p6xmlImportEmptyNoObjectIds": "Las actividades no tienen ObjectId, así que la aplicación no puede vincularlas. Esto no es un Primavera P6 XML normal.",
+    "p6xmlImportEmptyXerColumns": "El archivo usa nombres de columna de XER (como task_code) en lugar de campos de P6 XML. Abra el propio archivo .xer.",
+    "p6xmlImportOpened_one": "Archivo P6 XML abierto: {{count}} documento de proyecto.",
+    "p6xmlImportOpened_many": "Archivo P6 XML abierto: {{count}} documentos de proyecto.",
+    "p6xmlImportOpened_other": "Archivo P6 XML abierto: {{count}} documentos de proyecto.",
+    "p6xmlImportCrossProjectRelations_one": "{{count}} relación entre proyectos no se ha importado como relación.",
+    "p6xmlImportCrossProjectRelations_many": "{{count}} relaciones entre proyectos no se han importado como relaciones.",
+    "p6xmlImportCrossProjectRelations_other": "{{count}} relaciones entre proyectos no se han importado como relaciones.",
+    "p6xmlImportUnassignedActivities_one": "{{count}} actividad sin proyecto no se ha leído.",
+    "p6xmlImportUnassignedActivities_many": "{{count}} actividades sin proyecto no se han leído.",
+    "p6xmlImportUnassignedActivities_other": "{{count}} actividades sin proyecto no se han leído.",
+    "msProjectImportLoss": "No se ha importado todo de este archivo de MS Project.",
+    "msProjectLostSubprojects_one": "{{count}} proyecto insertado se ha leído como tarea normal, sin el enlace al otro archivo.",
+    "msProjectLostSubprojects_many": "{{count}} proyectos insertados se han leído como tareas normales, sin el enlace al otro archivo.",
+    "msProjectLostSubprojects_other": "{{count}} proyectos insertados se han leído como tareas normales, sin el enlace al otro archivo.",
+    "msProjectLostExternalTasks_one": "{{count}} tarea externa de otro proyecto se ha leído como tarea normal.",
+    "msProjectLostExternalTasks_many": "{{count}} tareas externas de otro proyecto se han leído como tareas normales.",
+    "msProjectLostExternalTasks_other": "{{count}} tareas externas de otro proyecto se han leído como tareas normales.",
+    "msProjectLostInactiveTasks_one": "{{count}} tarea inactiva se ha leído como tarea activa y cuenta en el cálculo.",
+    "msProjectLostInactiveTasks_many": "{{count}} tareas inactivas se han leído como tareas activas y cuentan en el cálculo.",
+    "msProjectLostInactiveTasks_other": "{{count}} tareas inactivas se han leído como tareas activas y cuentan en el cálculo.",
+    "msProjectLostManualTasks_one": "{{count}} tarea programada manualmente se ha leído como tarea programada automáticamente.",
+    "msProjectLostManualTasks_many": "{{count}} tareas programadas manualmente se han leído como tareas programadas automáticamente.",
+    "msProjectLostManualTasks_other": "{{count}} tareas programadas manualmente se han leído como tareas programadas automáticamente.",
+    "msProjectLostLevelingDelays_one": "No se ha importado el retraso de nivelación de {{count}} tarea.",
+    "msProjectLostLevelingDelays_many": "No se ha importado el retraso de nivelación de {{count}} tareas.",
+    "msProjectLostLevelingDelays_other": "No se ha importado el retraso de nivelación de {{count}} tareas.",
+    "msProjectLostCriticalSlack_one": "No se ha importado el umbral crítico del archivo (holgura de hasta {{count}} día laborable). La aplicación calcula con umbral 0.",
+    "msProjectLostCriticalSlack_many": "No se ha importado el umbral crítico del archivo (holgura de hasta {{count}} días laborables). La aplicación calcula con umbral 0.",
+    "msProjectLostCriticalSlack_other": "No se ha importado el umbral crítico del archivo (holgura de hasta {{count}} días laborables). La aplicación calcula con umbral 0.",
+    "msProjectLostBaselines_one": "{{count}} línea base no se ha importado.",
+    "msProjectLostBaselines_many": "{{count}} líneas base no se han importado.",
+    "msProjectLostBaselines_other": "{{count}} líneas base no se han importado.",
+    "msProjectLostExtraBaselines_one": "{{count}} línea base (Línea base 1–10) no se ha importado.",
+    "msProjectLostExtraBaselines_many": "{{count}} líneas base (Línea base 1–10) no se han importado.",
+    "msProjectLostExtraBaselines_other": "{{count}} líneas base (Línea base 1–10) no se han importado.",
+    "msProjectLostBaselineWorkCost_one": "En {{count}} tarea, recurso o asignación no se ha importado el trabajo ni el coste de la Línea base 0.",
+    "msProjectLostBaselineWorkCost_many": "En {{count}} tareas, recursos o asignaciones no se han importado el trabajo ni el coste de la Línea base 0.",
+    "msProjectLostBaselineWorkCost_other": "En {{count}} tareas, recursos o asignaciones no se han importado el trabajo ni el coste de la Línea base 0.",
+    "msProjectLostAssignmentBaselineDates_one": "En {{count}} asignación, la línea base difiere de la tarea; esa diferencia no se ha importado.",
+    "msProjectLostAssignmentBaselineDates_many": "En {{count}} asignaciones, la línea base difiere de la tarea; esa diferencia no se ha importado.",
+    "msProjectLostAssignmentBaselineDates_other": "En {{count}} asignaciones, la línea base difiere de la tarea; esa diferencia no se ha importado.",
+    "msProjectLostCustomFields_one": "{{count}} campo personalizado con valores (campo personalizado o código de esquema) no se ha importado.",
+    "msProjectLostCustomFields_many": "{{count}} campos personalizados con valores (campos personalizados y códigos de esquema) no se han importado.",
+    "msProjectLostCustomFields_other": "{{count}} campos personalizados con valores (campos personalizados y códigos de esquema) no se han importado.",
+    "msProjectLostNotes_one": "{{count}} nota no se ha importado.",
+    "msProjectLostNotes_many": "{{count}} notas no se han importado.",
+    "msProjectLostNotes_other": "{{count}} notas no se han importado.",
+    "msProjectLostHyperlinks_one": "{{count}} hipervínculo no se ha importado.",
+    "msProjectLostHyperlinks_many": "{{count}} hipervínculos no se han importado.",
+    "msProjectLostHyperlinks_other": "{{count}} hipervínculos no se han importado.",
+    "msProjectLostFixedCosts_one": "No se ha importado el coste fijo de {{count}} tarea.",
+    "msProjectLostFixedCosts_many": "No se han importado los costes fijos de {{count}} tareas.",
+    "msProjectLostFixedCosts_other": "No se han importado los costes fijos de {{count}} tareas.",
+    "msProjectLostResourceRates_one": "No se han importado las tarifas de {{count}} recurso.",
+    "msProjectLostResourceRates_many": "No se han importado las tarifas de {{count}} recursos.",
+    "msProjectLostResourceRates_other": "No se han importado las tarifas de {{count}} recursos."
   },
   "scheduleErrors": {
     "cycle": "Relación circular entre tareas: {{path}}",
@@ -204,6 +280,9 @@
   "no": "No",
   "days": "d",
   "daysLong": "días",
+  "dayUnitLong_one": "día",
+  "dayUnitLong_many": "de días",
+  "dayUnitLong_other": "días",
   "ok": "OK",
   "apply": "Aplicar",
   "create": "Crear",
@@ -300,8 +379,8 @@
     "hourPlanningSection": "Planificación por horas",
     "enableHourPlanning": "Activar planificación por horas",
     "enableHourPlanningHint": "Activa la programación por horas/minutos: una escala de tiempo horaria, turnos con bandas de horario laboral y barras de tarea con precisión de hora. Desactivado ⇒ la aplicación sigue siendo totalmente granular por días, como antes.",
-    "showTaskTypes": "Mostrar reglas de trabajo y trabajo",
-    "showTaskTypesHint": "Los archivos de MS Project o Primavera P6 siempre lo muestran. Desactivado: la duración y las unidades se mantienen y el trabajo se ajusta.",
+    "showTaskTypes": "Usar tipos de tarea",
+    "showTaskTypesHint": "Elija por tarea qué se ajusta cuando cambian la duración, las unidades o el trabajo, como Task Type en MS Project y Duration Type en P6. Desactivado: la duración y las unidades se mantienen. Un archivo con tipos de tarea o trabajo guardado los muestra aunque esto esté desactivado.",
     "allowMixedDayHour": "Permitir planificación mixta de días/horas",
     "defaultTaskDurationUnit": "Unidad predeterminada para tareas nuevas",
     "defaultTaskDurationUnitHint": "Determina si las tareas nuevas comienzan en días laborables u horas de trabajo. Las tareas existentes no cambian.",
@@ -362,6 +441,10 @@
     "dateNotationDmy": "dd-mm-aaaa",
     "dateNotationMdy": "mm-dd-aaaa",
     "dateNotationYmd": "aaaa-mm-dd",
+    "timeNotation": "Formato de hora",
+    "timeNotationHint": "Determina cómo se muestran e introducen las horas: en la ventana de calendario, en las tareas por horas de la tabla, en la escala horaria del Gantt y en los mensajes. Los archivos y los cálculos no cambian (24 horas).",
+    "timeNotation24h": "24 horas (13:00)",
+    "timeNotation12h": "12 horas (1:00 PM)",
     "fontFamilyLabel": "Fuente",
     "fontScaleLabel": "Tamaño de texto",
     "fontScaleHint": "Escala el texto y el diseño de la interfaz.",
@@ -476,6 +559,8 @@
     "newProject": "Nuevo proyecto",
     "openExistingProject": "Abrir proyecto existente",
     "allProjects": "Todos los proyectos",
+    "scrollTabsStart": "Desplazar las pestañas hacia el inicio",
+    "scrollTabsEnd": "Desplazar las pestañas hacia el final",
     "active": "Activo",
     "tasksWord": "tareas",
     "criticalWord": "crítico",
@@ -487,19 +572,45 @@
   "feedback": {
     "buttonTooltip": "Enviar comentarios",
     "title": "Enviar comentarios",
-    "typeBug": "Error",
-    "typeFeature": "Solicitud de función",
+    "typeBug": "Algo no funciona",
+    "typeFeature": "Idea",
+    "typeGeneral": "Pregunta o comentario",
     "fieldTitle": "Título",
+    "titlePlaceholder": "Ej.: La ruta crítica cambia al guardar",
     "fieldDescription": "Descripción",
+    "descriptionPlaceholder": "¿Qué hizo, qué esperaba y qué ocurrió?",
     "attachScreenshot": "Adjuntar captura de pantalla",
+    "screenshotPreview": "Vista previa",
+    "retake": "Repetir captura",
+    "removeScreenshot": "Quitar",
     "capturing": "Capturando pantalla…",
     "captureFailed": "No se pudo capturar la pantalla. Aún puedes enviar comentarios sin captura.",
-    "submit": "Enviar a GitHub",
+    "submit": "Enviar",
+    "sending": "Enviando…",
+    "fieldEmail": "Correo electrónico (opcional, para una respuesta)",
+    "emailInvalid": "Esta dirección de correo no es válida. Corríjala o deje el campo vacío.",
+    "titleRequired": "Escriba un título.",
+    "tooShort": "Escriba al menos 10 caracteres en el título y la descripción juntos.",
+    "privacy": "Su mensaje y la captura de pantalla se envían a Open Feedback Studio de OpenAEC. Pueden aparecer como incidencia pública en GitHub. No incluya nada que no quiera compartir.",
+    "sentWith": "Enviado con: v{{version}} · {{os}} · {{language}}",
+    "sentTitle": "Gracias, su mensaje se ha enviado.",
+    "alreadyIn": "Ya hemos recibido este mensaje. ¿Quiere añadir algo? Entonces cambie el texto y envíelo de nuevo.",
+    "sentScreenshotDropped": "La captura de pantalla era demasiado grande y no se ha enviado.",
+    "viewOnGithub": "Ver en GitHub",
+    "errorValidation": "No se ha aceptado el mensaje. Revise el texto (no solo los enlaces) y la dirección de correo, e inténtelo de nuevo.",
+    "errorRateLimited": "Ha enviado muchos mensajes en poco tiempo. Inténtelo de nuevo dentro de una hora.",
+    "errorFailed": "No se ha podido enviar. Compruebe su conexión a internet e inténtelo de nuevo, o abra el mensaje en GitHub.",
+    "errorUncertain": "No sabemos si su mensaje ha llegado. Espere un minuto y envíelo de nuevo; si ya está, lo veremos automáticamente.",
+    "fallbackGithub": "Abrir en GitHub",
     "cancel": "Cancelar",
+    "clearDraft": "Vaciar",
+    "clearDraftTitle": "Borre todos los campos y la captura de pantalla",
     "close": "Cerrar",
+    "saveAndClose": "Guardar y cerrar",
     "tools": {
       "arrow": "Flecha",
       "rectangle": "Rectángulo",
+      "mask": "Cubrir",
       "pen": "Lápiz",
       "text": "Texto",
       "color": "Color",
@@ -516,6 +627,7 @@
     "openGithub": "OK, ir a GitHub",
     "annotate": "Anotar",
     "editorDone": "Listo",
+    "annotationSaveFailed": "No se pudieron guardar las modificaciones. Inténtelo de nuevo. Su captura de pantalla no se ha cambiado y no se enviará desde este editor.",
     "rotateFeedback": "Enviar comentarios",
     "rotateBug": "Reportar un error",
     "rotateFeature": "Sugerir una nueva función"
@@ -784,7 +896,7 @@
       "projectEndUnchanged": "Fecha de fin del proyecto: sin cambios ({{date}})",
       "projectEndChanged": "Fecha de fin del proyecto: {{before}} → {{after}}",
       "remainingConflicts": "Conflictos restantes",
-      "remainingConflictsHint": "Estas tareas no caben dentro de su holgura — a menudo porque un recurso no trabaja esos días o no tiene capacidad suficiente.",
+      "remainingConflictsHint": "Para estas tareas siguen existiendo conflictos de recursos. Consulte la explicación a continuación.",
       "intrinsicOverrun": "{{resource}} alcanza un pico de {{peak}} unidades/día, la capacidad es {{capacity}} — no se puede resolver desplazando.",
       "noChanges": "Ninguna tarea necesita moverse — la planificación ya está libre de conflictos.",
       "notCalculated": "Haz clic en Calcular para generar una propuesta de nivelación.",
@@ -868,7 +980,7 @@
       "cancel": "Cancelar"
     },
     "regen": {
-      "hint": "Los festivos cubren {{from}}–{{to}}; el proyecto llega hasta {{year}}. ¿Regenerar?",
+      "hint": "Los festivos cubren {{from}}–{{to}}. ¿Desea volver a generar hasta {{year}} inclusive?",
       "button": "Regenerar"
     },
     "countryName": {
@@ -903,7 +1015,7 @@
       "decreaseBreakDuration": "Reducir la duración de la pausa 15 minutos",
       "start": "Inicio de la pausa",
       "duration": "Duración de la pausa (minutos)",
-      "hint": "Las franjas de trabajo se calculan automáticamente. Duración 0 elimina la pausa.",
+      "hint": "Defina el inicio y la duración de la pausa; el día laborable estándar y sus bandas se calculan automáticamente. Ponga la duración en 0 para un día laborable continuo.",
       "errors": {
         "invalidDuration": "La duración debe ser un número entero de minutos igual o mayor que 0.",
         "outsideWorkingDay": "La pausa debe estar completamente dentro de la jornada laboral.",
@@ -927,9 +1039,13 @@
       "copyToAll": "Copiar a todos los días laborables",
       "noBands": "No laborable",
       "nextDay": "día siguiente",
+      "bandStart": "Inicio de la banda",
+      "bandEnd": "Fin de la banda",
       "shiftPreset": "Turno",
       "breakHint": "Un hueco entre dos franjas es una pausa: ajuste los horarios según sea necesario."
-    }
+    },
+    "defaultConstructionName": "Calendario de obra NL",
+    "defaultStandardName": "Calendario estándar"
   },
   "view": {
     "structureLockedHint": "No disponible mientras se filtra/agrupa/ordena",
@@ -1251,7 +1367,7 @@
   "progressImport": {
     "title": "Actualizar avance desde una hoja",
     "chooseFile": "Elegir archivo…",
-    "intro": "Elige una hoja CSV devuelta. La aplicación solo lee finalización, inicio real y fin real — el resto de tu planificación no cambia.",
+    "intro": "Elija una hoja CSV o XLSX devuelta. La aplicación solo lee la finalización, el inicio real y el fin real. El resto de su planificación no cambia.",
     "summaryApplied": "Aplicado: {{applied}}",
     "summaryNoop": "Sin cambios: {{noop}}",
     "summaryNeedsLink": "Esperando vínculo: {{needsLink}}",
@@ -1317,7 +1433,7 @@
     },
     "p6ZeroDurationUsesPlannedBoundary": {
       "label": "El hito sigue el límite de calendario planificado",
-      "help": "Un hito sin duración permanece en el límite de calendario que planificó el archivo: un inicio de día sigue siendo un hito de inicio, un fin de franja puede coincidir con el fin del predecesor."
+      "help": "Un hito sin duración se queda en el límite de calendario planificado en el archivo: un inicio de día sigue siendo un hito de inicio, y un fin de banda puede caer en el fin del predecesor."
     },
     "p6UseTaskPlannedStartFloor": {
       "label": "Inicio planificado como límite inferior adicional",
@@ -1325,11 +1441,11 @@
     },
     "p6FinishMilestoneBoundaryWindow": {
       "label": "Hito final como ventana de límite",
-      "help": "Un hito final puede situarse en dos límites de calendario adyacentes: inicio temprano al principio de una franja, fin temprano al final de la franja anterior."
+      "help": "Un hito de fin puede estar en dos límites de calendario contiguos: inicio temprano al inicio de una banda, fin temprano al final de la banda anterior."
     },
     "p6PreserveActualInstants": {
       "label": "Mantener exactas las fechas reales",
-      "help": "Las fechas reales de inicio y fin registradas no se desplazan a una franja de trabajo."
+      "help": "El inicio real y el fin real registrados no se desplazan al borde de una banda."
     },
     "p6UseRemainingStartForProgress": {
       "label": "Tarea en curso: inicio temprano = inicio del trabajo restante",
@@ -1337,7 +1453,7 @@
     },
     "p6PreserveZeroDurationConstraintInstants": {
       "label": "Momento de restricción exacto en un hito",
-      "help": "Una restricción de fecha y hora en un hito sin duración es un punto exacto, también al inicio de una franja de trabajo."
+      "help": "Una restricción de fecha y hora en un hito sin duración es un punto exacto, también al inicio de una banda."
     },
     "resumeFromActualElapsed": {
       "label": "El trabajo restante se reanuda tras la duración transcurrida",
@@ -1349,23 +1465,23 @@
     },
     "p6RelationFinishBoundary": {
       "label": "El sucesor empieza en el límite de fin",
-      "help": "En una relación fin-comienzo sin desfase sobre un límite de franja compartido, el sucesor empieza en el fin del predecesor (solo las relaciones que el archivo marca así). En el cálculo hacia atrás, el sucesor muestra su comienzo tardío simplemente como el inicio de una franja de trabajo."
+      "help": "Una relación fin-comienzo sin desfase cuyo sucesor, según el archivo, empieza exactamente en el fin del predecesor, al final de una banda, hace que el sucesor empiece en ese fin y no al inicio de la banda siguiente. El archivo no lo marca: la aplicación reconoce esa relación por sí misma al abrir un archivo .xer. Una relación que usted añade no está incluida. Al calcular hacia atrás, el sucesor muestra su inicio tardío simplemente como inicio de una banda."
     },
     "p6BackwardLagFinishBoundary": {
       "label": "Desfase hacia atrás desde un límite de fin",
-      "help": "Cuando el cálculo hacia atrás resta un desfase en tiempo de trabajo desde un límite de fin y cae justo en un inicio de franja, cae en el límite de fin anterior. En una relación fin-fin sin desfase, un fin tardío en el final de una franja también se queda en ese límite de fin."
+      "help": "Si el cálculo hacia atrás resta un desfase en horario laboral desde un límite de fin y cae exactamente en el inicio de una banda, se queda en el límite de fin anterior. También en una relación fin-fin sin desfase, un fin tardío al final de una banda se queda en ese límite de fin."
     },
     "p6CompletedDataDateWindow": {
       "label": "Tarea completada en la ventana de la fecha de estado",
-      "help": "Una tarea completada recibe fechas tempranas en la ventana de la fecha de estado, y su fin cuenta para el fin del proyecto (solo tareas con origen P6)."
+      "help": "Una tarea completada recibe fechas tempranas en la ventana de la fecha de estado, y su fin cuenta para el fin del proyecto."
     },
     "p6CompletedLoeActualFinish": {
       "label": "LOE completada mediante su fin real",
-      "help": "Una actividad de nivel de esfuerzo completada con solo una entrada comienzo-comienzo sigue la ruta por su fin real (solo tareas con origen P6)."
+      "help": "Una tarea de nivel de esfuerzo completada con solo una entrada comienzo-comienzo sigue la ruta a través de su fin real."
     },
     "p6OpenLoeTargetSpan": {
       "label": "LOE no iniciada toma la ventana objetivo",
-      "help": "Una actividad de nivel de esfuerzo que aún no ha comenzado toma su ventana objetivo como duración (solo tareas con origen P6)."
+      "help": "Una tarea de nivel de esfuerzo que aún no ha comenzado toma su ventana objetivo como duración."
     },
     "p6CompletedPredecessorAtDataDate": {
       "label": "Un predecesor completado no retiene más allá de la fecha de estado",
@@ -1381,7 +1497,7 @@
     },
     "p6CompletedOutOfSequenceWindow": {
       "label": "Una tarea completada fuera de secuencia espera a sus predecesoras",
-      "help": "Una tarea completada cuya predecesora aún no ha terminado recibe su ventana nula después de esa predecesora en lugar de en la fecha de estado (lógica retenida)."
+      "help": "Una tarea completada cuyo predecesor aún no ha terminado recibe su ventana nula después de ese predecesor, en lugar de en la fecha de estado (Retained Logic). Solo funciona si también están activadas «Tarea completada en la ventana de la fecha de estado» y «Tarea en curso: inicio temprano = inicio del trabajo restante»."
     },
     "p6CompletedPhysicalAtDataDate": {
       "label": "Tarea completada con avance físico en la fecha de estado",
@@ -1393,7 +1509,7 @@
     },
     "p6FinishFinishStartMilestoneLateFinish": {
       "label": "Una relación fin-fin hacia un hito de inicio se vincula al propio hito",
-      "help": "Una relación fin-fin hacia un hito de inicio cuenta hasta el propio hito, no hasta el comienzo de su día: el fin tardío de la predecesora puede llegar hasta el fin tardío del hito."
+      "help": "Una relación fin-fin hacia un hito de inicio cuenta hasta el propio hito, no hasta el inicio del día del hito: el fin tardío del predecesor puede llegar hasta el fin tardío del hito."
     },
     "p6StartedTaskIgnoresPlannedStartFloor": {
       "label": "El inicio planificado no es un mínimo para una tarea en curso",
@@ -1401,7 +1517,7 @@
     },
     "p6LateFinishOnOwnCalendar": {
       "label": "Fin tardío en el calendario propio",
-      "help": "Si el fin tardío que impone un sucesor cae fuera del horario laboral de la actividad, pasa a ser el final del período de trabajo anterior en el calendario propio."
+      "help": "Si el fin tardío que impone un sucesor cae fuera del horario laboral de la tarea, pasa a ser el fin de la banda anterior en el calendario propio."
     },
     "p6ProgressOverrideIgnoresStartedSuccessor": {
       "label": "Progress Override ignora también hacia atrás un sucesor iniciado",
@@ -1409,11 +1525,11 @@
     },
     "p6FinishNotBeforeFinishFinishBound": {
       "label": "Fin temprano nunca antes de un límite fin-fin",
-      "help": "En una relación fin-fin, el fin temprano del sucesor nunca queda, en hora de reloj, antes del límite que fija el predecesor. Si ese límite cae en tiempo no laborable del sucesor, el fin pasa a ser el inicio del siguiente periodo de trabajo."
+      "help": "En una relación fin-fin, el fin temprano del sucesor nunca queda, en hora de reloj, antes del límite que fija el predecesor. Si ese límite cae en tiempo no laborable del sucesor, el fin pasa a ser el inicio de la siguiente banda."
     },
     "p6AlapPositionedFromSuccessors": {
       "label": "Tareas ALAP tan tarde como permitan las sucesoras",
-      "help": "Una tarea no iniciada con la restricción «lo más tarde posible» termina en el minuto en que sus sucesoras la necesitan, primero las sucesoras, para que una cadena quede unida. Su propio inicio planificado no cuenta; una tarea sin predecesora no empieza entonces antes de la fecha de estado. Solo se aplica con un calendario por horas."
+      "help": "Una tarea no iniciada con la restricción «lo más tarde posible» termina en el minuto en que sus sucesores la necesitan, primero los sucesores, para que una cadena quede unida. Su propio inicio planificado no cuenta; una tarea sin predecesor no empieza entonces antes de la fecha de estado."
     }
   },
   "profiles": {
@@ -1428,13 +1544,22 @@
   "schedulingProfile": {
     "title": "Perfil de cálculo y opciones",
     "profile": "Perfil de cálculo",
+    "newProfile": "Nuevo perfil",
+    "newProfileTitle": "Nuevo perfil de cálculo",
+    "newProfileIntro": "El nuevo perfil recibe todas las convenciones de “{{name}}”, también las desviaciones. Después puede activar o desactivar cada convención. El proyecto usa el nuevo perfil después de pulsar “Aplicar”.",
+    "newProfileName": "Nombre del nuevo perfil",
+    "newProfileCreate": "Crear",
+    "bareBaseHint": "“{{name}}” es la base pura, sin las desviaciones de este proyecto. Si quiere conservarlas, elija “{{modified}}”.",
     "conventionsTitle": "Convenciones de este perfil",
+    "builtInReadOnly": "{{name}} es un perfil integrado. Las convenciones se muestran solo a título informativo y no se pueden modificar. Si quiere otras convenciones, elija {{button}}.",
+    "builtInDeviations": "Este proyecto viene de un archivo anterior. Las convenciones en naranja se desvían de la base de {{name}} y se calculan tal como se muestran. Si quiere cambiarlas, elija {{button}}.",
     "optionsTitle": "Opciones de cálculo de este proyecto",
     "customName": "Nombre de este perfil propio",
     "saveAsTemplate": "Guardar como plantilla",
     "updateTemplate": "Actualizar la plantilla desde este proyecto",
     "applyTemplate": "Actualizar desde la plantilla",
     "deleteTemplate": "Eliminar plantilla",
+    "deleteTemplateConfirm": "¿Eliminar la plantilla “{{name}}”? Los proyectos con este perfil conservan su propia copia.",
     "templateDeviates": "Este perfil difiere de la plantilla «{{name}}».",
     "themes": {
       "completedWork": "Avance y trabajo completado",
@@ -1445,12 +1570,13 @@
       "msproject": "Avance como en Microsoft Project",
       "ownProfilesOnly": "Solo para perfiles propios"
     },
-    "ownProfilesOnlyNote": "Estas convenciones están desactivadas en todos los perfiles integrados, también en Primavera P6. Si activa una, se convierte en un perfil propio.",
+    "ownProfilesOnlyNote": "Estas convenciones están desactivadas en todos los perfiles integrados, también en Primavera P6. Solo un perfil propio puede activarlas: elija para ello «Nuevo perfil».",
     "deviatingCount": "modificadas: {{n}}",
     "baseValue": "base: {{value}}",
     "on": "sí",
     "off": "no",
     "resetToBase": "volver a la base",
+    "storeChangedUnderDraft": "El perfil de cálculo del proyecto ha cambiado mientras tanto, por ejemplo al usar “Deshacer”. Más abajo sigue su propia elección. Con {{apply}} vuelve a aplicar esa elección en el proyecto.",
     "showHelp": "Explicación de «{{name}}»",
     "sourceOptions": {
       "title": "Ajustes del archivo de origen",
@@ -1459,6 +1585,25 @@
       "useProjectEndDateForFloat": "Calcular la holgura hasta la fecha de fin del proyecto",
       "p6CompletedLateFromRemainingWindow": "Tarea completada: fechas tardías desde la fecha de estado",
       "needsConvention": "Solo funciona junto con la convención «{{convention}}», que ahora está desactivada."
+    },
+    "requires": {
+      "xerOrigin": "solo tareas de .xer",
+      "hourPlanning": "solo con planificación por horas",
+      "hourPlanningTitle": "Solo funciona con planificación por horas: un calendario con bandas de tiempo de trabajo, una tarea en horas o el calendario de desfase a 24 horas."
+    },
+    "optionsDeviate": {
+      "line": "{{field}}: {{current}} (predeterminado: {{standard}})",
+      "intro": "Estas opciones de cálculo difieren de la configuración predeterminada de {{name}}. Suele ser a propósito, por ejemplo porque vienen del archivo abierto.",
+      "introNeutral": "Estas opciones de cálculo difieren de la configuración predeterminada de {{name}}. Puede ser una elección deliberada.",
+      "useDefaults": "Usar la configuración predeterminada de {{name}}",
+      "totalFloatAtMost": "holgura total ≤ {{amount}}",
+      "hours_one": "{{count}} hora",
+      "hours_many": "{{count}} horas",
+      "hours_other": "{{count}} horas",
+      "days_one": "{{count}} día laborable",
+      "days_many": "{{count}} días laborables",
+      "days_other": "{{count}} días laborables",
+      "tfAuto": "Automático"
     }
   },
   "dialogHelp": {
@@ -1516,5 +1661,76 @@
     "saveHint": "El proyecto se guarda en el sitio como un nuevo archivo IFC. Después, Guardar (Ctrl+S) guarda allí una nueva versión.",
     "saveToSite": "Guardar en el sitio",
     "toThisPc": "En este equipo…"
+  },
+  "formatNotice": {
+    "title": "{{format}} abierto",
+    "readMore": "Leer más",
+    "dontShowAgain": "No volver a mostrar para {{format}}",
+    "close": "Entendido",
+    "settingsSection": "Mostrar explicación después de abrir",
+    "formats": {
+      "xer": {
+        "name": "Archivo de Primavera (.xer)",
+        "kept": "La aplicación ha importado el WBS y las actividades, con relaciones, calendarios, recursos, avance, códigos de actividad y campos personalizados. Una línea base de proyecto pasa a ser la línea base del proyecto que la referencia.",
+        "limited": "Una relación entre dos proyectos no se convierte en relación en su planificación. Si el cálculo difiere, primero verá las fechas tal como Primavera las guardó.",
+        "save": "Guardar escribe un nuevo archivo IFC, con el .xer original dentro. No es posible volver a escribir en .xer: su .xer nunca cambia."
+      },
+      "mpp": {
+        "name": "Archivo de MS Project (.mpp)",
+        "kept": "La aplicación ha importado tareas con su estructura, duración y restricciones, además de relaciones, calendarios, recursos, asignaciones y avance.",
+        "limited": "No se incluyen las líneas base, los costes y las tarifas, las notas ni los campos personalizados de MS Project. Si el cálculo difiere, primero verá las fechas tal como MS Project las guardó.",
+        "save": "Guardar escribe un nuevo archivo IFC: su .mpp nunca cambia. No es posible volver a escribir en .mpp. Sí es posible exportar a MS Project XML."
+      },
+      "mspdi": {
+        "name": "MS Project XML",
+        "kept": "La aplicación ha importado tareas con su estructura, además de relaciones, restricciones, calendarios, recursos, asignaciones, avance, la fecha de estado y la línea base 0.",
+        "limited": "Las notas, los códigos de actividad y los campos personalizados no se incluyen. El proyecto calcula con el perfil Open Planner Studio, no como Microsoft Project.",
+        "save": "Al guardar se escribe un archivo IFC nuevo: su archivo XML no cambia. Puede volver a escribirlo con Exportar › MS Project XML."
+      },
+      "p6xml": {
+        "name": "Primavera P6 XML",
+        "kept": "La aplicación importó la WBS y las tareas, con relaciones, restricciones, calendarios, recursos, asignaciones, avance y la fecha de estado. Un proyecto de línea base pasa a ser una línea base del proyecto al que pertenece.",
+        "limited": "Las fechas límite, los códigos de actividad, los campos personalizados y las notas no se incluyen. El proyecto calcula con el perfil Open Planner Studio, no como Primavera P6.",
+        "save": "Al guardar se escribe un archivo IFC nuevo: su archivo XML no cambia. Puede volver a escribirlo con Exportar › Primavera P6 XML."
+      },
+      "csv": {
+        "name": "Archivo CSV",
+        "kept": "La aplicación leyó una tarea por fila: nombre, código WBS, duración, fechas, predecesores y avance.",
+        "limited": "Un CSV no contiene recursos, calendarios, restricciones, fechas límite ni líneas base. El proyecto se llama CSV Import.",
+        "save": "Al guardar se escribe un archivo IFC nuevo: su archivo CSV no cambia. Puede volver a escribirlo con Exportar › CSV (separado por punto y coma)."
+      }
+    }
+  },
+  "ifcSchemaQuestion": {
+    "title": "¿En qué esquema IFC guardar?",
+    "body": "Este archivo se guardó como {{schema}}. La aplicación guarda de forma predeterminada como IFC 4.3 ADD2, el esquema de IfcOpenShell y Bonsai. ¿Quiere mantener este archivo como {{schema}}? Puede cambiarlo más adelante en «Información del proyecto».",
+    "bodyUnwritable": "Este archivo se guardó como {{schema}}. La aplicación no puede escribir ese esquema. Elija el esquema en el que la aplicación lo guarda. Puede cambiarlo más adelante en «Información del proyecto».",
+    "keep": "Mantener {{schema}}",
+    "toDefault": "Guardar como IFC 4.3 ADD2"
+  },
+  "phaseAssignmentQuestion": {
+    "title": "La tarea pasa a ser tarea de resumen",
+    "intro_one": "'{{phase}}' recibe la subtarea '{{child}}' y pasa a ser tarea de resumen.",
+    "intro_many": "'{{phase}}' recibe {{count}} de subtareas y pasa a ser tarea de resumen.",
+    "intro_other": "'{{phase}}' recibe {{count}} subtareas y pasa a ser tarea de resumen.",
+    "introMany_one": "Esta acción convierte {{count}} tarea en tarea de resumen.",
+    "introMany_many": "Esta acción convierte {{count}} de tareas en tareas de resumen.",
+    "introMany_other": "Esta acción convierte {{count}} tareas en tareas de resumen.",
+    "noOwnAssignments": "Una tarea de resumen no tiene asignaciones propias.",
+    "question_one": "¿Qué quiere hacer con la asignación de {{resources}}?",
+    "question_many": "¿Qué quiere hacer con las asignaciones de {{resources}}?",
+    "question_other": "¿Qué quiere hacer con las asignaciones de {{resources}}?",
+    "questionMany": "¿Qué quiere hacer con sus asignaciones?",
+    "row": "'{{phase}}': {{resources}}",
+    "remove_one": "Eliminar asignación",
+    "remove_many": "Eliminar asignaciones",
+    "remove_other": "Eliminar asignaciones",
+    "moveTo": "Mover a '{{child}}'",
+    "moveToSubtasks": "Mover a las subtareas",
+    "blockedDuplicate": "No es posible mover: '{{child}}' ya tiene {{resources}}.",
+    "blockedNoChild": "No es posible mover: '{{phase}}' no recibe ninguna subtarea que pueda llevar una asignación, solo hitos o tareas de resumen.",
+    "actualWorkLost_one": "La asignación de {{resource}} ya tiene {{hours}} hora de trabajo real. Eliminarla descarta ese trabajo.",
+    "actualWorkLost_many": "La asignación de {{resource}} ya tiene {{hours}} horas de trabajo real. Eliminarla descarta ese trabajo.",
+    "actualWorkLost_other": "La asignación de {{resource}} ya tiene {{hours}} horas de trabajo real. Eliminarla descarta ese trabajo."
   }
 }

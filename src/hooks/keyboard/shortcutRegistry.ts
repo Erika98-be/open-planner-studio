@@ -25,7 +25,7 @@ import { isBackstageLeaveGuardActive, leaveBackstageGuarded } from '@/components
 // DOM-vrij en JSX-vrij bij constructie (zie de kop van dat bestand): de anker- en weergaveregels
 // voor nieuwe taken wonen daar zodat sneltoets, menu, lintknop én regressiebatterij letterlijk
 // dezelfde functie draaien.
-import { insertTaskRelativeToScope } from '@/state/taskInsertActions';
+import { insertTaskRelativeToScope, addTaskNearSelection } from '@/state/taskInsertActions';
 import { computeScrollToDate } from '@/utils/ganttViewport';
 // De acties die het lint EN het toetsenbord delen, staan één keer gedefinieerd.
 import { COMMANDS } from '@/state/commands';
@@ -105,15 +105,14 @@ export function isShortcutBlockedByDialog(): boolean {
 }
 
 /**
- * "Taak wordt een samenvattingstaak" wacht op een antwoord dat een handeling uitvoert op de state
- * van NU (`answerPhaseAssignmentQuestion`). Zolang die vraag open staat, voert GEEN globale
- * sneltoets iets uit (Delete, F5, Ctrl+Z, Insert, Alt+Shift+pijlen, …); alleen de toetsen van het
- * venster zelf werken. De poort staat één keer in `useKeyboardShortcuts` (vóór de productie-
- * voorpoort én het register), niet per sneltoets. Bewust alleen deze vraag: onder andere dialogen
- * blijven Ctrl+Z/Ctrl+Y bestaand gedrag (zie `ProgressImportDialog`, `ProjectInfoPanelContent`).
+ * De startvraag en "Taak wordt een samenvattingstaak" wachten op een antwoord voor een nog niet
+ * uitgevoerde handeling. Intussen voert GEEN globale app-sneltoets iets uit (ook F5/Ctrl+S niet),
+ * ook wanneer de startvraag tijdelijk voor Help verborgen is. Dezelfde pending-poort schermt de
+ * achtergrondbediening in de shell af; de vraag en Help houden hun eigen toetsen.
+ * Andere dialogen behouden hun bestaande toetscontract.
  */
-export function isGlobalShortcutFrozen(): boolean {
-  return useAppStore.getState().ui.pendingPhaseAssignmentQuestion !== null;
+export function isGlobalShortcutFrozen(ui: UIState = useAppStore.getState().ui): boolean {
+  return ui.pendingActualStartQuestion !== null || ui.pendingPhaseAssignmentQuestion !== null;
 }
 
 /**
@@ -430,11 +429,12 @@ export const SHORTCUTS: ShortcutDef[] = [
     category: 'structure',
     labelKey: 'context.addMilestone',
     when: () => !isShortcutBlockedByDialog(),
-    run: (store) => {
-      store.addTask({
+    run: () => {
+      addTaskNearSelection({
         name: i18n.t('defaultMilestone', { ns: 'task' }),
         isMilestone: true,
-        taskType: 'ATTENDANCE',
+        milestoneKind: 'FINISH',
+        taskType: 'USERDEFINED',
       });
     },
   },

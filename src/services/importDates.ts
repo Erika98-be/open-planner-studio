@@ -42,6 +42,14 @@ export function importDateTime(s: string, hour: boolean): string {
   return hour ? formatInstant(parseImportedInstant(s), 'hour') : s.substring(0, 10);
 }
 
+/** `importDateTime` voor een datum die ook mag ONTBREKEN (taakdatums en MSPDI Baseline 0): lege of onleesbare
+ *  invoer (`NA`, geen `YYYY-MM-DD`-begin, of een tijd die geen instant geeft) ⇒ `undefined`, nooit
+ *  vandaag en nooit een `RangeError` uit `formatInstant`. Leesbare invoer ⇒ exact `importDateTime`. */
+export function importDateTimeOrUndefined(s: string, hour: boolean): string | undefined {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(s) || Number.isNaN(parseImportedInstant(s).getTime())) return undefined;
+  return importDateTime(s, hour);
+}
+
 /** Statusdatum uit een bestand → `project.statusDate`, voor élke lezer die hem kent (IFC, MSPDI, P6,
  *  `.mpp` via `statusDateFromXml`).
  *  Zonder tijd ⇒ `YYYY-MM-DD`; mét tijd ⇒ de store-vorm van een uur-instant (`YYYY-MM-DDTHH:mm`),
@@ -169,7 +177,8 @@ export function resolveMissingScheduleDates(
  * niet bestaat (maand 13, 31 februari) — geeft `undefined` in plaats van "vandaag". Een verzonnen
  * vandaag-datum als "zo stond het in het bestand" zou het document anders in de modus openen met
  * alle taken op vandaag. `task.time` blijft de gewone,
- * vergevende lezing via `csvDateOrToday`.
+ * vergevende lezing via `csvDateOrToday`; de CSV-lezer weigert onherkende niet-lege cellen vóór
+ * hij een importresultaat teruggeeft.
  */
 export function csvDateOrUndefined(s: string): string | undefined {
   const trimmed = s.trim();

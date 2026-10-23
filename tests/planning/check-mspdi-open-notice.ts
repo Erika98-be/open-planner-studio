@@ -171,11 +171,14 @@ async function main(): Promise<void> {
   eq('6d baseline 1 op een toewijzing, baseline 0-werk op een resource', [onAssignment?.baselines, onAssignment?.baselineWorkCost], [1, 1]);
   // 6f/6g Baseline 0-datums van een toewijzing (review ronde 2): de app bewaart alleen de taakbaseline.
   //       Gelijk aan de taak ⇒ niets verloren; afwijkend ⇒ een eigen regel.
-  const assignmentBaseline = (start: string, finish: string) => readMSPDI(wrap(`<Tasks>${task(1, 'Fundering', `<Baseline><Number>0</Number>
+  const assignmentBaseline = (start: string, finish: string,
+    { taskNumber = '0', assignmentNumber = '0', taskUid = '1' }:
+      { taskNumber?: string; assignmentNumber?: string; taskUid?: string } = {}) =>
+    readMSPDI(wrap(`<Tasks>${task(1, 'Fundering', `<Baseline><Number>${taskNumber}</Number>
       <Start>2026-03-02T08:00:00</Start><Finish>2026-03-03T17:00:00</Finish><Duration>PT16H0M0S</Duration></Baseline>`)}</Tasks>
     <Resources><Resource><UID>1</UID><ID>1</ID><Name>Kraan</Name><Type>1</Type></Resource></Resources>
-    <Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
-      <Baseline><Number>0</Number><Start>${start}</Start><Finish>${finish}</Finish></Baseline></Assignment></Assignments>`));
+    <Assignments><Assignment><UID>1</UID><TaskUID>${taskUid}</TaskUID><ResourceUID>1</ResourceUID><Units>1</Units>
+      <Baseline><Number>${assignmentNumber}</Number><Start>${start}</Start><Finish>${finish}</Finish></Baseline></Assignment></Assignments>`));
   const same = assignmentBaseline('2026-03-02T08:00:00', '2026-03-03T17:00:00');
   eq('6f toewijzingsbaseline gelijk aan de taak: geen verslag', [same.assignments.length, same.msProjectReport], [1, undefined]);
   const differs = assignmentBaseline('2026-03-02T08:00:00', '2026-03-05T17:00:00');
@@ -250,6 +253,57 @@ async function main(): Promise<void> {
     const json = JSON.parse(readFileSync(new URL(`../../src/i18n/locales/${loc}/common.json`, import.meta.url), 'utf8')) as { notifications: Record<string, string> };
     eq(`6e ${loc}: baselinezin noemt Baseline 0 niet`, ['msProjectLostExtraBaselines_one', 'msProjectLostExtraBaselines_other']
       .map(key => json.notifications[key]?.includes('Baseline 0')), [false, false]);
+  }
+
+  // (7) Knownbug 156: ook één tariefrecord in tabel A kan verlies bevatten. Per resource één
+  //     telling, ongeacht het aantal verloren velden; het standaardtarief blijft gewoon ingelezen.
+  const rate = (fields: string, table = '<RateTable>0</RateTable>') =>
+    `<Rate>${table}<StandardRate>50</StandardRate>${fields}</Rate>`;
+  const rateCases: { label: string; rates: string; resourceFields?: string; lost: number }[] = [
+    { label: 'alleen overwerktarief', rates: rate('<OvertimeRate>75</OvertimeRate>'), lost: 1 },
+    { label: 'alleen gebruikskosten', rates: rate('<CostPerUse>20</CostPerUse>'), lost: 1 },
+    { label: 'beide velden', rates: rate('<OvertimeRate>75</OvertimeRate><CostPerUse>20</CostPerUse>'), lost: 1 },
+    { label: 'zonder RateTable is tabel A', rates: rate('<OvertimeRate>75</OvertimeRate>', ''), lost: 1 },
+    { label: 'nulwaarden', rates: rate('<OvertimeRate>0.00</OvertimeRate><CostPerUse>0.00</CostPerUse>'), lost: 0 },
+    { label: 'alleen standaardtarief', rates: rate(''), lost: 0 },
+    { label: 'direct en genest telt samen één keer', rates: rate('<CostPerUse>20</CostPerUse>'),
+      resourceFields: '<OvertimeRate>75</OvertimeRate>', lost: 1 },
+    { label: 'meerdere records in tabel A', rates: rate('') + rate(''), lost: 1 },
+    { label: 'andere tarieftabel', rates: rate('<CostPerUse>20</CostPerUse>', '<RateTable>1</RateTable>'), lost: 1 },
+  ];
+  for (const { label, rates, resourceFields = '', lost } of rateCases) {
+    const r = readMSPDI(wrap(`<Tasks>${task(1, 'Fundering')}</Tasks>
+      <Resources><Resource><UID>1</UID><ID>1</ID><Name>Kraan</Name><Type>1</Type><StandardRate>50</StandardRate>
+        ${resourceFields}<Rates>${rates}</Rates></Resource></Resources>`));
+    eq(`7 ${label}: tarief en telling`, [r.resources[0]?.costPerHour, r.msProjectReport?.resourceRates ?? 0], [50, lost]);
+    eq(`7 ${label}: alleen de bestaande tariefmelding`,
+      msProjectImportNotice([r])?.detailLines?.map(l => [l.messageKey, l.params?.count]),
+      lost ? [['notifications.msProjectLostResourceRates', lost]] : undefined);
+  }
+
+  // (8) Knownbug 160: Number en TaskUID worden numeriek gelezen, zoals in de reader. Een gelijke
+  //     toewijzingsbaseline geeft geen verlies; een afwijkende blijft ook met voorloopnullen gemeld.
+  const numericCases = [
+    { label: 'baselinenummer van de taak', taskNumber: '00' },
+    { label: 'baselinenummer van de toewijzing', assignmentNumber: '00' },
+    { label: 'taakverwijzing', taskUid: '01' },
+    { label: 'alle drie met witruimte', taskNumber: ' 00 ', assignmentNumber: ' 00 ', taskUid: ' 01 ' },
+    { label: 'expliciet positief teken', taskNumber: '+0', assignmentNumber: '+0', taskUid: '+1' },
+  ];
+  for (const values of numericCases) {
+    const equal = assignmentBaseline('2026-03-02T08:00:00', '2026-03-03T17:00:00', values);
+    eq(`8 ${values.label}: koppeling en taakbaseline behouden`,
+      [equal.assignments.length, equal.assignments[0]?.taskId === equal.tasks[0]?.id,
+        equal.baselines?.[0]?.tasks[0]?.taskId === equal.tasks[0]?.id], [1, true, true]);
+    eq(`8 ${values.label}: gelijke baseline geeft geen verslag`, equal.msProjectReport, undefined);
+    const different = assignmentBaseline('2026-03-02T08:00:00', '2026-03-05T17:00:00', values);
+    eq(`8 ${values.label}: afwijking blijft gemeld`,
+      msProjectImportNotice([different])?.detailLines?.map(l => [l.messageKey, l.params?.count]),
+      [['notifications.msProjectLostAssignmentBaselineDates', 1]]);
+  }
+  for (const assignmentNumber of ['', 'NA']) {
+    eq(`8 onleesbaar baselinenummer ${JSON.stringify(assignmentNumber)} wordt geen Baseline 0`,
+      assignmentBaseline('2026-03-02T08:00:00', '2026-03-05T17:00:00', { assignmentNumber }).msProjectReport, undefined);
   }
 
   // (5) De sleutels bestaan in nl en en (geen lege toast).

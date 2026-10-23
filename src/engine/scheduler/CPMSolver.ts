@@ -4,6 +4,7 @@ import { Sequence, LagUnit } from '@/types/sequence';
 import type { WorkCalendar } from '@/types/calendar';
 import { calendarWithEffectiveWorkTime } from '@/utils/effectiveWorkTime';
 import { CalendarEngine } from './CalendarEngine';
+import { LevelingQueue } from './levelingQueue';
 import { resolveCalendar } from './resolveCalendar';
 import {
   parseDate, formatDate, parseInstant, utcDayStart, MS_PER_DAY, type DateMode,
@@ -15,6 +16,7 @@ import {
   taskDurationUnit, writeDerivedSpan, isPinnedComplete, isPinnedInProgress, isElapsedTask,
 } from './duration';
 import { computeScheduleResults } from './scheduleAnalysis';
+import { deadlineBound } from './deadlineBound';
 import { hasValidP6SuspendResume } from '@/utils/p6SuspendResume';
 import {
   explainP6CompletedDataDateWindowResolved,
@@ -1657,6 +1659,61 @@ export class CPMSolver {
     return out;
   }
 
+  /** Sessie voor de nivelleerder: alleen delays/splitGaps van bestaande taken mogen wijzigen.
+   *  Graaf, kalenders, duurbronnen, ankers en opties blijven vast; gebruik een eigen solverinstance.
+   *  Een wijziging schuift via een topologische wachtrij door de bestaande forward-pass, tot aan
+   *  de gevraagde taak. Latere opvolgers wachten tot ze nodig zijn. Zo veroorzaakt een keten van
+   *  plaatsingen geen volledige netwerkpass per taak. ALAP/hammock vereisen de volledige solve.
+   *  Dat geldt ook voor completion >= 1 zonder actualFinish: zo'n taak blijft actief in de
+   *  nivelleerder, terwijl de resultaatpass haar start nog op een voltooidvenster kan zetten.
+   */
+  createLevelingForwardPass(): {
+    markChanged: (taskId: string) => void;
+    earlyStart: (taskId: string) => string | undefined;
+  } | null {
+    if ([...this.tasks.values()].some(t => t.isHammock
+      || t.constraint?.type === 'ALAP' || t.constraint2?.type === 'ALAP'
+      || (t.time.completion >= 1 && !t.time.actualFinish))) return null;
+    if (this.prepareSolve()) return null;
+    const order = this.topologicalSort();
+    const rankOf = new Map(order.map((id, rank) => [id, rank]));
+    const projectStart = this.forwardProjectStart();
+    const results = this.forwardPass(order, new Map(), projectStart);
+    const dirty = new Set<number>();
+    const queue = new LevelingQueue();
+    const markChanged = (taskId: string) => {
+      const rank = rankOf.get(taskId);
+      if (rank === undefined || dirty.has(rank)) return;
+      dirty.add(rank);
+      queue.push(rank);
+    };
+    return {
+      markChanged,
+      earlyStart: (taskId: string) => {
+        const target = rankOf.get(taskId);
+        if (target === undefined) return undefined;
+        for (let rank = queue.peek(); rank !== undefined && rank <= target; rank = queue.peek()) {
+          queue.pop();
+          dirty.delete(rank);
+          const id = order[rank];
+          // Deze voorganger-vensters zijn forward-invoer voor opvolgers. Wis alleen de opnieuw
+          // berekende taak; de vensters van onaangeraakte voorgangers blijven geldig.
+          this.completedOutOfSequenceEs.delete(id);
+          this.completedOutOfSequenceRelation.delete(id);
+          this.completedPhysicalPoints.delete(id);
+          for (const seq of this.predecessors.get(id) ?? []) this.seqConstraint.delete(seq.id);
+          this.forwardPass([id], results, projectStart);
+          // Ook bij gelijke ES/EF doorgeven: een voltooid P6-venster kan veranderen zonder dat de
+          // actuals veranderen. Dezelfde forward-logica bepaalt de relatiegrens voor de opvolger.
+          for (const seq of this.successors.get(id) ?? []) markChanged(seq.successorId);
+        }
+        const early = results.get(taskId);
+        const task = this.tasks.get(taskId)!;
+        return early ? formatInstant(early.es, this.modeOf(this.calendarFor(task))) : undefined;
+      },
+    };
+  }
+
   solve(): CPMResult {
     const guardResult = this.prepareSolve();
     if (guardResult) return guardResult;
@@ -1820,8 +1877,7 @@ export class CPMSolver {
     return result;
   }
 
-  private forwardPass(order: string[]): Map<string, { es: Date; ef: Date }> {
-    const results = new Map<string, { es: Date; ef: Date }>();
+  private forwardProjectStart(): Date | null {
     // Vroegste projectstart (= vroegste start onder de taken zónder voorganger, ELK al geklemd op
     // de geconfigureerde projectstartdatum via `rootFloor`). Dient als ondergrens zodat een
     // negatieve lag (lead) een taak niet vóór het projectbegin trekt. Vooraf bepaald, zodat de
@@ -1837,7 +1893,14 @@ export class CPMSolver {
       const s = this.rootFloor(eng, t.time.scheduleStart, isElapsedTask(t));
       if (!projectStart || s < projectStart) projectStart = s;
     }
+    return projectStart;
+  }
 
+  private forwardPass(
+    order: string[],
+    results = new Map<string, { es: Date; ef: Date }>(),
+    projectStart = this.forwardProjectStart(),
+  ): Map<string, { es: Date; ef: Date }> {
     for (const taskId of order) {
       const task = this.tasks.get(taskId)!;
       const cal = this.calendarFor(task);
@@ -2218,6 +2281,14 @@ export class CPMSolver {
         const taskElapsedForSnap = isElapsedTask(task);
         if (!taskElapsedForSnap && task.levelingDelayElapsed) {
           earlyStart = this.snapOnOrAfter(cal, earlyStart);
+        } else if (!taskElapsedForSnap && cal.isHourMode) {
+          // Een WERKTIJD-vertraging telt werkminuten op (`addWorkingMinutesSigned`) en kan exact op
+          // een blokeinde landen (di 16:00). Als start is dat het volgende blokbegin (wo 08:00);
+          // zonder deze snap gaf `addDurationChecked`s band-eind-wacht (voor een rauw wortel-anker)
+          // een vroeg einde gelijk aan de start: duur nul (knownbugs 140 van het ontwerp "alleen
+          // uren"). `snapSuccessorEarlyStart` laat een eindmijlpaal op het blokeinde staan, net als na
+          // een relatie. Binnen een blok is dit een no-op. `bg140-*` in `cases-hours-blokgrenzen.json`.
+          earlyStart = this.snapSuccessorEarlyStart(cal, earlyStart, task);
         }
       }
 
@@ -2372,9 +2443,10 @@ export class CPMSolver {
             } else {
             // RETAINED_LOGIC: remaining respecteert óók de voorganger-druk (earlyStart).
             if (earlyStart > remStart) remStart = earlyStart;
-            // Conventie A22 `resumeFromActualElapsed`: MS Project hervat het restwerk NIET op de
-            // statusdatum zelf, maar op `actualStart + reeds-verstreken-duur` (`totalSpan − remaining`,
-            // vanaf de eigen `actualES`), doorgesnapt via dezelfde werk-optelling als het restwerk.
+            // Conventie A22 `resumeFromActualElapsed`: MS Project voegt `actualStart + reeds-verstreken-duur`
+            // (`totalSpan − remaining`, vanaf de eigen `actualES`) toe als derde ondergrens voor het restwerk,
+            // doorgesnapt via dezelfde werk-optelling als het restwerk. De statusdatum en de voorganger-druk
+            // blijven gelden: de laatste van de drie grenzen bepaalt `remStart`.
             // Bewijs (OzBuild "Create Technical Specification": 20% van 5d ⇒ verstreken 1d; actualStart
             // vr 08:00 + 1 werkdag → ma 08:00; + 4 werkdagen restwerk = MSP's eigen opgeslagen finish
             // EXACT). De statusdatum-vloer alléén geeft hier te vroeg.
@@ -2903,8 +2975,13 @@ export class CPMSolver {
     const days = isFiniteNumber(link.lagDays) ? link.lagDays : 0;
     return days * eng.hoursPerDay * 60;
   }
-  /** Externe-link-lag in DAGEN (dag-modus). Afwezig ⇒ 0. */
-  private externalLagDays(link: ExternalLink): number {
+  /** Externe-link-lag in DAGEN: minuten blijven de bron, net als in uurmodus.
+   *  Reken via de lokale kalender en rond halve dagen van nul af (symmetrische lead/lag). */
+  private externalLagDays(link: ExternalLink, eng: CalendarEngine): number {
+    if (isFiniteNumber(link.lagMinutes) && eng.hoursPerDay > 0) {
+      const days = link.lagMinutes / (eng.hoursPerDay * 60);
+      return Math.sign(days) * Math.round(Math.abs(days));
+    }
     return isFiniteNumber(link.lagDays) ? link.lagDays : 0;
   }
 
@@ -2929,7 +3006,7 @@ export class CPMSolver {
       const shifted = eng.addWorkingMinutesSigned(anchor, this.externalLagMinutes(link, eng));
       return startSide ? shifted : this.startFromFinish(eng, shifted, task);
     }
-    const lag = this.externalLagDays(link);
+    const lag = this.externalLagDays(link, eng);
     // FS: de werkdag ná het finish-anker (finish→start). Anders: het anker zelf (addWorkingDaysSigned
     // snapt zelf voorwaarts naar een werkdag). Beide takken tellen daarna `lag` werkdagen bij.
     const base = rel === 'FS' ? eng.nextWorkDayAfter(anchor) : anchor;
@@ -2953,9 +3030,17 @@ export class CPMSolver {
     const finishSide = rel === 'FS' || rel === 'FF';   // eerste teken F ⇒ mijn finish; S ⇒ mijn start
     if (eng.isHourMode) {
       const shifted = eng.addWorkingMinutesSigned(anchor, -this.externalLagMinutes(link, eng));
-      return finishSide ? shifted : this.finishFromStart(eng, shifted, task);
+      if (!finishSide) return this.finishFromStart(eng, shifted, task);
+      // FS/FF: de grens is een EINDmoment. `addWorkingMinutesSigned` normaliseert vooruit
+      // (`nextWorkInstant`) en kan op een blokbegin landen (anker wo 08:00 ⇒ late finish wo 08:00).
+      // Als eindmoment is dat het vorige blokeinde (di 16:00): zelfde punt op de tijdas, dus de
+      // speling verandert niet, maar de getoonde late finish en de dag die een dagtaak eruit leest
+      // wel (knownbugs 141 van het ontwerp "alleen uren"). Mijlpaal en ELAPSEDTIME-taak blijven
+      // ongemoeid. `bg141-*` in `cases-hours-blokgrenzen.json`.
+      if (isZeroDurationMilestone(task) || isElapsedTask(task)) return shifted;
+      return this.snapOnOrBefore(eng, shifted);
     }
-    const lag = this.externalLagDays(link);
+    const lag = this.externalLagDays(link, eng);
     const base = rel === 'FS' ? eng.prevWorkDayBefore(anchor) : eng.prevWorkDay(anchor);
     const shifted = eng.addWorkingDaysSigned(base, -lag);
     return finishSide ? shifted : this.finishFromStart(eng, shifted, task);
@@ -3022,13 +3107,8 @@ export class CPMSolver {
         if (bound && bound < lf) lf = bound;
       }
     }
-    if (task.deadline) {
-      const dl = parseDate(task.deadline);
-      if (!isNaN(dl.getTime())) {
-        const dlW = eng.prevWorkDay(dl);
-        if (dlW < lf) lf = dlW;
-      }
-    }
+    const dlW = deadlineBound(task.deadline, eng);
+    if (dlW && dlW < lf) lf = dlW;
     return lf;
   }
 

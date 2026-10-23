@@ -135,7 +135,7 @@
   "barColorMode_auto": "Po zadatku — automatski",
   "barColorMode_category": "Po kategoriji",
   "barColorFieldLabel": "Polje kategorije",
-  "barColorMissingField": "Ovo polje ne postoji u ovom projektu. Privremeno se koristi vrsta zadatka.",
+  "barColorMissingField": "Ovo polje ne postoji u ovom projektu. Kategorija radova se privremeno koristi.",
   "statusLineLabel": "Statusna linija:",
   "statusLine_none": "Nema",
   "statusLine_statusDate": "Linija datuma stanja",

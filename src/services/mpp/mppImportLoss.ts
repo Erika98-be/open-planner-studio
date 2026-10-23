@@ -2,8 +2,8 @@
  * Importverslag voor `.mpp` (MPP14): wat `readMPP` NIET overneemt (issue #391, "exchange without
  * silent loss"). Alleen tellen; de lezer zelf blijft ongewijzigd.
  *
- * De lezer leest uitsluitend de velden in `fieldMap14.ts` (`TaskFieldId`, `ResourceFieldId`,
- * `AssignmentFieldId`) plus kalenders, relaties en timephased werk. Alles hieronder valt daarbuiten.
+ * De veldkaarten in `fieldMap14.ts` dienen zowel de lezer als dit verslag; kosten en tarieven
+ * worden alleen voor verliesdetectie opgezocht. De lezer neemt de hieronder getelde velden niet over.
  * De var-data-sleutels en fixed-data-veld-id's komen letterlijk uit MPXJ (`FieldMap14.java`,
  * `getDefaultTaskData`/`getDefaultResourceData`/`getDefaultAssignmentData`; MPP14 gebruikt de
  * veld-id zelf als var-data-sleutel, `useTypeAsVarDataKey()`), de baseline-sleutels uit
@@ -28,16 +28,20 @@ const TASK_HYPERLINK_DATA = 215;
 const TASK_SUBPROJECT_UNIQUEID_OFFSET = 458;
 /** `SUBPROJECT_TASK_ID` ≠ 0 ⇒ externe taak (MPP14Reader.java: `task.setExternalTask(true)`). */
 const TASK_SUBPROJECT_TASK_ID = 255;
-/** `FIXED_COST` (fixed data, CURRENCY = 8-byte double). */
-const TASK_FIXED_COST_FIELD = 8;
+/** Baselinevelden gescheiden naar datatype: datums volgen dezelfde decoder als de lezer,
+ *  numerieke velden houden hun bestaande nulcontrole. */
+interface BaselineFields {
+  dates: readonly number[];
+  values: readonly number[];
+}
 /** Baseline 0–10 van een taak: alle var-data-velden met gegevens (`FieldMap14.getDefaultTaskData`):
  *  start, einde en duur (in MPP14 onder de *_ESTIMATED_*-id's, `MPPTaskField.mapMpp14`, plus de
  *  1299+-varianten), werk en kosten. De eenhedenvelden (`*_DURATION_UNITS`) tellen niet. */
-const TASK_BASELINE_KEYS: readonly (readonly number[])[] = [
-  [1, 6, 27, 43, 44, 1299, 1300, 1301],
+const TASK_BASELINE_KEYS: readonly BaselineFields[] = [
+  { dates: [43, 44, 1299, 1300], values: [1, 6, 27, 1301] },
   ...[482, 493, 504, 515, 526, 544, 555, 566, 577, 588].map((start, i) => {
     const late = 1302 + i * 3;
-    return [start, start + 1, start + 2, start + 3, start + 5, late, late + 1, late + 2];
+    return { dates: [start, start + 1, late, late + 1], values: [start + 2, start + 3, start + 5, late + 2] };
   }),
 ];
 /** Baseline 1–10 van een resource: werk en kosten (var-data). Baseline 0 staat in vaste velden en is
@@ -46,9 +50,11 @@ const RESOURCE_BASELINE_KEYS: readonly (readonly number[])[] = [
   [], ...[342, 352, 362, 372, 382, 392, 402, 412, 422, 432].map(work => [work, work + 1]),
 ];
 /** Baseline 0–10 van een toewijzing: werk, kosten, start, einde. */
-const ASSIGNMENT_BASELINE_KEYS: readonly (readonly number[])[] = [
-  [16, 32, 146, 147],
-  ...[289, 298, 307, 316, 325, 334, 343, 352, 361, 370].map(work => [work, work + 1, work + 6, work + 7]),
+const ASSIGNMENT_BASELINE_KEYS: readonly BaselineFields[] = [
+  { dates: [146, 147], values: [16, 32] },
+  ...[289, 298, 307, 316, 325, 334, 343, 352, 361, 370].map(work => ({
+    dates: [work + 6, work + 7], values: [work, work + 1],
+  })),
 ];
 /** Eigen velden van een taak (Text/Number/Date/Start/Finish/Cost/Duration 1–n, Outline Code 1–10 en
  *  de enterprise-varianten): var-data-sleutels uit `FieldMap14.getDefaultTaskData`. */
@@ -61,9 +67,6 @@ const TASK_CUSTOM_KEYS = ranges([
 // ── Resource (TBkndRsc) ──────────────────────────────────────────────────────────────────────────
 const RESOURCE_NOTES = 20;
 const RESOURCE_HYPERLINK_DATA = 136;
-const RESOURCE_STANDARD_RATE_FIELD = 6;
-const RESOURCE_OVERTIME_RATE_FIELD = 7;
-const RESOURCE_COST_PER_USE_FIELD = 18;
 /** `COST_RATE_A`…`COST_RATE_E`. */
 const RESOURCE_COST_RATE_KEYS = [61, 62, 63, 64, 65];
 const RESOURCE_CUSTOM_KEYS = ranges([
@@ -93,45 +96,83 @@ function hasValue(bytes: Uint8Array | null): boolean {
   return bytes.some(b => b !== 0) && bytes.some(b => b !== 0xff);
 }
 
+function baselineHasValue(data: Var2Data, uid: number, fields: BaselineFields): boolean {
+  return fields.dates.some(key => data.getTimestamp(uid, key) !== null)
+    || fields.values.some(key => hasValue(data.getByteArray(uid, key)));
+}
+
 /**
  * Inhoud in een RTF-aantekening (MS Project bewaart aantekeningen als 8-bit RTF). Inhoud is zichtbare
  * tekst (ook `\'hh` en Unicode via `\uN`), een afbeelding (`\pict`, ook binnen `{\*\shppict}`) of
- * een ingesloten object (`\object`). Een aantekening met alleen opmaak telt niet. Destinations met `\*`,
- * fonttbl, colortbl, stylesheet en info worden voor TEKST overgeslagen. De lezer neemt geen enkele
- * aantekening over, dus elke aantekening met inhoud is verloren.
+ * een ingesloten object (`\object`). Een aantekening met alleen opmaak telt niet. Metadata en
+ * onbekende destinations met `\*` worden volledig overgeslagen; afbeeldingswrappers mogen wel echte
+ * afbeeldingen bevatten. De lezer neemt geen enkele aantekening over, dus elke aantekening met
+ * inhoud is verloren.
  */
 export function rtfHasVisibleText(bytes: Uint8Array): boolean {
   let text = '';
-  for (let i = 0; i < bytes.length && i < MAX_NOTE_BYTES && bytes[i] !== 0; i++) text += String.fromCharCode(bytes[i]);
-  if (!text.startsWith('{\\rtf')) return text.trim() !== '';
-  // Een afbeelding of object is inhoud, waar het ook staat (Word/RichEdit zetten de afbeelding vaak in
-  // `{\*\shppict{\pict …}}`).
-  if (/\\(pict|object)(?![a-z])/.test(text)) return true;
+  // Eén byte per teken: ook nulbytes kunnen binnen een `\binN`-payload vallen.
+  for (let i = 0; i < bytes.length && i < MAX_NOTE_BYTES; i++) text += String.fromCharCode(bytes[i]);
+  if (!/^\{[\r\n]*\\rtf/.test(text)) {
+    const end = text.indexOf('\0');
+    return (end < 0 ? text : text.slice(0, end)).trim() !== '';
+  }
   const SKIP = new Set(['fonttbl', 'colortbl', 'stylesheet', 'info', 'generator', 'listtable', 'listoverridetable']);
   const skipStack: boolean[] = [];
   let skip = false;
+  let destination: 'start' | 'starred' | 'body' = 'body';
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
+    // CR/LF zijn geen teksttokens; een nulbyte is alleen buiten binaire payload de terminator.
+    if (c === '\0') break;
+    if (c === '\r' || c === '\n') continue;
     if (c === '{') {
+      if (destination === 'starred') skip = true;
       skipStack.push(skip);
-      if (text.startsWith('{\\*', i)) skip = true;
-      else {
-        const word = /^\{\\([a-z]+)/.exec(text.slice(i, i + 40))?.[1];
-        if (word && SKIP.has(word)) skip = true;
-      }
+      destination = 'start';
     } else if (c === '}') {
       skip = skipStack.pop() ?? false;
+      destination = 'body';
     } else if (c === '\\') {
       const next = text[i + 1];
-      if (next === "'") { if (!skip) return true; i += 3; continue; }
-      if (next === '\\' || next === '{' || next === '}') { if (!skip) return true; i++; continue; }
+      if (next === '*' && destination !== 'body') {
+        destination = 'starred';
+        i++;
+        continue;
+      }
       const m = /^\\([a-z]+)(-?\d+)? ?/.exec(text.slice(i, i + 40));
-      // `\uN` is één Unicode-teken (`\uc0` en `\ucN` zijn alleen een instelling).
-      if (m && m[1] === 'u' && m[2] !== undefined && !skip) return true;
-      if (m) i += m[0].length - 1;
-      else i++;
-    } else if (!skip && !/\s/.test(c)) {
-      return true;
+      if (m) {
+        const word = m[1];
+        if (destination !== 'body') {
+          // De eerste controlwoordtoken bepaalt de bestemming, ook na CR/LF of `\*`.
+          // Geërfde metadata blijft verborgen; `\\pict` wordt hieronder als tekstescape verwerkt.
+          if (!skip && (word === 'pict' || word === 'object')) return true;
+          // Word/RichEdit gebruikt `{\*\shppict{\pict …}}`; deze wrapper heft een geërfde skip niet op.
+          if (SKIP.has(word) || (destination === 'starred' && word !== 'shppict' && word !== 'nonshppict')) skip = true;
+        }
+        destination = 'body';
+        // `\uN` is één Unicode-teken (`\uc0` en `\ucN` zijn alleen een instelling).
+        if (word === 'u' && m[2] !== undefined && !skip) return true;
+        i += m[0].length - 1;
+        if (word === 'bin' && m[2] !== undefined) {
+          // Ruwe bytes zijn geen tokens, ook niet in overgeslagen bestemmingen. Accolades,
+          // backslashes, CR/LF en nulbytes in de payload veranderen dus geen groepsgrenzen.
+          i += Math.min(Math.max(0, Number(m[2])), text.length - i - 1);
+        }
+      } else {
+        if (destination === 'starred') skip = true;
+        destination = 'body';
+        if (next === "'") { if (!skip) return true; i += 3; continue; }
+        if (next === '\\' || next === '{' || next === '}') { if (!skip) return true; i++; continue; }
+        i++;
+      }
+    } else {
+      if (destination === 'starred') {
+        if (/\s/.test(c)) continue;
+        skip = true;
+      }
+      destination = 'body';
+      if (!skip && !/\s/.test(c)) return true;
     }
   }
   return false;
@@ -187,6 +228,18 @@ export interface MppImportLossInput {
  *  op 0: het verslag mag het openen nooit breken. */
 export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportReport {
   const report = emptyMsProjectImportReport('mpp');
+  // Var2Data levert voor gedeelde offsets dezelfde byteview. Elke storage heeft eigen views,
+  // ook als offset/inhoud gelijk zijn. Alleen notitievelden gebruiken deze cache; hij leeft één
+  // scan en bewaart ook false, zodat opmaak/verborgen metadata niet per entiteit opnieuw scant.
+  const noteContentByBlock = new WeakMap<Uint8Array, boolean>();
+  const noteHasContent = (bytes: Uint8Array | null): boolean => {
+    if (!bytes) return false;
+    const cached = noteContentByBlock.get(bytes);
+    if (cached !== undefined) return cached;
+    const content = rtfHasVisibleText(bytes);
+    noteContentByBlock.set(bytes, content);
+    return content;
+  };
   const customFields = new Set<string>();
   const baselines = new Set<number>();
   const guard = (part: () => void) => { try { part(); } catch { /* deel overslaan */ } };
@@ -197,20 +250,19 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     for (const uid of input.taskUniqueIds) {
       if (!task.meta.containsKey(uid)) continue;
       const bytes = (key: number) => task.data.getByteArray(uid, key);
-      const notes = bytes(TASK_NOTES);
-      if (notes && rtfHasVisibleText(notes)) report.notes++;
+      if (noteHasContent(bytes(TASK_NOTES))) report.notes++;
       if (hyperlinkHasText(bytes(TASK_HYPERLINK_DATA))) report.hyperlinks++;
       if (hasValue(bytes(TASK_SUBPROJECT_UNIQUEID_OFFSET))) report.subprojects++;
       if (task.data.getInt(uid, TASK_SUBPROJECT_TASK_ID) !== 0) report.externalTasks++;
       TASK_BASELINE_KEYS.forEach((keys, number) => {
-        if (keys.some(key => hasValue(bytes(key)))) baselines.add(number);
+        if (baselineHasValue(task.data, uid, keys)) baselines.add(number);
       });
       for (const key of TASK_CUSTOM_KEYS) if (hasValue(bytes(key))) customFields.add(`task:${key}`);
     }
   });
 
   guard(() => {
-    const offset = fixedOffsetOf(input.taskFieldMap, TASK_FIXED_COST_FIELD);
+    const offset = fixedOffsetOf(input.taskFieldMap, TaskFieldId.FixedCost);
     const uidOffset = fixedOffsetOf(input.taskFieldMap, TaskFieldId.UniqueId);
     const metaBytes = input.cfb.getStream(['   114', 'TBkndTask', 'FixedMeta']);
     const dataBytes = input.cfb.getStream(['   114', 'TBkndTask', 'FixedData']);
@@ -233,8 +285,7 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     for (const uid of input.resourceUniqueIds) {
       if (!resource.meta.containsKey(uid)) continue;
       const bytes = (key: number) => resource.data.getByteArray(uid, key);
-      const notes = bytes(RESOURCE_NOTES);
-      if (notes && rtfHasVisibleText(notes)) report.notes++;
+      if (noteHasContent(bytes(RESOURCE_NOTES))) report.notes++;
       if (hyperlinkHasText(bytes(RESOURCE_HYPERLINK_DATA))) report.hyperlinks++;
       if (RESOURCE_COST_RATE_KEYS.some(key => rateTableHasRate(bytes(key)))) rateLost.add(uid);
       RESOURCE_BASELINE_KEYS.forEach((keys, number) => {
@@ -245,24 +296,28 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     // Tabel A slaat MS Project soms niet op (CostRateTableFactory: "economises"); dan staan de tarieven
     // alleen in de vaste velden.
     guard(() => {
-      const offsets = [RESOURCE_STANDARD_RATE_FIELD, RESOURCE_OVERTIME_RATE_FIELD, RESOURCE_COST_PER_USE_FIELD]
+      const offsets = [ResourceFieldId.StandardRate, ResourceFieldId.OvertimeRate, ResourceFieldId.CostPerUse]
         .map(field => fixedOffsetOf(input.resourceFieldMap, field));
       const uidOffset = fixedOffsetOf(input.resourceFieldMap, ResourceFieldId.UniqueId);
+      const maxUnitsOffset = fixedOffsetOf(input.resourceFieldMap, ResourceFieldId.MaxUnits);
       const metaBytes = input.cfb.getStream(['   114', 'TBkndRsc', 'FixedMeta']);
       const dataBytes = input.cfb.getStream(['   114', 'TBkndRsc', 'FixedData']);
       if (uidOffset === null || !metaBytes || !dataBytes) return;
       const meta = FixedMeta.withItemSize(metaBytes, RESOURCE_FIXED_META_ITEM_SIZE, 'TBkndRsc/FixedMeta');
       const data = FixedData.fromMeta(meta, dataBytes, 0, 0, 'TBkndRsc/FixedData');
-      const minLength = Math.max(uidOffset + 2, ...offsets.map(offset => (offset ?? 0) + 8));
+      // Dezelfde selectie als `readResources`: UID en optionele MAX_UNITS moeten passen, behalve
+      // bij de ondersteunde UID-0-sentinel. Tariefvelden bepalen de recordselectie niet.
+      const minLength = Math.max(uidOffset + 2, maxUnitsOffset === null ? 0 : maxUnitsOffset + 8);
       const seen = new Set<number>();
       for (let index = 0; index < meta.getAdjustedItemCount(); index++) {
         const item = data.getByteArrayValue(index);
-        // Een kort plaatshoudersrecord (16 bytes) telt niet mee: MPXJ's `createResourceMap` slaat
-        // records korter dan de volle maat over. Daarna: SHORT op de uid-offset, eerste wint.
-        if (!item || item.length < minLength) continue;
+        if (!item || item.length < uidOffset + 2) continue;
         const uid = getShort(item, uidOffset);
+        if (uid !== 0 && item.length < minLength) continue;
         if (seen.has(uid) || !input.resourceUniqueIds.has(uid)) continue;
         seen.add(uid);
+        // Een geselecteerd kort record kan al een volledig tarief dragen. Ontbrekende of slechts
+        // gedeeltelijk aanwezige DOUBLE-velden geven via `doubleAt` afzonderlijk 0.
         if (offsets.some(offset => doubleAt(item, offset) !== 0)) rateLost.add(uid);
       }
     });
@@ -279,11 +334,10 @@ export function scanMppImportLoss(input: MppImportLossInput): MsProjectImportRep
     const data = new Var2Data(selected.varMeta, input.cfb.getStream(['   114', 'TBkndAssn', 'Var2Data']));
     for (const { uid } of selected.records) {
       const bytes = (key: number) => data.getByteArray(uid, key);
-      const notes = bytes(ASSIGNMENT_NOTES);
-      if (notes && rtfHasVisibleText(notes)) report.notes++;
+      if (noteHasContent(bytes(ASSIGNMENT_NOTES))) report.notes++;
       for (const key of ASSIGNMENT_CUSTOM_KEYS) if (hasValue(bytes(key))) customFields.add(`assignment:${key}`);
       ASSIGNMENT_BASELINE_KEYS.forEach((keys, number) => {
-        if (keys.some(key => hasValue(bytes(key)))) baselines.add(number);
+        if (baselineHasValue(data, uid, keys)) baselines.add(number);
       });
     }
   });

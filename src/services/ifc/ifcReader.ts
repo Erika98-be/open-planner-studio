@@ -3,6 +3,7 @@ import { WORK_RULES, type WorkRule } from '@/types/workRule';
 import { normalizeCurveValues } from '@/engine/contour/contourEngine';
 import type { CustomTaskType } from '@/types/taskType';
 import { createDefaultTaskTime } from '@/utils/taskDefaults';
+import { isLeafTask, isSummaryTask } from '@/utils/taskHierarchy';
 import { effHoursPerDay, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import { Sequence, SequenceType } from '@/types/sequence';
 import { Resource, ResourceAssignment, AvailabilityStep, ResourceCurve, isResourceCurve } from '@/types/resource';
@@ -17,6 +18,7 @@ import { generateId } from '@/utils/id';
 import { formatInstant, localTodayIso } from '@/utils/dateUtils';
 import { ifcGuid, ifcGuid128, ifcObjectSeed } from './ifcWriter';
 import { IfcParseError } from './ifcErrors';
+import { IFC_BUILDING_MODEL_TYPES } from './ifcBuildingModelTypes';
 import { workCalendarSlots, workControlSlots } from './ifcWorkControlSlots';
 import { cleanIfcSchemaName, ifcSchemaUnconfirmedOnRead } from './ifcSchemaQuestion';
 import type { ImportLabels, ImportResult, RecordedSourceFormat, XerArchiveIssue, XerArchiveIssueCode } from '@/services/importTypes';
@@ -165,6 +167,13 @@ export function readIFC(
   // Eerst de integriteitspoort: liever een expliciete fout dan een stil half project.
   assertIfcIntegrity(content);
   const entities = parseSTEP(content);
+  // Knownbug 110: deze lezer/writer bewaart uitsluitend planning. Weiger vóór een ImportResult
+  // bestaat, zodat ook MCP, core, auto-save en herstel geen uitgekleed 4D-bestand kunnen koppelen.
+  // Kijk naar geparseerde entiteittypen, nooit naar tekst in een naam, pset of commentaar.
+  if (entities.some(entity => IFC_BUILDING_MODEL_TYPES.has(entity.type))) {
+    throw new IfcParseError('building-model', labels.ifcBuildingModelUnsupported ??
+      'This IFC file contains building model objects. Opening is blocked because saving would discard them. Edit the separate planning file and merge it with the building model afterwards.');
+  }
   // Vóór elke lezing van een string: STEP-codering (`\X2\…\X0\`, `\\` e.d.) terug naar tekst. Oude
   // eigen bestanden schreven letterlijk en blijven byte-voor-byte gelezen zoals voorheen.
   if (stringsAreStepEncoded(entities)) decodeEntityStrings(entities);
@@ -342,11 +351,21 @@ export function readIFC(
     (task) => resolveCalendar(task.calendarId, resourceCalendars, calendar));
   if (!project.startDate && !projectStartRecorded.value) project.startDate = startAnchor;
 
-  // Voortgang-invarianten op de rauw ingelezen actuals — ná extractStructure zodat
+  // Alleen bladtaken volgen de voortgang-invarianten — ná extractStructure zodat
   // project.statusDate (uit OPS_ProjectSettings) beschikbaar is als default-actualFinish.
   // `runningStatusIds`: taken met `IfcTask.Status` = 'STARTED' — een lopende taak op 100 % blijft
   // dan lopend (eigenaarsbesluit 2026-10-14). Oude bestanden (`$`) lezen als voorheen.
-  normalizeImportedProgress(tasks, project.statusDate, runningStatusIds);
+  normalizeImportedProgress(tasks.filter(isLeafTask), project.statusDate, runningStatusIds);
+  // Fasen dragen bron- of rollupwaarden: 100 % kan zonder werkelijk einde voorkomen
+  // (bv. afgeronde voortgang of een niet-gestarte mijlpaal naast voltooid werk). Bewaar hun
+  // voortgang, actuals en restduur; een taakdefault zou ook "datums zoals opgeslagen" vervalsen.
+  // Status wordt niet apart opgeslagen voor fasen: leid hem af zonder datums te verzinnen.
+  for (const task of tasks) {
+    if (!isSummaryTask(task)) continue;
+    const t = task.time;
+    task.status = t.actualFinish ? 'COMPLETED'
+      : t.actualStart || t.completion > 0 ? 'STARTED' : 'NOT_STARTED';
+  }
 
   const ifcGlobalIds = collectIfcGlobalIds(entities, entityMap, taskStepIdMap, project.id, guidLog);
 
@@ -1556,11 +1575,7 @@ function extractTaskIdentityByStepId(
   entityMap: Map<string, StepEntity>,
 ): Map<string, string> {
   const out = new Map<string, string>();
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!pset || pset.type !== 'IFCPROPERTYSET'
-      || stripQuotes(pset.args[2] || '') !== PSET.TaskIdentity) continue;
+  for (const { pset, objectRefs } of propertySetRelations(entities, entityMap, PSET.TaskIdentity)) {
     let internalId: string | undefined;
     for (const propRef of parseRefs(pset.args[4] || '')) {
       const prop = entityMap.get(propRef);
@@ -1570,7 +1585,7 @@ function extractTaskIdentityByStepId(
       if (isValidPersistedIfcId(value)) internalId = value;
     }
     if (!internalId) continue;
-    for (const objectRef of parseRefs(rel.args[4] || '')) {
+    for (const objectRef of objectRefs) {
       if (entityMap.get(objectRef)?.type === 'IFCTASK') out.set(objectRef, internalId);
     }
   }
@@ -1954,13 +1969,8 @@ function extractP6BoundarySequenceGuids(
   }
 
   const accepted: Set<string>[] = [];
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    const owners = parseRefs(rel.args[4] || '');
+  for (const { pset: entity, objectRefs: owners } of propertySetRelations(entities, entityMap, PSET.Sequences)) {
     if (owners.length !== 1 || !relevantScheduleIds.has(owners[0])) continue;
-    const entity = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!entity || entity.type !== 'IFCPROPERTYSET'
-      || stripQuotes(entity.args[2] || '') !== PSET.Sequences) continue;
     for (const propRef of parseRefs(entity.args[4] || '')) {
       const prop = entityMap.get(propRef);
       if (!prop || prop.type !== 'IFCPROPERTYSINGLEVALUE') continue;
@@ -2075,12 +2085,7 @@ function extractStructure(
   const taskById = new Map(tasks.map(t => [t.id, t]));
 
   // 3. Waarden per object via IFCRELDEFINESBYPROPERTIES.
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!pset || pset.type !== 'IFCPROPERTYSET') continue;
-    const psetName = stripQuotes(pset.args[2] || '');
-    const objectRefs = parseRefs(rel.args[4] || '');
+  for (const { pset, name: psetName, objectRefs } of propertySetRelations(entities, entityMap)) {
     const props = parseRefs(pset.args[4] || '')
       .map(r => entityMap.get(r))
       .filter((p): p is StepEntity => !!p);
@@ -2287,13 +2292,7 @@ function extractResourceMeta(
   resourceGuidMap: Map<string, string>,
 ): void {
   const resourceById = new Map(resources.map(r => [r.id, r]));
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!pset || pset.type !== 'IFCPROPERTYSET') continue;
-    if (stripQuotes(pset.args[2] || '') !== PSET.Resource) continue;
-
-    const objectRefs = parseRefs(rel.args[4] || '');
+  for (const { pset, objectRefs } of propertySetRelations(entities, entityMap, PSET.Resource)) {
     const props = parseRefs(pset.args[4] || '')
       .map(r => entityMap.get(r))
       .filter((p): p is StepEntity => !!p && p.type === 'IFCPROPERTYSINGLEVALUE');
@@ -2388,28 +2387,59 @@ function parseIntList(s: string): number[] {
   return inner.split(',').map(x => parseInt(x.trim(), 10)).filter(Number.isFinite);
 }
 
+interface PropertySetRelation {
+  pset: StepEntity;
+  name: string;
+  objectRefs: readonly string[];
+}
+
+interface PropertySetIndex {
+  all: PropertySetRelation[];
+  byName: Map<string, PropertySetRelation[]>;
+  calendarsByTarget: Map<string, PropertySetRelation[]>;
+}
+
 /**
- * `IFCRELDEFINESBYPROPERTIES` per doel-STEP-id, in bestandsvolgorde; één keer per entiteitenlijst
- * opgebouwd. De kalender-psetlezers liepen per kalender (en per lezer, zes keer) álle entiteiten door
- * en parseerden daarbij elke relatie opnieuw: O(kalenders × entiteiten × 6) — met 13 kalenders op een
- * project van 8000 taken een derde van de leestijd. Een relatie die hetzelfde doel twee keer noemt,
- * staat er één keer in (zoals de oude `includes`-toets).
+ * Los property-relaties en hun psetnaam één keer op per gelezen bestand. De extractors lezen
+ * dezelfde koppelingen; telkens alle entiteiten scannen en dezelfde referentie/naam parsen kost
+ * bij grote plannen onnodig tijd. De lijsten behouden bestandsvolgorde en dubbele relaties.
+ * Alleen de kalenderindex dedupliceert een herhaald doel binnen één relatie (de oude `includes`-toets
+ * van de kalenderlezers); de andere extractors houden alle doelverwijzingen in hun eigen volgorde.
+ * De entiteiten zijn vóór de eerste aanroep al STEP-gedecodeerd; de WeakMap houdt geen bestand vast.
  */
-const relDefinesIndex = new WeakMap<StepEntity[], Map<string, StepEntity[]>>();
-function relDefinesByTarget(entities: StepEntity[]): Map<string, StepEntity[]> {
-  let index = relDefinesIndex.get(entities);
-  if (index) return index;
-  index = new Map();
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    for (const target of new Set(parseRefs(rel.args[4] || ''))) {
-      let list = index.get(target);
-      if (!list) { list = []; index.set(target, list); }
-      list.push(rel);
+const propertySetRelationIndex = new WeakMap<StepEntity[], PropertySetIndex>();
+function propertySets(entities: StepEntity[], entityMap: Map<string, StepEntity>): PropertySetIndex {
+  let index = propertySetRelationIndex.get(entities);
+  if (!index) {
+    index = { all: [], byName: new Map(), calendarsByTarget: new Map() };
+    for (const rel of entities) {
+      if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
+      const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
+      if (!pset || pset.type !== 'IFCPROPERTYSET') continue;
+      const entry = { pset, name: stripQuotes(pset.args[2] || ''), objectRefs: parseRefs(rel.args[4] || '') };
+      index.all.push(entry);
+      let named = index.byName.get(entry.name);
+      if (!named) { named = []; index.byName.set(entry.name, named); }
+      named.push(entry);
+      // Alleen kalenderlezers zoeken op doel; geen aparte doellijst voor elke taak alloceren.
+      if (entry.name === PSET.Calendar) {
+        for (const target of new Set(entry.objectRefs)) {
+          let targets = index.calendarsByTarget.get(target);
+          if (!targets) { targets = []; index.calendarsByTarget.set(target, targets); }
+          targets.push(entry);
+        }
+      }
     }
+    propertySetRelationIndex.set(entities, index);
   }
-  relDefinesIndex.set(entities, index);
   return index;
+}
+
+function propertySetRelations(
+  entities: StepEntity[], entityMap: Map<string, StepEntity>, name?: string,
+): readonly PropertySetRelation[] {
+  const index = propertySets(entities, entityMap);
+  return name === undefined ? index.all : index.byName.get(name) ?? [];
 }
 
 /**
@@ -2423,9 +2453,7 @@ function* opsCalendarPsetProps(
   entities: StepEntity[],
   entityMap: Map<string, StepEntity>,
 ): Generator<StepEntity[]> {
-  for (const rel of relDefinesByTarget(entities).get(calStepId) ?? []) {
-    const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!pset || pset.type !== 'IFCPROPERTYSET' || stripQuotes(pset.args[2] || '') !== PSET.Calendar) continue;
+  for (const { pset } of propertySets(entities, entityMap).calendarsByTarget.get(calStepId) ?? []) {
     yield parseRefs(pset.args[4] || '')
       .map(r => entityMap.get(r))
       .filter((p): p is StepEntity => !!p && p.type === 'IFCPROPERTYSINGLEVALUE');
@@ -3168,11 +3196,7 @@ function extractAssignments(
   // van WindowMeta (zelfde `GUID#N`-volgnummer-conventie als de queues hierboven, maar dan uit
   // één JSON-blob-property ('Windows') i.p.v. losse IFCPROPERTYSINGLEVALUE's per assignment).
   const windowsByTask = new Map<string, Map<string, WindowMeta[]>>();
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!pset || pset.type !== 'IFCPROPERTYSET') continue;
-    const psetName = stripQuotes(pset.args[2] || '');
+  for (const { pset, name: psetName, objectRefs } of propertySetRelations(entities, entityMap)) {
 
     if (psetName === PSET.Timephased) {
       const windowProp = parseRefs(pset.args[4] || '')
@@ -3208,7 +3232,7 @@ function extractAssignments(
         indexed.push({ guid: m[1], index: parseInt(m[2], 10), meta });
       }
       indexed.sort((a, b) => a.index - b.index);
-      for (const objRef of parseRefs(rel.args[4] || '')) {
+      for (const objRef of objectRefs) {
         let taskWindows = windowsByTask.get(objRef);
         if (!taskWindows) { taskWindows = new Map(); windowsByTask.set(objRef, taskWindows); }
         for (const { guid, meta } of indexed) {
@@ -3226,7 +3250,7 @@ function extractAssignments(
       .map(r => entityMap.get(r))
       .filter((p): p is StepEntity => !!p && p.type === 'IFCPROPERTYSINGLEVALUE');
 
-    for (const objRef of parseRefs(rel.args[4] || '')) {
+    for (const objRef of objectRefs) {
       let taskMeta = metaByTask.get(objRef);
       if (!taskMeta) {
         taskMeta = { queues: new Map(), legacy: new Map() };
@@ -3502,10 +3526,7 @@ function extractTimephasedDurationWalksMeta(
 ): void {
   const taskById = new Map(tasks.map(t => [t.id, t]));
 
-  for (const rel of entities) {
-    if (rel.type !== 'IFCRELDEFINESBYPROPERTIES') continue;
-    const pset = entityMap.get(parseRef(rel.args[5] || '') || '');
-    if (!pset || pset.type !== 'IFCPROPERTYSET' || stripQuotes(pset.args[2] || '') !== PSET.DurationWalks) continue;
+  for (const { pset, objectRefs } of propertySetRelations(entities, entityMap, PSET.DurationWalks)) {
     const prop = parseRefs(pset.args[4] || '')
       .map(r => entityMap.get(r))
       .find((p): p is StepEntity =>
@@ -3532,7 +3553,7 @@ function extractTimephasedDurationWalksMeta(
       }))
       .filter((w): w is { anchor: string; resourceCalendarId: string; workMinutes?: number } => w.resourceCalendarId !== undefined);
     if (walks.length === 0) continue;
-    for (const objRef of parseRefs(rel.args[4] || '')) {
+    for (const objRef of objectRefs) {
       const taskId = taskStepIdMap.get(objRef);
       const task = taskId ? taskById.get(taskId) : undefined;
       if (task) task.timephasedDurationWalks = walks;

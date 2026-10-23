@@ -75,7 +75,8 @@ function emptyOs() {
 
 /**
  * Tel de assets van een lijst releases (vorm van de GitHub-API) op.
- * Drafts worden overgeslagen; pre-releases tellen mee maar zijn gemarkeerd.
+ * Drafts worden overgeslagen. Pre-releases krijgen een gemarkeerde rij per release,
+ * maar tellen niet mee in de totalen en updater-checks.
  */
 export function aggregate(releases) {
   const totals = { windows: emptyOs(), macos: emptyOs(), linux: emptyOs() };
@@ -92,15 +93,20 @@ export function aggregate(releases) {
       os: { windows: emptyOs(), macos: emptyOs(), linux: emptyOs() },
       polls: 0,
     };
+    const counted = !row.prerelease;
     for (const asset of rel.assets ?? []) {
       const c = classifyAsset(asset.name);
       const count = Number(asset.download_count) || 0;
-      if (c.role === 'poll') { row.polls += count; polls += count; continue; }
+      if (c.role === 'poll') {
+        row.polls += count;
+        if (counted) polls += count;
+        continue;
+      }
       if (c.role === 'ignore') {
         if (c.kind === 'unknown') unknown.push(`${rel.tag_name}: ${asset.name}`);
         continue;
       }
-      for (const bucket of [row.os[c.os], totals[c.os]]) {
+      for (const bucket of counted ? [row.os[c.os], totals[c.os]] : [row.os[c.os]]) {
         bucket[c.role] += count;
         bucket.byKind[c.kind] = (bucket.byKind[c.kind] ?? 0) + count;
       }
@@ -153,6 +159,8 @@ export function renderMarkdown(stats) {
   lines.push('`.deb`/`.rpm`/`.AppImage` op dat mensen ook handmatig downloaden. Snap Store-installs staan');
   lines.push('niet in GitHub; alleen de directe download van het `.snap`-asset telt hier mee.');
   lines.push('');
+  lines.push('Pre-releases tellen niet mee in de totalen; ze staan alleen per release hieronder, met `(pre)`.');
+  lines.push('');
   lines.push('### Per release');
   lines.push('');
   lines.push('| release | datum | Windows | macOS | Linux | updater-checks |');
@@ -184,6 +192,7 @@ export function renderText(stats) {
   }
   lines.push(`${'totaal'.padEnd(8)} ${String(grand).padStart(7)}`);
   lines.push(`updater-checks (latest.json): ${stats.polls}`);
+  lines.push('pre-releases (pre) tellen niet mee in de totalen');
   lines.push('');
   lines.push('release           datum       win    mac  linux  checks');
   for (const r of stats.releases) {

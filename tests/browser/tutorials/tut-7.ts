@@ -46,14 +46,14 @@ export const TUTORIAL_7: TutorialScript = {
       do: [{ select: { field: l('Papier:', 'Paper:'), within: report }, option: l('A4', 'A4') }],
       expect: [
         { see: { field: l('Papier:', 'Paper:'), within: report }, text: 'A4' },
-        { see: { field: l('Orientatie:', 'Orientation:'), within: report }, text: l('Liggend', 'Landscape') },
+        { see: { field: l('Oriëntatie:', 'Orientation:'), within: report }, text: l('Liggend', 'Landscape') },
       ],
     },
     {
       id: 'pdf',
       do: [{
         download: { click: { button: l('Exporteer PDF', 'Export PDF'), within: report } },
-        filename: l('Aanbouw woning-voortgang.pdf', 'House extension-voortgang.pdf'),
+        filename: l('Aanbouw woning-voortgang.pdf', 'House extension-progress.pdf'),
       }],
       expect: [],
     },

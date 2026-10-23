@@ -579,13 +579,16 @@ function classifyCalendars(s: StoreState, items: CalendarItem[]): { plans: Calen
   return { plans, rejections };
 }
 
-/** Spanne voor `computeGenerateSpan` (via resolveCalendarHolidays). Bij AANMAAK geven we bewust een
+/** Spanne voor `computeGenerateSpan` (via resolveCalendarHolidays). Bij wijzigen telt het latere van
+ *  het ingevoerde en het berekende projecteinde. Bij AANMAAK geven we bewust een
  *  LEEG projecteinde door: dan geldt de create-spanne (startjaar−1 t/m startjaar+3) i.p.v. een
  *  spanne rond een einddatum die nog niets met deze nieuwe kalender te maken heeft. */
 function calendarSpan(s: StoreState, forCreate: boolean): { projectStart: string; projectEnd: string } {
+  const endDate = s.project.endDate || '';
+  const calculatedEnd = s.cpmResult?.projectEnd || '';
   return {
     projectStart: s.project.startDate,
-    projectEnd: forCreate ? '' : (s.project.endDate || s.cpmResult?.projectEnd || ''),
+    projectEnd: forCreate ? '' : (endDate > calculatedEnd ? endDate : calculatedEnd),
   };
 }
 
@@ -1070,9 +1073,9 @@ const updateCalendar: BatchStepTool = {
     'bands. `hoursPerDay` follows the new bands only if it was equal to the modal day sum of the bands ' +
     'before the change; a deliberate deviation (P6 `day_hr_cnt`, e.g. bands 14:00–24:00 with 8 hours per day) stays. A ' +
     '`hoursPerDay` you pass in the same item always wins. The working days are read from the ' +
-    'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): a newly created ' +
-    'calendar to which NO task and no resource is attached does NOT survive save+reload — so attach tasks to ' +
-    'it right away with `update_tasks.calendarId`. Hour bands survive IFC, also when they DIFFER PER ' +
+    'bands, so a calendar where they disagreed is repaired. KEEPING IN THE FILE (IFC): unused calendars survive IFC save+reload ' +
+    'even without task or resource assignments. There is no need to attach a task just to retain a calendar. ' +
+    'Hour bands survive IFC, also when they DIFFER PER ' +
     'WEEKDAY (for example a short Friday). A calendar in which tasks no longer fit (e.g. a long holiday block) gives no ' +
     'error but a prominent warning with `cappedTaskIds`. If, on the other hand, NO working time at all is ' +
     'left (empty `workDays`, or `workTime` bands on no day at all), the recalculation fails and the whole ' +
@@ -1143,7 +1146,9 @@ const updateCalendar: BatchStepTool = {
             },
             generate: {
               type: 'object',
-              description: 'Generator basis for holidays; the year span is derived from the project.',
+              description: 'Generator basis for holidays. Updating covers the year before the project start ' +
+                'through the year after the later of the entered and calculated project ends; without ' +
+                'either end, through start year + 3. Creating always uses start year - 1 through start year + 3.',
               required: ['country'],
               properties: {
                 country: {

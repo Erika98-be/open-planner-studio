@@ -319,7 +319,13 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
           (updates as Partial<UIState>).showPropertiesPanel = true;
         }
       }
+      const helpWasOpen = s.ui.activeRibbonTab === 'file' && s.ui.backstageSection === 'help';
       Object.assign(s.ui, updates);
+      // Wegnavigeren annuleert het sectieverzoek, ook als Help nog lazy laadt. Een verzoek dat
+      // juist naar Help opent blijft staan tot de viewer het kan afhandelen.
+      if (helpWasOpen && (s.ui.activeRibbonTab !== 'file' || s.ui.backstageSection !== 'help')) {
+        s.ui.pendingHelpSection = null;
+      }
       const max = maxGanttZoom(s.ui.enableQuarterHourZoom, s.ui.enableHourPlanning);
       if (s.view.zoom > max) s.view.zoom = max;
     }),
@@ -413,6 +419,8 @@ export const createUiSlice: AppSlice<UiSlice> = (set, get) => ({
       s.ui.activeRibbonTab = 'file';
       s.ui.backstageSection = 'help';
       s.ui.pendingHelpArticleId = articleId;
+      // Een expliciet artikel vervangt de eerdere intentie om een inhoudssectie te tonen.
+      s.ui.pendingHelpSection = null;
     }),
 
   toggleCollapse: (taskId) => {

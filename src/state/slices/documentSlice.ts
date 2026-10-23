@@ -162,19 +162,15 @@ export interface DocumentSlice {
   getOpenDocumentPayloads: () => { id: string; payload: DocumentPayload }[];
   /** Herstel meerdere documenten na een crash; vervangt de huidige set volledig.
    *
-   *  Defensief per document (TODO "recovery-robuustheid bij een corrupt herstelbestand"): een
-   *  snapshot kan `readIFC` overleven (dus tot hier komen — de per-document `try/catch` in
-   *  `useRecoveryRestore` ving alleen die stap af) en toch een projectgraaf dragen die de solver
-   *  niet aankan, bijvoorbeeld een cyclische WBS-kinderrelatie die `applyCpmResult`'s recursieve
-   *  rollup in een stack-overflow laat lopen. Zo'n document wordt overgeslagen; de overige
-   *  documenten herstellen gewoon. Geeft de id's van overgeslagen documenten terug zodat de
-   *  aanroeper hun snapshots kan laten staan in plaats van ze te wissen.
+   *  Defensief per document: `readIFC` is al afgerond (de parsegrens ligt in `useRecoveryRestore`).
+   *  De voorbereiding van elke actieve kandidaat, inclusief solve/rollup en documentactivatie,
+   *  heeft hieronder een eigen `try/catch`. Gooit die voorbereiding, dan wordt de kandidaat
+   *  overgeslagen en probeert de lus de volgende. Geeft de id's van overgeslagen documenten terug
+   *  zodat de aanroeper hun snapshots kan laten staan in plaats van ze te wissen.
    *
-   *  Bewuste grens: alleen het ACTIEVE document wordt hier doorgerekend — slapende documenten
-   *  krijgen geen solve, dat is de hele reden dat ze slapend zijn. Een corrupte snapshot die niet
-   *  als actief document wordt gekozen komt dus gewoon als payload binnen en valt pas om bij een
-   *  latere `switchDocument`. Alle documenten preventief solven zou het herstel juist verzwaren met
-   *  precies de solve die we hier proberen te overleven. */
+   *  Bewuste grens: alleen kandidaten voor het ACTIEVE document worden hier doorgerekend.
+   *  De overige, SLAPENDE documenten worden apart tot payload gevormd, zonder solve. Ook die
+   *  payloadopbouw heeft een per-document `try/catch`; hun berekening wordt hier niet uitgevoerd. */
   restoreDocuments: (docs: RecoveryDocInput[], activeId: string | null) => { skippedIds: string[] };
   /** Reken elk NIET-ACTIEF geopend document met een verouderde planning (`payload.scheduleStale`)
    *  écht door en schrijf de uitkomst in zijn payload terug. Geeft het aantal bijgewerkte
@@ -346,6 +342,8 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   ...initialDocumentRegistry(),
 
   newDocument: () => {
+    // Open veldinvoer hoort bij het document dat nu actief is (zie pendingTextEdits.ts).
+    runtime.finishPendingTextEdits();
     const state = get();
     const outgoing = capturePayload(state);
     const newId = generateId('doc');
@@ -367,6 +365,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   duplicateDocument: (name) => {
+    // Eerst open veldinvoer in de bron committen: die hoort in de bron én (dus) in de kopie, en niet
+    // alleen in de kopie via de unmount van het veld (review #401, punt 1).
+    runtime.finishPendingTextEdits();
     // Een documentwissel breekt een lopende coalesce-reeks af (zie switchDocument): de kopie mag niet
     // stilzwijgend verdergaan op de undo-stap van de bron.
     runtime.resetUndoCoalescing();
@@ -458,8 +459,9 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   switchDocument: (id) => {
+    if (id === get().activeDocumentId) return;
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het uitgaande document (pendingTextEdits.ts)
     const state = get();
-    if (id === state.activeDocumentId) return;
     // Een documentwissel breekt een lopende coalesce-reeks af: terugswitchen mag niet
     // stilzwijgend verdergaan op de undo-stap van vóór de wissel.
     runtime.resetUndoCoalescing();
@@ -492,6 +494,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
   },
 
   closeDocument: (id) => {
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het document dat nu actief is
     const state = get();
     if (!state.documents.some((d) => d.id === id)) return;
 
@@ -599,6 +602,7 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
 
   restoreDocuments: (docs, activeId) => {
     if (docs.length === 0) return { skippedIds: [] };
+    runtime.finishPendingTextEdits(); // open veldinvoer hoort bij het document dat nu actief is
     // Herstel leest per document een ZELFSTANDIG IFC; identieke gevalideerde XER-bron-
     // archieven worden hier weer één gedeelde referentie vóór er payloads van gemaakt worden
     // (rehab-2 alleen al draagt 52.640 retained TASKRSRC-rijen). Deze stap GOOIT bewust bij een
@@ -611,14 +615,11 @@ export const createDocumentSlice: AppSliceFactory<DocumentSlice> = (runtime) => 
     const state = get();
     const skippedIds: string[] = [];
 
-    // 1. Kies een actief document en reken het door. `readIFC` liep al zonder gooien (zie de
-    //    per-document `try/catch` in `useRecoveryRestore`), maar een geldig geparste, inhoudelijk
-    //    inconsistente graaf (bv. een cyclische WBS-kinderrelatie) kan de solver/rollup alsnog laten
-    //    gooien — `applyCpmResult`'s `updateSummary` heeft geen cyclusbewaking, in tegenstelling tot
-    //    de CPM-solver zelf (die geeft `result.error` terug, geen throw). De kandidaat die daarop
-    //    stukloopt wordt overgeslagen; de volgende in de lijst wordt geprobeerd, zodat één corrupt
-    //    document niet de rest van het herstel blokkeert. De oorspronkelijk actieve kandidaat gaat
-    //    als eerste, zodat een geslaagd herstel dezelfde `activeDocumentId` behoudt als vóór de crash.
+    // 1. Kies een actief document en reken het door. De per-document `try/catch` hieronder
+    //    begrenst geworpen fouten tijdens de voorbereiding, inclusief solve/rollup en activatie.
+    //    Gooit de voorbereiding van een kandidaat, dan komt diens id in `skippedIds` en probeert
+    //    de lus de volgende. De oorspronkelijk actieve kandidaat gaat als eerste, zodat een
+    //    geslaagd herstel van die kandidaat dezelfde `activeDocumentId` behoudt als vóór de crash.
     const tryOrder = [
       ...sharedDocs.filter((d) => d.id === activeId),
       ...sharedDocs.filter((d) => d.id !== activeId),

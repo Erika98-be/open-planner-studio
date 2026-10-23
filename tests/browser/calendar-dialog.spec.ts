@@ -524,3 +524,126 @@ test('kalenderdialoog: na Continu krijgt een dag die weer aan gaat 00:00–24:00
     [1, 2, 3, 4, 5], allDay, [], 24,
   ]);
 });
+
+// Nieuwe route: eerder gegenereerde feestdagen uitbreiden na wijziging van de projectperiode.
+test('generatiehint noemt het doeljaar inclusief buffer, niet een verzonnen projecteinde', async ({ page, ops: _ops }) => {
+  for (const endDate of ['2029-12-31', '']) {
+    await page.evaluate(endDate => {
+      const s = window.__OPS__!.store.getState();
+      s.setProject({ startDate: '2026-01-01', endDate });
+      window.__OPS__!.store.setState({ cpmResult: null });
+      s.setCalendar({ ...s.calendar, generation: {
+        ruleSetId: 'NL', generatedFromYear: 2025, generatedToYear: 2028,
+      } });
+      s.setUI({ showCalendarDialog: true });
+    }, endDate);
+    const dialog = page.locator('[data-ops-calendar-dialog]');
+    const targetYear = endDate ? 2030 : 2029;
+    await expect(dialog.getByText(`Holidays cover 2025–2028; regenerate through ${targetYear}?`, { exact: true })).toBeVisible();
+    await expect(dialog).not.toContainText('project runs to');
+    await dialog.getByRole('button', { name: 'Regenerate', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Regenerate', exact: true })).toHaveCount(0);
+    await dialog.locator('[data-ops-cal-apply]').click();
+    await expect(dialog).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().calendar.generation?.generatedToYear)).toBe(targetYear);
+    expect(await page.evaluate(() => window.__OPS__!.store.getState().project.endDate ?? '')).toBe(endDate);
+  }
+
+  // Bug 182: dezelfde bestaande generatieroute met een echt berekend einde ná de ingevulde datum.
+  // De matrix van einddatums blijft corpusvrij in cases-mutate-cal-res.ts; hier alleen de UI-koppeling.
+  const fixture = await page.evaluate(async () => {
+    const modulePath = '/src/engine/calendar/generateCalendarHolidays.ts';
+    const { materializeHolidays } = await import(/* @vite-ignore */ modulePath) as typeof import('@/engine/calendar/generateCalendarHolidays');
+    const store = window.__OPS__!.store;
+    const s = store.getState();
+    s.setUI({ autoCalcCPM: false, activeRibbonTab: 'planning' });
+    s.setProject({ startDate: '2027-06-07', endDate: '2027-12-31' });
+    s.setCalendar({ ...store.getState().calendar,
+      ...materializeHolidays({ country: 'NL', bouwvak: 'geen' }, 2026, 2030),
+      workingExceptions: [{ name: 'Werkzaterdag', startDate: '2027-06-12', endDate: '2027-06-12' }],
+    });
+    const { id: projectCalendarId, ...base } = structuredClone(store.getState().calendar);
+    const resourceCalendarId = s.addCalendar({ ...base, name: 'Ploegkalender generatie',
+      ...materializeHolidays({ country: 'DE', region: 'BY', bouwvak: 'geen' }, 2026, 2030),
+    });
+    const resourceId = s.addResource({
+      name: 'Ploeg generatie', type: 'LABOR', description: '', maxUnits: 1, calendarId: resourceCalendarId,
+    });
+    const taskId = s.addTask({ name: 'Werk in 2033', calendarId: projectCalendarId, manuallyScheduled: true });
+    const task = store.getState().tasks.find(t => t.id === taskId)!;
+    s.updateTask(taskId, { time: { ...task.time,
+      scheduleStart: '2033-06-06', scheduleFinish: '2033-06-10', scheduleDuration: 5,
+    } });
+    s.runCPM();
+    store.setState({ isDirty: false });
+    return { projectCalendarId, resourceCalendarId, resourceId, taskId };
+  });
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().cpmResult?.projectEnd.slice(0, 4))).toBe('2033');
+
+  const readState = () => page.evaluate(({ projectCalendarId, resourceCalendarId, resourceId, taskId }) => {
+    const s = window.__OPS__!.store.getState();
+    const task = s.tasks.find(t => t.id === taskId)!;
+    return {
+      // Genereren wijzigt de feestdagen, geen id's, kalenderkoppelingen, werkende uitzonderingen of manual-datums.
+      domain: {
+        endDate: s.project.endDate, projectCalendarId: s.project.calendarId,
+        calendars: s.calendars.map(c => ({ id: c.id, workingExceptions: c.workingExceptions })),
+        resourceCalendarId: s.resources.find(r => r.id === resourceId)?.calendarId,
+        task: { id: task.id, calendarId: task.calendarId, manuallyScheduled: task.manuallyScheduled,
+          start: task.time.scheduleStart, finish: task.time.scheduleFinish },
+      },
+      project: s.calendars.find(c => c.id === projectCalendarId)!,
+      resource: s.calendars.find(c => c.id === resourceCalendarId)!,
+      cpmResult: s.cpmResult,
+      undo: s.historyEvents.filter(e => e.state === 'applied').length,
+      dirty: s.isDirty, stale: s.scheduleStale,
+    };
+  }, fixture);
+  const before = await readState();
+  await page.locator('[data-ops-ribbon-item="calendar"]').first().click();
+  const projectDialog = page.locator('[data-ops-calendar-dialog]');
+  await expect(projectDialog.getByText('Holidays cover 2026–2030; regenerate through 2034?', { exact: true })).toBeVisible();
+  expect(await readState()).toEqual(before);
+  await projectDialog.getByRole('button', { name: 'Regenerate', exact: true }).click();
+  expect(await readState()).toEqual(before); // Alleen de lokale buffer, ook na de generatieklik.
+  await projectDialog.locator('[data-ops-cal-apply]').click();
+  await expect(projectDialog).toHaveCount(0);
+  const afterProject = await readState();
+  expect(afterProject.project.generation).toMatchObject({ ruleSetId: 'NL', generatedFromYear: 2026, generatedToYear: 2034 });
+  expect(afterProject.project.holidays.some(h => h.startDate === '2034-12-25')).toBe(true);
+  expect(afterProject.resource).toEqual(before.resource);
+  expect(afterProject.domain).toEqual(before.domain);
+  expect(afterProject).toMatchObject({ undo: before.undo + 1, dirty: true, stale: false });
+
+  // Dezelfde standaardspanne in het resourcevenster, nu via de gewone knop Genereren en de preview.
+  await page.evaluate(() => window.__OPS__!.store.getState().setUI({
+    activeRibbonTab: 'resources', showResourcePanel: true, resourcePanelDocked: false, resourcesView: 'project',
+  }));
+  const row = page.getByRole('row', { name: /Ploeg generatie/ });
+  await row.getByRole('button', { name: 'Edit…' }).click();
+  const resourceDialog = page.getByRole('dialog');
+  await expect(resourceDialog.getByText('Holidays cover 2026–2030; regenerate through 2034?', { exact: true })).toBeVisible();
+  await resourceDialog.getByRole('button', { name: 'Generate holidays…', exact: true }).click();
+  await expect(resourceDialog.locator('[data-ops-calendar-generator]')).toContainText('2026–2034');
+  await resourceDialog.getByRole('button', { name: 'Generate', exact: true }).click();
+  expect(await readState()).toEqual(afterProject);
+  await resourceDialog.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(resourceDialog).toBeHidden();
+  const afterResource = await readState();
+  expect(afterResource.resource.generation).toMatchObject({ ruleSetId: 'DE', region: 'BY', generatedFromYear: 2026, generatedToYear: 2034 });
+  expect(afterResource.resource.holidays.some(h => h.startDate === '2034-12-25')).toBe(true);
+  expect(afterResource.project).toEqual(afterProject.project);
+  expect(afterResource.domain).toEqual(before.domain);
+  expect(afterResource.cpmResult).toEqual(afterProject.cpmResult); // Resource-Apply rekent niet stil door.
+  expect(afterResource).toMatchObject({ undo: afterProject.undo + 1, dirty: true, stale: true });
+
+  // Eén echte undo per Toepassen herstelt beide kalenders; de identiteiten blijven gelijk.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect.poll(() => readState().then(s => s.resource)).toEqual(before.resource);
+  await page.keyboard.press('ControlOrMeta+z');
+  const undone = await readState();
+  expect(undone.project).toEqual(before.project);
+  expect(undone.resource).toEqual(before.resource);
+  expect(undone.domain).toEqual(before.domain);
+});
