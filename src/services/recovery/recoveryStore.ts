@@ -149,6 +149,9 @@ export interface LoadedRecoveryDoc extends RecoveryDocContent {
 }
 
 export interface LoadedRecovery {
+  /** Manifestregels waarvan de snapshottekst niet leesbaar was. Geen lege/ontbrekende herstelset:
+   * deze fouten tellen mee bij de herstelkeuze en verhinderen automatisch opruimen (knownbug 202). */
+  readFailures?: readonly { id: string; detail: string }[];
   activeDocumentId: string | null;
   docs: LoadedRecoveryDoc[];
   /**
@@ -745,6 +748,7 @@ async function loadTauri(): Promise<LoadedRecovery> {
 
     if (manifest) {
       const docs: LoadedRecoveryDoc[] = [];
+      const readFailures: { id: string; detail: string }[] = [];
       for (const d of manifest.documents) {
         try {
           const { ifc, mtime } = await readSnapshotTauri(await join(dir, d.ifc));
@@ -758,16 +762,17 @@ async function loadTauri(): Promise<LoadedRecovery> {
           });
         } catch (err) {
           console.error('Recovery: kon documentsnapshot niet lezen:', d.id, err);
+          readFailures.push({ id: d.id, detail: err instanceof Error ? err.message : String(err) });
         }
       }
-      if (docs.length > 0) {
+      if (docs.length > 0 || readFailures.length > 0) {
         return {
-          activeDocumentId: manifest.activeDocumentId ?? null, docs,
+          activeDocumentId: manifest.activeDocumentId ?? null, docs, readFailures,
           archives: await readArchivesTauri(dir, manifest.documents),
         };
       }
-      // Manifest gelezen maar géén enkel document eruit leesbaar → alsnog scannen (hieronder):
-      // misschien staan er snapshots die dit manifest niet (meer) noemt.
+      // Alleen een werkelijk leeg manifest valt terug op de scan. Een manifest met uitsluitend
+      // I/O-fouten moet eerst een expliciete herstelkeuze krijgen, geen lege-sessie-autosave.
     } else {
       console.error('Recovery: manifest onleesbaar of vormvreemd — terugval op directory-scan.');
     }

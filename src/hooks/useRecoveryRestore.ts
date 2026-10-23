@@ -61,14 +61,21 @@ export function useRecoveryRestore(): RecoveryRestore {
       const finish = () => { autoSaveEnabled.current = true; setRecoveryResolved(true); };
       try {
         const loaded = await loadRecovery();
-        if (loaded.docs.length === 0) { finish(); return; }
+        const readFailures = loaded.readFailures ?? [];
+        if (loaded.docs.length === 0 && readFailures.length === 0) { finish(); return; }
+        for (const failure of readFailures) {
+          useAppStore.getState().notify({
+            severity: 'error', messageKey: 'notifications.recoveryReadFailed',
+            detail: failure.detail, dedupeKey: 'recovery-read',
+          });
+        }
 
         // Parse elke snapshot vooraf zodat de dialoog projectnaam + taakaantal kan tonen, en
         // hergebruik dat resultaat bij het daadwerkelijke herstellen.
         const restored: RecoveryDocInput[] = [];
         const entries: RecoveryEntry[] = [];
-        /** Hoeveel snapshots op het parsen stukliepen — bepaalt of we mogen opruimen (zie onder). */
-        let failed = 0;
+        /** Zowel I/O- als parsefouten verhinderen opruimen, ook bij gedeeltelijk gezond herstel. */
+        let failed = readFailures.length;
         for (const d of loaded.docs) {
           try {
             // Een snapshot met archiefVERWIJZING (eigenaarsbesluit plan (9)) haalt de bronbytes uit

@@ -357,6 +357,8 @@ else Reflect.deleteProperty(globalThis, 'navigator');
 const DIR = '/appdata';
 const disk = new Map<string, Uint8Array>();
 let failManifestCommit = false;
+const unreadableSnapshots = new Set<string>();
+let failSnapshotStat = false;
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 type TauriArgs = { path: string; paths: string[]; oldPath: string; newPath: string };
@@ -369,8 +371,13 @@ type TauriArgs = { path: string; paths: string[]; oldPath: string; newPath: stri
       case 'plugin:fs|mkdir': return null;
       case 'plugin:fs|exists': return disk.has(args.path);
       case 'plugin:fs|read_dir': return [...disk.keys()].map((p) => ({ name: p.slice(DIR.length + 1) }));
-      case 'plugin:fs|read_text_file': case 'plugin:fs|read_file': return need(args.path);
-      case 'plugin:fs|stat': need(args.path); return { mtime: 0, atime: null, birthtime: null };
+      case 'plugin:fs|read_text_file': case 'plugin:fs|read_file':
+        if (unreadableSnapshots.has(args.path)) throw new Error('Snapshot tijdelijk onleesbaar');
+        return need(args.path);
+      case 'plugin:fs|stat':
+        need(args.path);
+        if (failSnapshotStat) throw new Error('Stat niet beschikbaar');
+        return { mtime: 0, atime: null, birthtime: null };
       case 'plugin:fs|write_text_file': case 'plugin:fs|write_file':
         disk.set(decodeURIComponent(options!.headers!.path!), new Uint8Array(args)); return null;
       case 'plugin:fs|rename':
@@ -494,6 +501,52 @@ for (const legacy of [true, false]) {
   await expectHeld(label + ' schone afsluiting', brokenName);
   await clearRecovery();
 }
+// Knownbug 202: een echte I/O-fout is iets anders dan leesbare maar onparseerbare IFC.
+// Zowel gemengd als volledig onleesbaar moet een keuze opleveren en de manifestregels behouden.
+for (const version of [1, RECOVERY_MANIFEST_VERSION]) {
+  for (const allUnreadable of [false, true]) {
+    const a = version === 1 ? N.ifcName('io-a') : N.generationIfcName('io-a', 'oud');
+    const b = version === 1 ? N.ifcName('io-b') : N.generationIfcName('io-b', 'oud');
+    put(a, 'A origineel'); put(b, 'B enige kopie');
+    put(N.manifest, JSON.stringify({ version, activeDocumentId: 'io-a', documents: [
+      { id: 'io-a', ifc: a, filePath: null, isDirty: true },
+      { id: 'io-b', ifc: b, filePath: null, isDirty: true },
+    ] }));
+    unreadableSnapshots.add(`${DIR}/${b}`);
+    if (allUnreadable) unreadableSnapshots.add(`${DIR}/${a}`);
+    const loaded = await loadRecovery();
+    const label = `I/O v${version}, alles onleesbaar=${allUnreadable}`;
+    eq(label + ': leesbare documenten', loaded.docs.map(d => d.id), allUnreadable ? [] : ['io-a']);
+    eq(label + ': I/O-uitval wordt expliciet doorgegeven', loaded.readFailures?.map(f => f.id),
+      allUnreadable ? ['io-a', 'io-b'] : ['io-b']);
+    eq(label + ': reden blijft beschikbaar', loaded.readFailures?.every(f => f.detail.includes('tijdelijk onleesbaar')), true);
+    // Dezelfde keuze als de hook: een onvolledige set wordt vastgehouden, niet gewist.
+    if (loaded.readFailures?.length) await holdRecoveryForLater(loaded.docs.map(d => d.id));
+    else await clearRecovery();
+    for (let round = 1; round <= 2; round++) {
+      await saveRecovery(fullRecoverySave('io-a', [{ ...doc('io-a'), ifc: 'A nieuw ' + round }]));
+      eq(label + `: ronde ${round} bewaart bytes B`, bytesOf(b), 'B enige kopie');
+      eq(label + `: ronde ${round} bewaart verwijzing B`, manifestRefs().includes(`io-b=${b}`), true);
+    }
+    await clearOwnRecovery();
+    eq(label + ': afsluiten bewaart B', bytesOf(b), 'B enige kopie');
+    unreadableSnapshots.clear();
+    eq(label + ': na herstel I/O opnieuw aangeboden', (await loadRecovery()).docs.some(d => d.id === 'io-b' && d.ifc === 'B enige kopie'), true);
+    await clearRecovery();
+    eq(label + ': expliciet verwerpen mag B wissen', bytesOf(b), null);
+  }
+}
+{
+  put(N.ifcName('stat'), 'leesbare bron');
+  put(N.manifest, JSON.stringify({ version: 1, documents: [{ id: 'stat', ifc: N.ifcName('stat') }] }));
+  failSnapshotStat = true;
+  const loaded = await loadRecovery();
+  eq('stat-fout is geen snapshotleesfout', loaded.readFailures ?? [], []);
+  eq('stat-fout houdt leesbare IFC met onbekende mtime', loaded.docs.map(d => [d.ifc, d.mtime]), [['leesbare bron', null]]);
+  failSnapshotStat = false;
+  await clearRecovery();
+}
+
 // Desktopversies blijven leesbaar, zonder verzonnen metadata of migratie van IFC-bytes.
 for (const version of [1, 2, 3, 4, 5]) {
   const snapshot = version <= 2 ? N.ifcName('contract') : N.generationIfcName('contract', 'oud');
