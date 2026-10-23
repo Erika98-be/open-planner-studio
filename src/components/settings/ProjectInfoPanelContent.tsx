@@ -555,25 +555,23 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
           </div>
         </div>
 
-        <>
-          <div className="flex flex-col gap-1">
-            <label className="text-text-secondary font-medium">
-              {tCommon('settings.defaultTaskDurationUnit')}
-            </label>
-            <Select
-              aria-label={tCommon('settings.defaultTaskDurationUnit')}
-              value={defaultTaskDurationUnit}
-              onChange={value => setDefaultTaskDurationUnit(value as 'days' | 'hours')}
-              options={[
-                { value: 'days', label: tCommon('duration.days') },
-                { value: 'hours', label: tCommon('duration.hours') },
-              ]}
-            />
-            <p className="scrollzoom-hint">
-              {tCommon('settings.defaultTaskDurationUnitHint')}
-            </p>
-          </div>
-          </>
+        <div className="flex flex-col gap-1">
+          <label className="text-text-secondary font-medium">
+            {tCommon('settings.defaultTaskDurationUnit')}
+          </label>
+          <Select
+            aria-label={tCommon('settings.defaultTaskDurationUnit')}
+            value={defaultTaskDurationUnit}
+            onChange={value => setDefaultTaskDurationUnit(value as 'days' | 'hours')}
+            options={[
+              { value: 'days', label: tCommon('duration.days') },
+              { value: 'hours', label: tCommon('duration.hours') },
+            ]}
+          />
+          <p className="scrollzoom-hint">
+            {tCommon('settings.defaultTaskDurationUnitHint')}
+          </p>
+        </div>
 
         {/* Issue #292: het schema in de kop bij opslaan. Alleen bij bewerken; Toepassen zet het (één
             undo-stap via applyProjectInfo/setProject, document gewijzigd) en telt als antwoord op de
@@ -603,14 +601,12 @@ export const ProjectInfoPanelContent = forwardRef<ProjectInfoPanelContentHandle,
             </div>
 
             {/* Ploegpreset voor de nieuwe kalender. */}
-            <>
-              <div className="flex flex-col gap-1">
-                <label className="text-text-secondary font-medium">{tCommon('calendar.worktime.shiftPreset')}</label>
-                <Select aria-label={tCommon('calendar.worktime.shiftPreset')} value={shiftPreset}
-                  onChange={v => setShiftPreset(v as ShiftPresetKey)}
-                  options={WIZARD_PRESETS.map(k => ({ value: k, label: tCommon(SHIFT_PRESET_LABEL[k]) }))} />
-              </div>
-          </>
+            <div className="flex flex-col gap-1">
+              <label className="text-text-secondary font-medium">{tCommon('calendar.worktime.shiftPreset')}</label>
+              <Select aria-label={tCommon('calendar.worktime.shiftPreset')} value={shiftPreset}
+                onChange={v => setShiftPreset(v as ShiftPresetKey)}
+                options={WIZARD_PRESETS.map(k => ({ value: k, label: tCommon(SHIFT_PRESET_LABEL[k]) }))} />
+            </div>
 
             {/* Feestdagen-generator: land/regio, bouwvak (default GEEN — bewust)
                 + compacte preview. "Aangepast…" (extra optie in de land-select) verbergt de

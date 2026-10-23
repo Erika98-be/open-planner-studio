@@ -61,7 +61,7 @@ function render() {
     rows: st.viewRows, sequences: st.sequences, calendar: st.calendar,
     view: { ...st.view, viewStartDate: '2026-05-28', zoom: 48, scrollX: 0, scrollY: 0 },
     selectedTaskIds: [], canvasWidth: 3000, canvasHeight: 400, rowHeight: 28, headerHeight: 60,
-    
+
   });
   renderer.render();
   const summary = rects.find(r => r.fill.toUpperCase() === SUMMARY_FILL);

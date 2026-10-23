@@ -60,7 +60,7 @@ async function store(page: Page) {
       earlyFinish: task?.time.earlyFinish,
       dateNotation: s.ui.dateNotation,
       timeNotation: s.ui.timeNotation,
-      
+
     };
   });
 }

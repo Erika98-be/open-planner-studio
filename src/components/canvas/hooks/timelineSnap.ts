@@ -34,7 +34,11 @@ export function snapTimelineDate(axis: GanttAxis, x: number, hourMode: boolean, 
 /** T24: werkdag onder de pointer; een nachtploeg hoort bij zijn begindatum. */
 export function splitWorkdayStart(raw: Date, eng: CalendarEngine, calendar: WorkCalendar): Date {
   const day = workdayOfInstant({ kind: 'blocks', engine: eng, calendar }, formatInstant(raw, 'hour'), 'start');
-  let date = parseDate(day);
+  return firstWorkdayStartOnOrAfter(parseDate(day), eng);
+}
+
+/** Zoekt vanaf een werkdagdatum; wijs middernacht niet opnieuw toe aan een vorige nachtploeg. */
+function firstWorkdayStartOnOrAfter(date: Date, eng: CalendarEngine): Date {
   for (let i = 0; i < 3660; i++, date = addCalendarDays(date, 1)) {
     const bands = eng.effectiveBandsOn(date);
     if (bands.length) return new Date(date.getTime() + bands[0].start * 60_000);
@@ -51,7 +55,7 @@ export function splitWorkdayMinutes(at: Date, eng: CalendarEngine, calendar: Wor
 /** Een werkstuk mag tot de volgende werkdaggrens worden ingekort, ook vanaf ma 13:00. */
 export function splitWorkMinimum(start: Date, eng: CalendarEngine, calendar: WorkCalendar): number {
   const day = workdayOfInstant({ kind: 'blocks', engine: eng, calendar }, formatInstant(start, 'hour'), 'start');
-  const next = splitWorkdayStart(addCalendarDays(parseDate(day), 1), eng, calendar);
+  const next = firstWorkdayStartOnOrAfter(addCalendarDays(parseDate(day), 1), eng);
   return eng.workMinutesBetween(start, next);
 }
 
@@ -66,7 +70,7 @@ export function splitWorkdayUnits(start: Date, minutes: number, eng: CalendarEng
     days += Math.min(1, rest / capacity);
     rest -= capacity;
     const day = workdayOfInstant({ kind: 'blocks', engine: eng, calendar }, formatInstant(at, 'hour'), 'start');
-    at = splitWorkdayStart(addCalendarDays(parseDate(day), 1), eng, calendar);
+    at = firstWorkdayStartOnOrAfter(addCalendarDays(parseDate(day), 1), eng);
   }
   return Math.round(days * 100) / 100;
 }

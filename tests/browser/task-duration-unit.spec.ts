@@ -5,7 +5,7 @@ async function seedDurationTask(page: Page, unit: 'days' | 'hours' = 'days', amo
   return page.evaluate(({ nativeUnit, nativeAmount }) => {
     const state = window.__OPS__!.store.getState();
     state.setUI({
-      
+
       allowMixedDayHour: true,
       showPropertiesPanel: true,
       rightPanelCollapsed: false,

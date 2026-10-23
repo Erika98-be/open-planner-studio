@@ -4,6 +4,7 @@
 // Alle handelingen lopen via echte muis- en toetsevents; de dev-brug zet alleen de fixture klaar
 // en leest de domeinstate terug. De muispositie wordt uit de canvasgeometrie afgeleid die de brug
 // al blootgeeft (`taskBarPoint`) plus de zoom — geen pixel-asserties.
+import { isWellFormedSplit } from '@/engine/scheduler/splitEdit';
 import type { Page } from '@playwright/test';
 import { barPoint, expect, seedProject, state, test } from './fixtures/ops';
 
@@ -445,7 +446,9 @@ test('F4a: splitsen en stukslepen bij dagzoom volgen de werkdag van de taakkalen
     await page.evaluate(id => {
       const s = window.__OPS__!.store.getState();
       const task = s.tasks.find(t => t.id === id)!;
-      s.updateTask(id, { time: { ...task.time, durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 10 } });
+      s.updateTask(id, { time: { ...task.time, durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 30,
+        scheduleStart: '2026-06-01', earlyStart: '2026-06-01', scheduleFinish: '2026-07-10', earlyFinish: '2026-07-10',
+      } });
     }, taskId);
   };
   const gaps = () => splitGapsOf(page, taskId);
@@ -492,6 +495,24 @@ test('F4a: splitsen en stukslepen bij dagzoom volgen de werkdag van de taakkalen
   await seed('night');
   await split('2026-06-02');
   await expect.poll(gaps).toEqual([{ afterMinutes: 480, gapMinutes: 480, source: 'user' }]);
+  // De eerste ploeg blijft volledig staan wanneer de planner de eerste stukrand naar links trekt.
+  await seed('night', 1920);
+  await page.evaluate(() => window.__OPS__!.store.getState().setViewStartDate('2026-05-29'));
+  await split('2026-06-02');
+  p = await pointAt('2026-06-02', 6);
+  await page.mouse.move(p.x - 2, p.y);
+  await page.mouse.down();
+  await page.mouse.move((await pointAt('2026-05-29', 12)).x, p.y, { steps: 8 });
+  const nightLabel = await page.getByTestId('split-drag-label').textContent();
+  await page.mouse.up();
+  const night = await page.evaluate(id => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!, taskId);
+  console.log('NACHTGRENS', JSON.stringify({ gaps: night.splitGaps, minutes: night.time.durationMinutes,
+    valid: isWellFormedSplit(night.splitGaps, night.time.durationMinutes!), label: nightLabel }));
+  expect(night.splitGaps).toEqual([{ afterMinutes: 480, gapMinutes: 480, source: 'user' }]);
+  expect(nightLabel).toBe('Piece: 1 workday');
+  expect(night.time.durationMinutes).toBe(1920);
+  expect(isWellFormedSplit(night.splitGaps, night.time.durationMinutes!)).toBe(true);
+
   await seed('night');
   await split('2026-06-06', 2);
   await expect.poll(gaps).toEqual([{ afterMinutes: 1920, gapMinutes: 480, source: 'user' }]);
@@ -499,15 +520,43 @@ test('F4a: splitsen en stukslepen bij dagzoom volgen de werkdag van de taakkalen
   await split('2026-06-06', 10);
   await expect.poll(gaps).toEqual([{ afterMinutes: 2400, gapMinutes: 480, source: 'user' }]);
 
-  // Ook een dagenmaat-taak meet bij dagzoom de werkafstand op haar kalender, niet in vaste dagslots.
+  // Drie korte vrijdagen mogen de split niet één dag naar voren trekken.
+  await seed('short');
+  await asDays();
+  await page.evaluate(() => window.__OPS__!.store.getState().setScroll(2800, 0));
+  await split('2026-06-22');
+  console.log('DAGSLOTS', JSON.stringify(await gaps()));
+  await expect.poll(gaps).toEqual([{ afterMinutes: 7200, gapMinutes: 480, source: 'user' }]);
+  // Lees de werkelijk getekende grenzen. Het eerste einde is exclusief: maandag 00:00
+  // betekent dat het eerste stuk tot en met vrijdag werkt. De pauze neemt maandag in beslag.
+  const drawn = await page.evaluate(async id => {
+    const modulePath = '/src/engine/renderer/GanttRenderer.ts';
+    const { GanttRenderer } = await import(/* @vite-ignore */ modulePath);
+    const proto = GanttRenderer.prototype;
+    const original = proto.getDrawnSegmentCount;
+    let bounds: { start: string; end: string }[] = [];
+    proto.getDrawnSegmentCount = function(taskId: string) {
+      bounds = this.splitSegmentsByTask.get(taskId)?.map((segment: { x1: number; x2: number }) => ({
+        start: this.axis.xToDate(segment.x1).toISOString(), end: this.axis.xToDate(segment.x2).toISOString(),
+      })) ?? [];
+      return original.call(this, taskId);
+    };
+    try { window.__OPS__!.gantt.taskSegmentCount(id); } finally { proto.getDrawnSegmentCount = original; }
+    return bounds;
+  }, taskId);
+  console.log('GETEKENDE GRENZEN', JSON.stringify(drawn));
+  expect(drawn[0].end).toBe('2026-06-22T00:00:00.000Z');
+  expect(drawn[1].start).toBe('2026-06-23T00:00:00.000Z');
+
+  // Tot F3/F4b bewaart een echte dagtaak (zonder tijdstippen) het bestaande dagslotcontract.
   await seed('short');
   await asDays();
   await split('2026-06-08');
-  await expect.poll(gaps).toEqual([{ afterMinutes: 2280, gapMinutes: 480, source: 'user' }]);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 2400, gapMinutes: 480, source: 'user' }]);
   await seed('short');
   await asDays();
   await split('2026-06-04');
   p = await pointAt('2026-06-05', 9);
   await drag(page, p, (await pointAt('2026-06-08', 9)).x);
-  await expect.poll(gaps).toEqual([{ afterMinutes: 1440, gapMinutes: 840, source: 'user' }]);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 1440, gapMinutes: 960, source: 'user' }]);
 });

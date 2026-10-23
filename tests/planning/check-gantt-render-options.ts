@@ -515,7 +515,7 @@ const baseInput: GanttRenderOptionsInput = {
   enableQuarterHourZoom: true,
   effectiveCalById: new Map(),
   barSplitMode: 'always',
-  
+
   durationDisplay: 'auto',
   durationSuffixes: { day: 'd', hour: 'u', minute: 'm' },
   externalStaleLabel: 'verouderd (NL-test)',
@@ -624,7 +624,7 @@ if (optsOk.axis !== axis) diffs.push('30 axis: renderer krijgt niet dezelfde as-
 const optsSecondary = buildGanttRenderOptions({
   ...baseInput,
   view: { ...baseInput.view, zoom: 12, scrollX: 400 },
-  
+
   durationDisplay: undefined,
   durationSuffixes: undefined,
   externalStaleLabel: undefined,

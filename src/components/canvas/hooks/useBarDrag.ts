@@ -243,8 +243,9 @@ export function useBarDrag({
     const pieces0 = editableSplitPieces(task, cal, segmentCount);
     if (!pieces0) return undefined;
     const hourMode = taskDurationUnit(task) === 'hours';
-    const eng = new CalendarEngine(calendarForEngine(cal));
-    const dayZoom = hourSnapMinutes === 1440;
+    const eng = new CalendarEngine(hourMode ? calendarForEngine(cal) : cal);
+    // F4a past T24 alleen toe op urenmaat; dagtaken houden het dagslotcontract tot F3/F4b.
+    const dayZoom = hourMode && hourSnapMinutes === 1440;
     const anchorDate = dayZoom ? splitWorkdayStart(axis.xToDate(canvasX), eng, cal) : snapAt(canvasX, hourMode);
     if (!anchorDate) return undefined;
     const index = kind === 'gap' ? segmentIndex - 1 : segmentIndex;
@@ -254,7 +255,7 @@ export function useBarDrag({
     const taskStart = startIso.includes('T') ? parseInstant(startIso) : parseDate(startIso);
     const arrayIndex = pieces0.indexOf(base);
     const before = pieces0.slice(0, arrayIndex).reduce((sum, p) => sum + p.minutes, 0);
-    const pieceStart = dayZoom || hourMode ? eng.nextWorkInstant(eng.addWorkMinutes(taskStart, before)) : eng.addWorkingDaysSigned(taskStart, before / (eng.hoursPerDay * 60));
+    const pieceStart = hourMode ? eng.nextWorkInstant(eng.addWorkMinutes(taskStart, before)) : eng.addWorkingDaysSigned(taskStart, before / (eng.hoursPerDay * 60));
     return {
       kind, index, pieces0, baseMinutes: base.minutes,
       dayZoom, pieceStart,
@@ -403,8 +404,8 @@ export function useBarDrag({
       // Getekende werkafstand tussen het grijppunt en de dag onder de muis, met teken: naar links
       // negatief. `workAxisMinutesBetween` is half-open en telt alleen vooruit.
       const delta = at.getTime() >= split.anchorDate.getTime()
-        ? workAxisMinutesBetween(split.anchorDate, at, split.eng, split.dayZoom || split.hourMode)
-        : -workAxisMinutesBetween(at, split.anchorDate, split.eng, split.dayZoom || split.hourMode);
+        ? workAxisMinutesBetween(split.anchorDate, at, split.eng, split.hourMode)
+        : -workAxisMinutesBetween(at, split.anchorDate, split.eng, split.hourMode);
       const top = barTopOf?.(dragState.taskId) ?? null;
       if (delta === lastAppliedDeltaRef.current) return;
       lastAppliedDeltaRef.current = delta;

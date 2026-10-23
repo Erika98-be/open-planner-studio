@@ -101,17 +101,17 @@ export function useSplitGesture({
   const contextFor = useCallback((task: Task) => {
     const cal = effectiveCalById.get(task.id) ?? calendar;
     const hourMode = taskDurationUnit(task) === 'hours';
-    const eng = new CalendarEngine(calendarForEngine(cal));
+    const eng = new CalendarEngine(hourMode ? calendarForEngine(cal) : cal);
     const hoursPerDay = eng.hoursPerDay;
     return {
       eng, cal, hourMode, hoursPerDay,
       workMinutes: durationMinutesOf(task, { isHourMode: hourMode, hoursPerDay }),
-      unitMinutes: hourSnapMinutes === 1440 ? 0 : splitUnitMinutes(task, hoursPerDay, hourSnapMinutes),
+      unitMinutes: hourMode && hourSnapMinutes === 1440 ? 0 : splitUnitMinutes(task, hoursPerDay, hourSnapMinutes),
     };
   }, [calendar, effectiveCalById, hourSnapMinutes]);
 
   const snapAt = useCallback(
-    (x: number, hourMode: boolean, eng: CalendarEngine, cal: WorkCalendar) => hourSnapMinutes === 1440
+    (x: number, hourMode: boolean, eng: CalendarEngine, cal: WorkCalendar) => hourMode && hourSnapMinutes === 1440
       ? splitWorkdayStart(axis.xToDate(x), eng, cal)
       : snapTimelineDate(axis, x, hourMode, hourSnapMinutes),
     [axis, hourSnapMinutes],
@@ -171,10 +171,10 @@ export function useSplitGesture({
     // dat anker meten schuift de split precies die opschuiving op.
     const startIso = shownStart(task);
     const taskStart = startIso.includes('T') ? parseInstant(startIso) : parseDate(startIso);
-    const { workMinutes: offsetMinutes, inGap } = workOffsetAtDate(pieces0, taskStart, at, eng, hourSnapMinutes === 1440 || hourMode);
+    const { workMinutes: offsetMinutes, inGap } = workOffsetAtDate(pieces0, taskStart, at, eng, hourMode);
     if (inGap) return false;
     const minOffsetMinutes = completedWorkMinutes(task, hoursPerDay);
-    const minimumGap = hourSnapMinutes === 1440 ? splitWorkdayMinutes(at, eng, cal) : unitMinutes;
+    const minimumGap = hourMode && hourSnapMinutes === 1440 ? splitWorkdayMinutes(at, eng, cal) : unitMinutes;
     // Proefsplits met de kleinste pauze: kan die niet, dan kan geen enkele lengte hier.
     if (!splitAt(pieces0, offsetMinutes, minimumGap, unitMinutes, minOffsetMinutes).ok) return false;
     frozenRef.current = {
@@ -218,13 +218,13 @@ export function useSplitGesture({
       if (!at) return;
       // Pauzelengte = de werkafstand tussen de klikdag en de dag onder de muis, minstens één
       // eenheid. Terugslepen naar links geeft 0 ⇒ weer de kleinst mogelijke pauze.
-      const measured = workAxisMinutesBetween(g.anchorDate, at, g.eng, hourSnapMinutes === 1440 || g.hourMode);
+      const measured = workAxisMinutesBetween(g.anchorDate, at, g.eng, g.hourMode);
       const gapMinutes = Math.max(g.minimumGap, measured);
       commit(gapMinutes);
       setState(prev => (prev ? {
         ...prev,
         currentX: axis.dateToX(at),
-        gapUnits: hourSnapMinutes === 1440 ? splitWorkdayUnits(g.anchorDate, gapMinutes, g.eng, g.cal) : Math.round(gapMinutes / g.unitMinutes),
+        gapUnits: g.hourMode && hourSnapMinutes === 1440 ? splitWorkdayUnits(g.anchorDate, gapMinutes, g.eng, g.cal) : Math.round(gapMinutes / g.unitMinutes),
       } : prev));
     };
 

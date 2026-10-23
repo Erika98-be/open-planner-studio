@@ -629,7 +629,7 @@ S().applyOpenedImport(x10Import(), {
   fileHandle: null,
   recompute: false,
   fit: false,
-  
+
   linkedOpen: true,
 });
 eq('111 XER met twaalf documenten toont precies één bestandsmelding', N().length, 1);
@@ -661,7 +661,7 @@ S().applyOpenedImport(x10Import(), {
   fileHandle: null,
   recompute: false,
   fit: false,
-  
+
   linkedOpen: true,
 });
 eq('117 twee afzonderlijke XER-imports tonen twee afzonderlijke meldingen', N().length, 2);

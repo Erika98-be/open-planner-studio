@@ -226,7 +226,6 @@ eq('eenheidswissel 12h → dagen op H8 is niet exact en wijzigt niets', convertT
 // Storecontract: projectdefault, normale mutatie, undo/redo, clipboard en documentwissel.
 const context = createAppStoreContext();
 const store = context.store;
-store.getState().setUI({ });
 store.getState().setCalendar(h8);
 store.getState().setProject({ defaultTaskDurationUnit: 'hours' });
 const storeTaskId = store.getState().addTask({ name: 'Nieuwe urentaak' });
@@ -234,7 +233,6 @@ eq('projectdefault maakt nieuwe handmatige taak uren', store.getState().tasks[0]
 eq('standaardhoeveelheid wordt als vijf uur opgeslagen', store.getState().tasks[0]?.time.durationMinutes, 300);
 eq('vijf uur krijgt op H8 een coherent dagequivalent', store.getState().tasks[0]?.time.scheduleDuration, 0.625);
 const noBandsContext = createAppStoreContext();
-noBandsContext.store.getState().setUI({ });
 noBandsContext.store.getState().setProject({ defaultTaskDurationUnit: 'hours' });
 noBandsContext.store.getState().addTask({ name: 'Veilige dagtaak zonder werkblokken' });
 eq('urenprojectdefault maakt op de geldige scalaire standaardkalender een urentaak',

@@ -350,7 +350,7 @@ function taskRowNames(state: AppState): string[] {
     fileHandle: null,
     recompute: true,
     fit: false,
-    
+
     linkedOpen: false,
   });
   unsubscribe();

@@ -271,7 +271,7 @@ export async function snapshot(page: Page): Promise<Snap> {
       overallocated: overIds.map(id => resName.get(id) ?? id).sort(),
       ui: {
         tab: s.ui.activeRibbonTab,
-        
+
         showTaskTypes: s.ui.showTaskTypes,
         showHistogram: s.ui.showHistogram,
         histogramResource: s.view.histogramResourceId ? (resName.get(s.view.histogramResourceId) ?? null) : null,
