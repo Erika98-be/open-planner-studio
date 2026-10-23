@@ -5,8 +5,9 @@
   de dagenmaat alleen in het OPS-profiel), B1a (standaardmaat dagenmaat in het OPS-profiel, vast werk altijd
   urenmaat), B2 (de schakelaar Urenplanning verdwijnt), B3 (rest exact), B4 (een datum toont alleen een tijd
   midden op de werkdag), B5 (berekenen en melden), B6 (losse mijlpaal aan het einde van de werkdag in het
-  OPS-profiel), B7 (procentlag exact) en B8 ("d" is in het OPS-profiel de dagenmaat; de urenmaat staat in u). Open
-  bij de eigenaar: wat Duurweergave in het OPS-profiel doet (§3.12, B8).
+  OPS-profiel), B7 (procentlag exact) en B8 ("d" is in het OPS-profiel de dagenmaat; de urenmaat staat in u).
+  Besloten door de eigenaar op 2026-10-23 in het orkestratorgesprek: B9 = optie 1 (Duurweergave heeft in het
+  OPS-profiel geen effect; elke taak toont zijn eigen maat, §3.12).
 - **Review:** ronde 1 (GPT-6.1-Sol, Codex, reasoning xhigh; oordeel NEE) is verwerkt: de laadgrens en B5 (§5.2),
   de normalisatie en de markering (§3.6, §5.2), de adapters in de eerste release (§7), de belasting per werkdag
   (§3.11), de beperkte N1/N2 (§4.3), de statusregel (§4.2), `project.endDate` (§4.2), de eindsemantiek van
@@ -26,7 +27,7 @@
   (§5.2, route 3), en bij dagzoom komt het splitwerk uit de kalender, niet uit de kloksnap van 1440 (§3.12, T24).
   Ronde 7 (zelfde reviewer; oordeel JA, drie VERVOLG; geen nieuwe ronde) is vastgelegd: een maatwijziging door de
   werkregelbrug is planning (F3-eis, §5.2), de splitsregel bij dagzoom in twee stappen met de werkdagdefinitie
-  (§3.12, T24), en Duurweergave in het OPS-profiel voorwaardelijk op de open vraag (§3.12, B8).
+  (§3.12, T24), en Duurweergave in het OPS-profiel volgens B9 = optie 1 (§3.12, B8).
 - **Schrijver:** expert-agent (Opus 5.5), branch `claude/uren-spec`, vanaf `main` `adaf9ab37`; in fixronde 4
   bijgewerkt met `main` `5266893af`; fixronde 5, 6 en 7 op dezelfde stand.
 - **Regelnummers** gelden voor `adaf9ab37`. Elke verwijzing is zelf gelezen. Waar een feit uit de
@@ -563,12 +564,13 @@ normalisatie draait altijd; de markering `TimeModel` stuurt alleen de B5-overgan
   iedereen te typen, want de schakelaar Urenplanning verdwijnt (B2). Nu weigert `parseDuration` decimalen
   (`durationFormat.ts:40-41`). Een lag in dagen wordt niet meer afgerond (`lagFormat.ts:73`).
 - **Weergave.** De duur volgens B8: in het OPS-profiel een dagenmaat-taak in d en een urenmaat-taak in u; onder het
-  P6- en het MSP-profiel volgens de instelling Duurweergave, zoals nu. Wat Duurweergave in het OPS-profiel nog doet,
-  is een open vraag aan de eigenaar (vraag 9, §8); dit ontwerp kiest niet. Vast staat alleen wat B8 optie 2 zelf
-  noemt: een urenmaat-taak toont daar nooit dagen, ook niet met "Altijd dagen". Open is of een dagenmaat-taak met
-  "Altijd uren" in uren verschijnt. Zo ja, dan betekent "u" in het OPS-profiel twee dingen. Zo nee, dan verandert
-  Duurweergave in het OPS-profiel de duur van een taak niet meer. Datums volgens B4: een tijd alleen als het moment
-  midden op de werkdag valt.
+  P6- en het MSP-profiel volgens de instelling Duurweergave, zoals nu. B9 = optie 1: in het OPS-profiel heeft
+  Duurweergave (`durationDisplay`: "Automatisch (eigen eenheid per taak)", "Altijd dagen", "Altijd uren") geen effect.
+  F4 maakt de instelling daar grijs, met de hint "In het OPS-profiel toont elke taak zijn eigen maat." Een nieuwe
+  i18n-sleutel bevat de hint in nl en en. Dit geldt op alle drie de plekken van `SettingsPanelContent`: ⚙, het
+  tabblad Instellingen en Backstage. Een browsertest toont op die drie plekken het grijze veld en de hint in het
+  OPS-profiel, en het actieve veld onder P6. Wie in OPS de uren van een dagenmaat-taak wil zien, ziet die niet in
+  de kolom Duur (B9). Datums volgens B4: een tijd alleen als het moment midden op de werkdag valt.
 - **Gantt.** Bij dagzoom snapt slepen per werkdag, van blokbegin tot blokeinde; bij uurzoom per uur of kwartier
   (`timelineSnap.ts:12-28`). De grenzen van dagzoom en uurzoom staan hieronder (T24).
 - **Projectinstellingen.** "Standaardmaat voor nieuwe taken" (§3.2) en het profielblok met de nieuwe conventie
@@ -1462,8 +1464,8 @@ dag in een cache (`bandCache`, gevuld door `bandsStartingOn`, `CalendarEngine.ts
 ### 7.2 Fasen
 
 Elke fase is een eigen PR op de integratiebranch (§7.3), wordt los groen en verandert geen gedrag dat een latere fase
-nodig heeft. B2, B4 en B8 zijn besloten (2026-10-20) en bepalen F4. Vóór F4 moet nog één vraag bij de eigenaar vallen:
-wat Duurweergave in het OPS-profiel doet (§3.12, B8).
+nodig heeft. B2, B4 en B8 zijn besloten (2026-10-20) en bepalen F4. B9 = optie 1 is besloten door de eigenaar op
+2026-10-23 in het orkestratorgesprek: Duurweergave heeft in het OPS-profiel geen effect (§3.12).
 
 **F0 — Meting en vangnet (alleen tests en een ongebruikte functie).**
 - Bestanden: nieuwe `src/state/migrations/minuteModel.ts` (§5.2, nog niet aangesloten); de functie "werkdag van
@@ -1528,12 +1530,15 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
 - Toets: run 1 en run 2 (§6.1); de nieuwe checks uit §6.1 en §6.2; de lezer van v2026.9.0 op de lagvormen en de
   breuken (§5.4); migratiemelding over de voorbeelden en het corpus; `measure:profiles` met corpus.
 
-**F4 — UI op momenten en maten (B2, B4 en B8 besloten).**
+**F4 — UI op momenten en maten (B2, B4, B8 en B9 besloten).**
 - Werkwijze: een fase-PR op `claude/uren-integratie`, net als F0–F3 en F5a. De PR naar `main` komt pas als F4 daar
   staat (§7.3).
 - Inhoud: datuminvoer volgens §3.6 (de store normaliseert al sinds F2); de datumweergave volgens B4 (een tijd alleen
   midden op de werkdag); de schrijfwijze en de invoer van de maat volgens B8 ("d" is in het OPS-profiel de
-  dagenmaat, de urenmaat staat in u); breuken in de dagenmaat (`durationFormat.ts:40-41`) en lag zonder afronding
+  dagenmaat, de urenmaat staat in u); Duurweergave in het OPS-profiel grijs (B9), met de hint "In het OPS-profiel
+  toont elke taak zijn eigen maat." als nieuwe i18n-sleutel in nl en en, op alle drie de plekken van
+  `SettingsPanelContent` (⚙, het tabblad Instellingen en Backstage); onder P6 en MSP werkt de instelling zoals nu;
+  breuken in de dagenmaat (`durationFormat.ts:40-41`) en lag zonder afronding
   (`lagFormat.ts:73`, I12), voor iedereen; de schakelaar Urenplanning weg (B2), met de 35 bestanden, de oude
   sleutel, de meldingen en de i18n-sleutels uit §3.12; de blokkade van urenmaat-taken weg
   (`TaskDurationField.tsx:56`); slepen per werkdag en de zoomgrenzen van T24 (§3.12); rapporten; gidsen nl/en (ook
@@ -1552,7 +1557,9 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
   ma–vr 22:00–06:00 splitst een klik op di na de hele ploeg van ma (480 min, niet 120), een klik op za 02:00 valt op
   de werkdag vr (pauze 480 min, niet 360), en een klik op za 10:00 valt op ma 22:00; een opgeslagen
   `ops-enableHourPlanning` (aan of uit) verandert niets; een urenmaat-taak is te bewerken; "5d", "40u" en een kaal
-  getal volgens B8, ook bij vast werk; de datums volgens B4 met de voorbeelden uit §8. `verify:i18n` zonder de
+  getal volgens B8, ook bij vast werk; de datums volgens B4 met de voorbeelden uit §8; een browsertest toont op
+  alle drie de plekken van `SettingsPanelContent` het grijze veld Duurweergave en de hint in het OPS-profiel, en
+  het actieve veld onder P6 (B9). `verify:i18n` zonder de
   vervallen sleutels. Eén checkstap voor de eigenaar (licht en donker), met de zoomgrenzen en de plek van
   `allowMixedDayHour`.
 
@@ -1613,8 +1620,8 @@ wat Duurweergave in het OPS-profiel doet (§3.12, B8).
 ## 8. Besluiten
 
 Besloten op 2026-10-20: B1, B1a, B2, B3, B4, B5, B6, B7 en B8. De regel voor `isDirty` bij B5 is geen besluit van de
-eigenaar, maar een technische keuze van de orkestrator (2026-10-20; §5.2). Open bij de eigenaar: wat Duurweergave in
-het OPS-profiel doet (vraag 9). §3.12 en B8 noemen beide mogelijkheden met hun gevolg; dit ontwerp kiest niet.
+eigenaar, maar een technische keuze van de orkestrator (2026-10-20; §5.2). De eigenaar besloot op 2026-10-23 in het
+orkestratorgesprek: B9 = optie 1. Duurweergave heeft in het OPS-profiel geen effect; elke taak toont zijn eigen maat.
 
 ### B1. Wat is één dag (welke maat)? — besloten: optie 3, een maat per taak
 
@@ -1877,8 +1884,8 @@ geldt. MSP schrijft "5 ed" voor kalendertijd (5 × 24 u); OPS gebruikt "ed" al b
   5 × de werktijd per dag in de urenmaat (40 u op de standaardkalender), en de tabel toont daarna "40 u".
 - Onder het P6- en het MSP-profiel is "5 d" de urenmaat (5 × de werktijd per dag), zoals in P6 en MSP. Na een
   profielwissel betekent "d" dus iets anders.
-- In het OPS-profiel toont een urenmaat-taak nooit dagen, ook niet met Duurweergave "Altijd dagen". Of een
-  dagenmaat-taak daar met "Altijd uren" in uren verschijnt, is een open vraag aan de eigenaar (vraag 9, §3.12, §8).
+- In het OPS-profiel heeft Duurweergave geen effect (B9 = optie 1): een dagenmaat-taak toont d en een urenmaat-taak
+  toont u, ook met "Altijd uren" of "Altijd dagen" (§3.12).
 
 **Verband met het besluit van 2026-10-15 ("een dag", §3.1; `docs/ifc-round-trip.md:249-256`).** Dat besluit blijft
 gelden voor de urenmaat. "1 d" in de urenmaat is de werktijd per dag van de taakkalender, niet `hoursPerDay`. Dat
@@ -1891,6 +1898,24 @@ bestaande dagtaak toont voortaan "wd") en optie 3 (overal "d", met een kolom voo
 dubbelzinnig, ook in een export, een rapport of het klembord).
 
 **Wie, wanneer, bron:** de eigenaar, 2026-10-20, via de coördinator in dit gesprek. Dit ontwerp beval optie 2 aan.
+
+### B9. Duurweergave in het OPS-profiel — besloten: optie 1
+
+**Besluit (eigenaar, 2026-10-23, in het orkestratorgesprek):** B9 = optie 1. In het OPS-profiel heeft de instelling
+Duurweergave (`durationDisplay`: "Automatisch (eigen eenheid per taak)", "Altijd dagen", "Altijd uren") geen effect.
+Elke taak toont zijn eigen maat: een dagenmaat-taak in "d", een urenmaat-taak in "u" (B8 optie 2).
+
+**Wat de planner ziet.** De instelling staat in het OPS-profiel grijs, met de hint "In het OPS-profiel toont elke
+taak zijn eigen maat." Onder het P6- en het MSP-profiel werkt de instelling zoals nu. F4 voert dit uit op alle drie
+de plekken van `SettingsPanelContent` (§3.12, §7.2).
+
+**Gevolg dat de eigenaar kent:** wie in OPS de uren van een dagenmaat-taak wil zien, ziet die niet in de kolom Duur.
+
+**Afgewezen:** optie 2 ("Altijd uren" zet ook een dagenmaat-taak om, bijvoorbeeld 5 d → "38 u" in een week met een
+korte vrijdag). Dan betekent "u" twee dingen, terwijl de maat bepaalt hoe een taak rekent. Ook afgewezen: optie 3
+(de instelling helemaal weg). Die neemt P6- en MSP-gebruikers een keuze af die daar alleen weergave is.
+
+**Wie, wanneer, bron:** de eigenaar, 2026-10-23, in het orkestratorgesprek.
 
 ### Technische keuzes die dit ontwerp zelf neemt
 
