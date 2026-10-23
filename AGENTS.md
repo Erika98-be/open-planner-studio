@@ -80,7 +80,7 @@ overview `scripts/README.md`). `i18n:add` also updates the source hashes in `i18
 for locales it did not write, so `prepare ui <locale> --missing`/`--stale` picks them up).
 
 Generators/helpers: `npm run gen:examples` (regenerates `public/examples`), `npm run gen:tutorial-project`
-(tutorial project nl/en to `build/tutorial-project/`, see `scripts/README.md`), `npm run gen:readme-screenshots` (README images and demo to `docs/images/readme/`, `-- --demo` adds `demo.gif`/`demo.mp4`; start Vite itself, light theme, 1600x900), `npm run gen:docs-screenshots -- --out <dir>`
+(tutorial project nl/en to `build/tutorial-project/`, see `scripts/README.md`), `npm run gen:readme-screenshots` (README images and demo to `docs/images/readme/`, `-- --demo` adds `demo.gif`/`demo.mp4`; `-- --url URL` uses an existing Vite service; otherwise starts Vite itself; light theme, 1600x900), `npm run gen:docs-screenshots -- --out <dir>`
 (tutorial screenshots as WebP from the step scripts in `tests/browser/tutorials/`, which `test:browser` runs without
 capturing), `npm run gen:release-highlights-json`,
 `npm run publish:wiki` (dry run; `-- --push` publishes), `npm run stats:downloads` (downloads per OS from the

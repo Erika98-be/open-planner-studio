@@ -5,12 +5,14 @@
 //   npm run gen:readme-screenshots -- --only hero,ai-tab
 //   npm run gen:readme-screenshots -- --demo           # ook demo.gif en demo.mp4 (duurt langer)
 //   npm run gen:readme-screenshots -- --demo-only      # alleen de demo
+//   npm run gen:readme-screenshots -- --url http://100.86.248.78:3221/ --demo
 //
-// Het script start Vite op een vrije poort uit de browsertest-baan (3107-3206, `dev-port.mjs`), opent de
+// Met --url gebruikt het script een apart gestarte Vite-dienst. Zonder die vlag start het Vite op
+// een vrije poort uit de browsertest-baan (3107-3206, `dev-port.mjs`). Het opent de
 // app in headless Chromium (licht thema, 1600x900, schaal 1, Engels) en bedient hem met echte muis- en
 // toetsgebeurtenissen. `window.__OPS__` dient alleen om state klaar te zetten (instelling, scrollpositie,
 // geselecteerde taak), nooit om te vervangen wat de afbeelding moet tonen.
-// Uitvoer: `docs/images/readme/*.png` (palet-gequantiseerd met ffmpeg als een PNG boven de 250 kB uitkomt)
+// Uitvoer: `docs/images/readme/*.png` (palet-gequantiseerd met ffmpeg als een PNG boven de 150 kB uitkomt)
 // en met --demo ook `demo.gif` en `demo.mp4`. De app verandert nog: een stap die mislukt, meldt zijn naam
 // en laat de overige beelden gewoon doorlopen. Exitcode 1 als er één mislukte.
 import { spawn, spawnSync } from 'node:child_process';
@@ -26,7 +28,7 @@ import { allocateNamedPort, worktreeRoot, worktreeSlug } from './dev-port.mjs';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const OUT = join(root, 'docs', 'images', 'readme');
 const VIEWPORT = { width: 1600, height: 900 };
-const MAX_PNG_BYTES = 250 * 1024;
+const MAX_PNG_BYTES = 150 * 1024;
 const SHOWCASE = /Vaart/; // De Vaart Apartment Complex: groot, met voortgang, kritiek pad en resources
 const SMALL = /Refurbishment/i; // klein voorbeeld voor de demo
 
@@ -252,7 +254,7 @@ function optimizePng(path) {
   if (statSync(path).size <= MAX_PNG_BYTES) return;
   const tmp = `${path}.q.png`;
   const run = spawnSync('ffmpeg', [
-    '-v', 'error', '-y', '-i', path,
+    '-v', 'error', '-y', '-threads', '1', '-filter_complex_threads', '1', '-i', path,
     '-vf', 'split[a][b];[a]palettegen=max_colors=128:stats_mode=full[p];[b][p]paletteuse=dither=none',
     tmp,
   ]);
@@ -264,9 +266,11 @@ function optimizePng(path) {
 
 async function recordDemo(browser, url) {
   const dir = mkdtempSync(join(tmpdir(), 'ops-readme-demo-'));
+  const recordingStarted = Date.now();
   const { context, page } = await newPage(browser, url, { video: dir });
+  let trim;
   try {
-    await demoScript(page);
+    trim = await demoScript(page, recordingStarted);
   } finally {
     await context.close(); // sluit de video af
   }
@@ -278,28 +282,31 @@ async function recordDemo(browser, url) {
   const mp4 = join(OUT, 'demo.mp4');
   const palette = join(dir, 'palette.png');
   const run = args => {
-    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', ...args], { stdio: 'inherit' });
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-threads', '1', '-filter_complex_threads', '1', ...args], { stdio: 'inherit' });
     if (r.status !== 0) throw new Error(`ffmpeg faalde: ${args.join(' ')}`);
   };
-  const TRIM = '3.5'; // de eerste seconden tonen nog het lege startscherm
-  const fps = 10;
+  // Start in het geladen project; de laadtijd hangt van de machine af.
+  const TRIM = String(trim);
+  const fps = 8;
   const scale = `fps=${fps},scale=960:-1:flags=lanczos`;
-  run(['-ss', TRIM, '-i', src, '-vf', `${scale},palettegen=max_colors=96:stats_mode=diff`, palette]);
+  run(['-ss', TRIM, '-i', src, '-vf', `${scale},palettegen=max_colors=80:stats_mode=diff`, palette]);
   run(['-ss', TRIM, '-i', src, '-i', palette, '-lavfi', `${scale}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`, gif]);
-  run(['-ss', TRIM, '-i', src, '-vf', 'fps=25,scale=1280:-2:flags=lanczos', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '26', '-movflags', '+faststart', mp4]);
+  run(['-ss', TRIM, '-i', src, '-vf', 'fps=25,scale=1280:-2:flags=lanczos', '-c:v', 'libx264', '-threads', '1', '-pix_fmt', 'yuv420p', '-crf', '26', '-movflags', '+faststart', mp4]);
   rmSync(dir, { recursive: true, force: true });
   console.log(`demo.gif ${(statSync(gif).size / 1048576).toFixed(1)} MB, demo.mp4 ${(statSync(mp4).size / 1048576).toFixed(1)} MB`);
 }
 
 /** Het demoverloop: voorbeeld openen, een relatie leggen, herberekenen, het kritieke pad lezen. */
-async function demoScript(page) {
+async function demoScript(page, recordingStarted) {
   const pause = ms => page.waitForTimeout(ms);
   await pause(1500);
   await openExample(page, SMALL);
   await dismissNotices(page);
   await calculate(page);
+  const trim = (Date.now() - recordingStarted) / 1000;
   await pause(2000);
   await demoLinkAndRecalc(page, pause);
+  return trim;
 }
 
 async function demoLinkAndRecalc(page, pause) {
@@ -333,7 +340,8 @@ async function demoLinkAndRecalc(page, pause) {
 
 mkdirSync(OUT, { recursive: true });
 const failures = [];
-const vite = await startVite();
+const externalUrl = argValue('--url');
+const vite = externalUrl ? { url: externalUrl, stop() {} } : await startVite();
 const browser = await chromium.launch({ headless: true });
 try {
   if (wantStills) {

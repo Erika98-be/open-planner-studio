@@ -16,7 +16,7 @@
 
 ![Open Planner Studio: Gantt chart with the critical path](docs/images/readme/hero.png)
 
-![Demo: open a project, add a relation, recalculate, read the critical path](docs/images/readme/demo.gif)
+![Demo: add a relation, change a duration, recalculate, read the critical path](docs/images/readme/demo.gif)
 
 </div>
 
@@ -27,6 +27,8 @@ It runs in your browser with nothing to install, or as a small native desktop ap
 ## Try it
 
 **[Open the browser version](https://open-planner-studio.open-aec.com/)**. It starts with a realistic example project, so you can start clicking right away. More examples are under *File › Examples*.
+
+The built-in Help has **78 published articles** in English and Dutch, with translations in the other UI languages. You can also read the [wiki](https://github.com/OpenAEC-Foundation/open-planner-studio/wiki) or visit the [website](https://open-aec.com/open-planner-studio/).
 
 ## Download
 
@@ -68,11 +70,14 @@ Installed apps update themselves when a new version is out (Windows, macOS, `.de
 - **External (cross-project) relations.** A task can depend on a task in another project file through a stored anchor date. The link is not live: the other project is not recalculated. See [External relations](public/docs/en/howto-externe-relaties.md).
 - **Near-critical tasks** with a threshold you set, and **multiple float paths** (path 1, 2, 3 ...) to see more than the single longest chain.
 - **Calculation profiles.** Three built-in profiles: *Open Planner Studio*, *Primavera P6* and *Microsoft Project*. A profile is a set of conventions for the places where the two products calculate differently. See [Calculation profiles](public/docs/en/uitleg-rekenprofielen.md).
-- Work breakdown structure, baselines, progress and status date, task splitting, work rules (task types), hour planning, resource levelling and a cross-project occupancy view.
+- **Task types (work rules).** Choose fixed duration and units, fixed duration and work, fixed work or fixed units per task. Duration, resource units and work adjust together when you edit them. Assignments have one row per resource, with units and remaining work in hours. See [Task types](public/docs/en/uitleg-werkregels.md).
+- **Days and hours.** Choose the duration unit per task; hours display as `10h` in English (`10u` in Dutch).
+- Work breakdown structure, baselines, progress and status date, task splitting in the Gantt, resource levelling and a cross-project occupancy view.
+- **Resource libraries.** Share resources and calendars across projects, with provenance recorded for each item.
 
 ## Interoperability
 
-IFC 4.3 is the native format. Every other format is an adapter. What works per format (full detail in [Import and export formats](public/docs/en/ref-import-exportformaten.md)):
+IFC 4.3 ADD2 is the default native format, written as schema-valid IFC. Every other format is an adapter. What works per format (full detail in [Import and export formats](public/docs/en/ref-import-exportformaten.md)):
 
 | Format | Open | Save / export |
 |--------|------|---------------|
@@ -80,8 +85,10 @@ IFC 4.3 is the native format. Every other format is an adapter. What works per f
 | **MS Project XML** (MSPDI) | Yes | Export |
 | **MS Project `.mpp`** (2010 to 2021) | Yes, read-only | No |
 | **Primavera P6 XML** | Yes, several projects per file | Export |
-| **Primavera P6 `.xer`** | Yes, read-only | No |
+| **Primavera P6 `.xer`** | Yes, read-only; one tab per project | No |
 | **CSV** | Yes | Export |
+
+The original `.xer` is kept inside the saved IFC. **Dates as recorded** shows the dates saved by P6 or MS Project before you recalculate.
 
 Progress can also go through a spreadsheet: export a progress sheet (`.xlsx` or `.csv`), fill it in on site, and read it back into the open project.
 
@@ -93,7 +100,7 @@ Eleven report types, with a live preview, exported to PDF (A4 to A1):
 
 Gantt chart, Resource diagram, Milestone overview, Variance, Look-ahead, Critical and near-critical, Progress report, Schedule health, Resource loading, Resource assignments, WBS summary.
 
-Reports can cover a reporting period, compare against a baseline and follow the filter and grouping of your screen (Gantt chart). See [Report types](public/docs/en/ref-rapporttypes.md).
+Schedule health includes a DCMA 14-point check. Reports can cover a reporting period, compare against a baseline and follow the filter and grouping of your screen (Gantt chart). See [Report types](public/docs/en/ref-rapporttypes.md).
 
 ## AI assistants (MCP)
 
@@ -103,15 +110,18 @@ See [Connecting an AI assistant](public/docs/en/howto-ai-assistent-koppelen.md) 
 
 ## Testing and reliability
 
-Scheduling correctness is the core promise, so it is measured. The numbers below come from this repository at the time of writing.
+**Tested on real MS Project and P6 schedules.** The counts below come from the code and pinned test manifests in this repository. They describe test coverage, not a guarantee for every file.
 
 - **573 data-driven scheduling cases** in 24 batteries (`tests/planning/cases-*.json`). Expected values are worked out by hand from CPM theory, not copied from the engine's own output.
-- **393 further contract checks** (`tests/planning/check-*.ts`), and a run of the whole planning suite under five time zones.
-- **Browser tests.** 119 Playwright specs drive real Chromium with real mouse and keyboard events (`tests/browser/`).
+- **424 further contract-check files** (`tests/planning/check-*.ts`), and a timezone matrix across five time zones.
+- **Browser tests.** 135 Playwright spec files drive real Chromium with real mouse and keyboard events (`tests/browser/`).
 - **MS Project fidelity.** A pinned baseline of 216 `.mpp` files (3,413 tasks) records that after recalculation every start and finish equals the dates MS Project saved in the file. The files themselves are not in this repository, so this gate runs only on a machine that has them. The baseline is in [`tests/planning/mpp-fidelity-baseline.json`](tests/planning/mpp-fidelity-baseline.json).
 - **Primavera P6 comparison.** 93 public `.xer` files are classified by origin. Nine of them, calculated by P6 itself, serve as the reference ([`tests/planning/xer-corpus-manifest.json`](tests/planning/xer-corpus-manifest.json)).
+- **Other formats.** MS Project XML (MSPDI), P6 XML, CSV and IFC have import/export and round-trip contract checks in `tests/planning/`; there is no single external-corpus count stated for them.
 - **Five suites** run behind `npm test`: `planning`, `library`, `mcp`, `dev-server` and `browser`.
 - CI runs the whole gate (`npm run verify`) on every pull request. A red suite blocks the deploy and the release.
+
+Count sources: [`public/docs/manifest.json`](public/docs/manifest.json) (published articles; drafts excluded), [`src/i18n/locales.ts`](src/i18n/locales.ts) (28 languages), [`src/services/mcp/toolRegistry.ts`](src/services/mcp/toolRegistry.ts) and its registered modules (41 tools). Scheduling and browser counts use the file patterns above.
 
 ## Current limitations
 
