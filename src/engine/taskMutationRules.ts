@@ -27,8 +27,8 @@ export function isActualPastStatusDate(
   return parseInstant(dateIso).getTime() > parseInstant(statusDateIso).getTime();
 }
 
-/** D1/D2/D4/D6 bij voortgangsinvoer in het urenpad. Letterlijke tijden blijven rauw (N0).
- *  Dagkalenders met dagtaken houden tot F2 hun bestaande datumvorm. */
+/** D1/D2/D4/D6 op de statuswerkdag in het urenpad. Letterlijke tijden blijven rauw (N0).
+ *  Algemene invoernormalisatie, ook vóór de statusdag, hoort bij F2. */
 export function normalizeActualDate(
   task: Task,
   field: 'actualStart' | 'actualFinish',
@@ -36,9 +36,11 @@ export function normalizeActualDate(
   statusDate: string | undefined,
   calendar: WorkCalendar | undefined,
 ): string | undefined {
-  if (!value || !isDateOnly(value) || !calendar
+  if (!value || !isDateOnly(value) || !statusDate || !calendar
     || (!calendar.workTime && taskDurationUnit(task) !== 'hours')) return value;
   const clock = isElapsedTask(task) ? ELAPSED_CLOCK : blocksClock(calendar);
+  const statusDay = statusDate.includes('T') ? workdayOfInstant(clock, statusDate, 'start') : statusDate;
+  if (value !== statusDay) return value;
   const side = isZeroDurationMilestone(task)
     ? task.milestoneKind === 'FINISH' ? 'end' : 'start'
     : field === 'actualFinish' ? 'end' : 'start';

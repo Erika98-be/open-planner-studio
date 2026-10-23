@@ -251,17 +251,18 @@ for (const { kind, statusDate } of SCENARIOS) {
   }
 }
 
-// 9. Uurtaak met een date-only statusdatum op dezelfde dag als de vroege start: op dagniveau
-//    "gelijk", maar als instant ligt de start (08:00) ná het einde (middernacht) — het bestaande
-//    `isActualFinishBeforeStart` noemt dat een omgekeerd paar. De klem vergelijkt daarom als instant
-//    en de start wordt exact het einde-instant.
+// 9. F1/D6: een datumloze status op de startdag geeft het werkelijke einde van die werkdag.
+//    De afgeleide start krijgt D1; het paar blijft geldig zonder klem naar middernacht.
 {
   const { S, ids, time$, status$ } = setup('uur', '2026-06-10', 1, false);
   const t = ids[0]!;
   eq('uur zelfde dag: voorwaarde vroege start op de statusdag, ná middernacht', time$(t).earlyStart, '2026-06-10T08:00');
   eq('uur zelfde dag: raster enkel 100% geaccepteerd',
     S().runGridMutation([cell(t, 'task.time.completion', 'task-progress', 1)]).ok, true);
-  expectClamped('uur zelfde dag: raster enkel 100%', time$(t), status$(t), '2026-06-10');
+  eq('uur zelfde dag: D1/D6 behouden het werkdagpaar',
+    { as: time$(t).actualStart, af: time$(t).actualFinish },
+    { as: '2026-06-10T08:00', af: '2026-06-10T17:00' });
+  eq('uur zelfde dag: voltooid', status$(t), 'COMPLETED');
 }
 {
   // Dagtaak op dezelfde dag: start = einde was al zo, er valt niets te klemmen.
