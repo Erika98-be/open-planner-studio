@@ -157,6 +157,10 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
   desktop app never has one. A document carries `siteFileId` and `siteFileVersion` (the base for conflict detection) next to
   `filePath`/`fileHandle`; derive the save
   target only via `saveTargetRef`. Dev: `?fakeSite=1` installs a fake site. Detail: `docs/platformbouw.md`.
+- **IFC building-model guard.** Opening files with `IfcProduct`/`IfcTypeProduct` objects is temporarily
+  blocked before import (knownbug 110): the planning writer does not preserve them. The checked-in
+  type inventory comes from official IFC2X3 TC1, IFC4 ADD2 TC1 and IFC4X3 ADD2 schemas; regenerate
+  with `scripts/ifc-product-types.py`. Edit the separate planning file, then merge externally.
 - **IFC 4.3 is the native format**; there is no JSON project format. New domain data must round-trip through
   `ifcWriter`/`ifcReader`, or it is gone after saving. CSV/MSPDI/P6/`.mpp`/`.xer` are adapters. The file schema is
   per project (`Project.ifcSchema`, default `IFC4X3_ADD2`); never write silently in another one. Route:

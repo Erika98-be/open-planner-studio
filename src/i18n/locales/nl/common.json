@@ -504,7 +504,8 @@
   "project": {
     "untitled": "Nieuwe planning",
     "imported": "Geïmporteerd project",
-    "unassignedResource": "Niet toegekend"
+    "unassignedResource": "Niet toegekend",
+    "ifcBuildingModelUnsupported": "Dit IFC-bestand bevat bouwmodelobjecten. Openen is geblokkeerd omdat opslaan die objecten zou verwijderen. Bewerk het losse planningsbestand en voeg het daarna opnieuw samen met het bouwmodel."
   },
   "documents": {
     "overviewTitle": "Open projecten",

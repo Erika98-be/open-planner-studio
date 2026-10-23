@@ -210,6 +210,8 @@ export interface ImportLabels {
    * `i18n/importLabels.ts`.
    */
   unassignedResource?: string;
+  /** Uitleg bij tijdelijk geweigerde IFC-bouwmodellen (knownbug 110). */
+  ifcBuildingModelUnsupported?: string;
 }
 
 /** Zie `ImportResult.recordedTimesOrigin`. */
