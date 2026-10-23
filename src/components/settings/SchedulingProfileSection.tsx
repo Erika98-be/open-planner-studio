@@ -142,7 +142,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
   // Telt alleen om na een klik op het kruisje opnieuw te tekenen (de set zelf staat buiten React).
   const [, setDismissTick] = useState(0);
   const durationDisplay = useAppStore(s => s.ui.durationDisplay);
-  const enableHourPlanning = useAppStore(s => s.ui.enableHourPlanning);
+
   const projectCal = useAppStore(s => s.calendar);
 
   const profile = value.profile;
@@ -216,8 +216,7 @@ export function SchedulingProfileSection({ mode, value, onChange }: SchedulingPr
 
   // Reken-opties: 'auto' voor afwezig, en thresholdHours die bij een bewerking niet wegvalt.
   const hpd = effHoursPerDay(projectCal);
-  const hourUnit = enableHourPlanning
-    && (durationDisplay === 'hours' || (durationDisplay === 'auto' && isHourModeCalendar(projectCal)));
+  const hourUnit = (durationDisplay === 'hours' || (durationDisplay === 'auto' && isHourModeCalendar(projectCal)));
   const crit = so.criticalDefinition;
   const critMode = crit?.mode ?? 'totalFloat';
   const hoursThreshold = crit?.thresholdHours !== undefined;

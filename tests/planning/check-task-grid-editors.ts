@@ -53,7 +53,7 @@ const effectiveCalendar: WorkCalendar = {
 const environment = {
   projectId: 'p-1', wbsAutoNumber: false, statusDate: '2026-01-07',
   calendarIds: new Set(['cal-hour']), effectiveHoursPerDay: 8, hourMode: false,
-  effectiveCalendar, enableHourPlanning: true,
+  effectiveCalendar,
   customTaskTypeIds: new Set(['custom-installation']),
   activityCodeTypes: [{ id: 'fase', name: 'Fase', values: [{ id: 'bouw', code: 'B' }] }],
   customFieldDefs: [
@@ -158,11 +158,11 @@ eq('Niet-exacte uur-naar-dagconversie wordt geweigerd', plan(
   'task.time.durationUnit', 'task-schedule', 'days',
   { ...baseTask, time: { ...baseTask.time, durationUnit: 'hours', scheduleDuration: 0.1875, durationMinutes: 90 } },
 ).ok, false);
-eq('Ureninvoer volgt de urenplanningpoort', plan(
+eq('Ureninvoer is altijd beschikbaar', plan(
   'task.time.scheduleDuration', 'task-schedule',
   { unit: 'hours', durationMinutes: 90, explicitUnit: true }, baseTask,
-  { enableHourPlanning: false },
-).ok, false);
+  { },
+).ok, true);
 
 const steered = {
   ...baseTask,

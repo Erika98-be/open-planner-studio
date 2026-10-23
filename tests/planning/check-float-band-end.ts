@@ -187,7 +187,6 @@ function dayScenario(holidays: WorkCalendar['holidays'] = []): string {
 // 9-uurskalender, A 5h naast B 9h, C na beide: A EF 13:00, LF 17:00 (4 werkuren speling).
 {
   S().newProject();
-  S().setUI({ enableHourPlanning: true });
   const band9 = [{ start: 8 * 60, end: 17 * 60 }];
   S().setCalendar({
     ...S().calendar, workDays: [1, 2, 3, 4, 5], holidays: [], hoursPerDay: 9, workStartHour: 8, workEndHour: 17,
@@ -202,7 +201,7 @@ function dayScenario(holidays: WorkCalendar['holidays'] = []): string {
   S().runCPM();
   const ha = S().tasks.find(t => t.id === HA)!;
   eq('3 opzet: A EF 13:00, LF 17:00', [ha.time.earlyFinish, ha.time.lateFinish], ['2026-06-01T13:00', '2026-06-01T17:00']);
-  const { renderer, bands } = renderScreen('2026-05-31', 240, { enableHourPlanning: true });
+  const { renderer, bands } = renderScreen('2026-05-31', 240, { });
   eq('3a scherm (uren): precies één spelingsband', bands.length, 1);
   near('3b scherm (uren): band begint op het EF-instant', bands[0]?.x, renderer.dateToX(parseInstant(ha.time.earlyFinish)));
   near('3c scherm (uren): band eindigt op het LF-instant, niet in de nacht', bands[0] && bands[0].x + bands[0].w, renderer.dateToX(parseInstant(ha.time.lateFinish)));

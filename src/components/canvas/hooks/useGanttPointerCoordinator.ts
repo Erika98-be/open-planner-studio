@@ -41,7 +41,7 @@ export function useGanttPointerCoordinator(
     splitMode,
     scrollMode,
     enableQuarterHourZoom,
-    enableHourPlanning,
+
     compressNonWorkdays,
     selectTask,
     selectTasks,
@@ -106,7 +106,7 @@ export function useGanttPointerCoordinator(
   const barDrag = useBarDrag({
     zoom: view.zoom,
     enableQuarterHourZoom,
-    enableHourPlanning,
+
     calendar,
     effectiveCalById: effectiveCalendarByTaskId,
     compressNonWorkdays,
@@ -135,7 +135,7 @@ export function useGanttPointerCoordinator(
     effectiveCalById: effectiveCalendarByTaskId,
     zoom: view.zoom,
     enableQuarterHourZoom,
-    enableHourPlanning,
+
     getTask,
     setTaskSplits,
     undo,

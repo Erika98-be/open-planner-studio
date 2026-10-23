@@ -79,7 +79,6 @@ export interface TaskEditPlanEnvironment {
   effectiveCalendar?: WorkCalendar;
   /** De kalender waarin een taak met dit `calendarId` rekent (leeg ⇒ projectkalender). */
   calendarFor?: (calendarId: string | undefined) => WorkCalendar;
-  enableHourPlanning?: boolean;
   customTaskTypeIds?: ReadonlySet<string>;
   activityCodeTypes: readonly ActivityCodeType[];
   customFieldDefs: readonly CustomFieldDef[];
@@ -309,7 +308,6 @@ function applyParsedDuration(
   // waardevergelijking als store en MCP (`taskTriggerChanges`).
   const before: TaskTriggerFields = { ...task, time: { ...task.time } };
   if (parsed.unit === 'hours') {
-    if (environment.enableHourPlanning !== true) return failure('hourPlanningDisabled', edit);
     if (!isFiniteNumber(parsed.durationMinutes) || parsed.durationMinutes < 0) return failure('duration', edit);
     if (!Number.isFinite(environment.effectiveHoursPerDay) || environment.effectiveHoursPerDay <= 0) {
       return failure('calendarHours', edit);
@@ -408,9 +406,6 @@ function applyScheduleEdit(
     if (edit.value !== 'days' && edit.value !== 'hours') return failure('enum', edit);
     const target = edit.value as TaskDurationUnit;
     if (target === task.time.durationUnit) return { ok: true, value: false };
-    if (target === 'hours' && environment.enableHourPlanning !== true) {
-      return failure('hourPlanningDisabled', edit);
-    }
     if (!environment.effectiveCalendar) return failure('calendarNotFound', edit);
     const proposal = convertTaskDurationUnit(task, target, environment.effectiveCalendar);
     if (!proposal) return failure('durationConversionNotExact', edit);

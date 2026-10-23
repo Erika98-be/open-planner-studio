@@ -321,9 +321,6 @@
     "themeHighContrast": "Høj kontrast",
     "themeFollowSystem": "Følg systemtema",
     "themeSystemHint": "Følger farveskemaet på dit system (nu: {{theme}}).",
-    "hourPlanningSection": "Timeplanlægning",
-    "enableHourPlanning": "Slå timeplanlægning til",
-    "enableHourPlanningHint": "Slår time- og minutplanlægning til: en tidsskala med timer, arbejdsskift med arbejdstidsbånd og timepræcise opgavebjælker. Fra ⇒ appen er helt dagsbaseret som før.",
     "showTaskTypes": "Brug opgavetyper",
     "showTaskTypesHint": "Vælg per opgave, hvad der justeres, når varighed, tildelingsenheder eller arbejde ændres, som Task Type i MS Project og Duration Type i P6. Fra: varighed og tildelingsenheder bliver stående. En fil med opgavetyper eller gemt arbejde viser dem også, når dette er fra.",
     "allowMixedDayHour": "Tillad blandet dag/timeplanlægning",
@@ -1094,10 +1091,6 @@
     "day": "dag",
     "month": "måned",
     "year": "år"
-  },
-  "hourData": {
-    "notice": "Denne fil indeholder timeplanlægning.",
-    "enable": "Slå timeplanlægning til"
   },
   "recordedDates": {
     "activeCount_one": "Du ser tidsplanen, som Primavera gemte den; ved at genberegne forskydes {{count}} opgave.",

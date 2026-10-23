@@ -77,7 +77,7 @@ same('§2 standaard (geen notatie meegegeven) = dmy 24 uur', label('2006-09-20T1
 same('§2 dag-modus: tijd valt weg', label('2006-09-20T17:00', false, 'dmy', '24h'), '20-09-2006');
 
 // ── §3 ──────────────────────────────────────────────────────────────────────
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 function openStore(parsed: OpenedImport) {
   const ctx = createAppStoreContext();
   ctx.store.getState().applyOpenedImport(parsed, OPEN);

@@ -5,15 +5,12 @@ import { Select } from '@/components/common/Select';
 import { HoverTooltip } from '@/components/canvas/HoverTooltip';
 import { StatusBanner } from '@/components/panels/StatusBanner';
 import { useAppStore } from '@/state/appStore';
-import { saveEnableHourPlanning } from '@/utils/settingsStore';
-import { applySetting } from '@/components/settings/applySetting';
 import {
   formatTaskDurationInput,
   parseTaskDurationInput,
   convertTaskDurationUnit,
   type ParsedTaskDuration,
 } from '@/utils/taskDurationInput';
-import { hasConcreteWorkBlocks } from '@/services/subdayIo';
 import { durationSuffixesFrom, hourTaskScheduleDuration } from '@/utils/taskDuration';
 import type { DurationSuffixes } from '@/utils/durationFormat';
 import { isZeroDurationMilestone } from '@/engine/scheduler/duration';
@@ -37,7 +34,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
 }) {
   const { t } = useTranslation('task');
   const { t: tCommon } = useTranslation('common');
-  const enableHourPlanning = useAppStore((s) => s.ui.enableHourPlanning);
   const allowMixedDayHour = useAppStore((s) => s.ui.allowMixedDayHour);
   const seed = formatTaskDurationInput(task);
   const [value, setValue] = useState(seed);
@@ -56,8 +52,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
   // `seed` niet, en zonder deze teller bleef het getypte getal staan tot een andere taak gekozen werd.
   const [commitTick, setCommitTick] = useState(0);
   const derived = isZeroDurationMilestone(task) || task.childIds.length > 0 || !!task.isHammock;
-  const hourEditBlocked = task.time.durationUnit === 'hours' && !enableHourPlanning;
-  const showUnitControls = enableHourPlanning && allowMixedDayHour;
+  const showUnitControls = allowMixedDayHour;
 
   // Een knop die precies onder een stilstaande muis terugkomt, krijgt van React opnieuw een
   // mouseenter zonder dat de gebruiker opnieuw heeft gehoverd. Eis daarom eerst een echte leave;
@@ -93,16 +88,11 @@ export function TaskDurationField({ task, calendar, onChange }: {
   };
 
   const commitInput = () => {
-    if (derived || hourEditBlocked) return;
+    if (derived) return;
     setNotExact(null);
     const parsed = parseTaskDurationInput(value, task.time.durationUnit);
     if (!parsed) {
       setMessage(t('duration.invalid'));
-      setValue(seed);
-      return;
-    }
-    if (parsed.unit === 'hours' && (!enableHourPlanning || !hasConcreteWorkBlocks(calendar))) {
-      setMessage(!enableHourPlanning ? t('duration.enableHourPlanningFirst') : t('duration.requiresWorkBlocks'));
       setValue(seed);
       return;
     }
@@ -112,14 +102,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
   const requestUnit = (target: TaskDurationUnit) => {
     if (target === task.time.durationUnit) return;
     setNotExact(null);
-    if (target === 'hours' && !enableHourPlanning) {
-      setMessage(t('duration.enableHourPlanningFirst'));
-      return;
-    }
-    if (!hasConcreteWorkBlocks(calendar)) {
-      setMessage(t('duration.requiresWorkBlocks'));
-      return;
-    }
     // De gekozen eenheid geldt meteen: een exacte omzetting wordt direct toegepast, als één
     // wijziging (één undo-stap), net als in het taakraster. Niet exact ⇒ melding, eenheid blijft.
     const next = convertTaskDurationUnit(task, target, calendar);
@@ -131,10 +113,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
     apply(next);
   };
 
-  const enableHours = () => {
-    applySetting('enableHourPlanning', true, saveEnableHourPlanning);
-    setMessage(null);
-  };
 
   const syncInfoAnchor = () => {
     const rect = infoButtonRef.current?.getBoundingClientRect();
@@ -194,7 +172,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
               (event.currentTarget as HTMLInputElement).blur();
             }
           }}
-          disabled={derived || hourEditBlocked}
+          disabled={derived}
           aria-label={t('duration.label')}
           className="input h-9 min-w-0 flex-1 !px-2.5 !py-0 !text-small !leading-4 disabled:opacity-50"
           data-ops-duration-value
@@ -208,7 +186,7 @@ export function TaskDurationField({ task, calendar, onChange }: {
                 fitWidestOption
                 value={task.time.durationUnit}
                 onChange={(next) => requestUnit(next as TaskDurationUnit)}
-                disabled={derived || hourEditBlocked}
+                disabled={derived}
                 options={[
                   { value: 'days', label: t('duration.days') },
                   { value: 'hours', label: t('duration.hours') },
@@ -247,12 +225,6 @@ export function TaskDurationField({ task, calendar, onChange }: {
           </>
         )}
       </div>
-      {hourEditBlocked && (
-        <div className="!text-small text-text-secondary" data-ops-duration-hour-planning-blocked>
-          {t('duration.enableHourPlanningFirst')}{' '}
-          <button type="button" className="underline" onClick={enableHours}>{t('duration.enableHourPlanning')}</button>
-        </div>
-      )}
       {notExact && (
         <StatusBanner tone="warning" inline bannerProps={{ 'data-ops-duration-not-exact': true }}>
           <span className="!text-small">{t('duration.conversionNotExact', { value: notExact })}</span>

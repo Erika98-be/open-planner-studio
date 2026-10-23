@@ -89,6 +89,9 @@ const week = blocksClock(WEEK);
   same('§1 std: einde za 00:00 ⇒ vr (24:00-regel)', w(std, '2026-06-06T00:00', 'end'), '2026-06-05');
   same('§1 std: start za 00:00 ⇒ za', w(std, '2026-06-06T00:00', 'start'), '2026-06-06');
   same('§1 std: einde di 12:00 (einde ochtendblok) ⇒ di', w(std, '2026-06-02T12:00', 'end'), '2026-06-02');
+  same('§1 std: einde za 12:00 zonder werkblok ⇒ za', w(std, '2026-06-06T12:00', 'end'), '2026-06-06');
+  same('§1 std: einde feestdag do 12:00 zonder werkblok ⇒ do', w(std, '2026-06-04T12:00', 'end'), '2026-06-04');
+  same('§1 std: einde ma 24:00 ⇒ ma', w(std, '2026-06-01T24:00', 'end'), '2026-06-01');
 
   same('§1 nacht: einde wo 06:00 ⇒ di', w(night, '2026-06-03T06:00', 'end'), '2026-06-02');
   same('§1 nacht: einde wo 02:00 ⇒ di', w(night, '2026-06-03T02:00', 'end'), '2026-06-02');
@@ -97,6 +100,8 @@ const week = blocksClock(WEEK);
   same('§1 nacht: start wo 06:00 (na het blok) ⇒ wo', w(night, '2026-06-03T06:00', 'start'), '2026-06-03');
   same('§1 nacht: einde wo 00:00 (midden in het blok van di) ⇒ di', w(night, '2026-06-03T00:00', 'end'), '2026-06-02');
   same('§1 nacht: einde za 06:00 (blok van vr) ⇒ vr', w(night, '2026-06-06T06:00', 'end'), '2026-06-05');
+  same('§1 nacht: einde zo 02:00 zonder blok van za ⇒ zo', w(night, '2026-06-07T02:00', 'end'), '2026-06-07');
+  same('§1 nacht: start zo 02:00 zonder blok van za ⇒ zo', w(night, '2026-06-07T02:00', 'start'), '2026-06-07');
 
   same('§1 24 uur: einde di 00:00 ⇒ ma', w(h24, '2026-06-02T00:00', 'end'), '2026-06-01');
   same('§1 24 uur: start di 00:00 ⇒ di', w(h24, '2026-06-02T00:00', 'start'), '2026-06-02');

@@ -205,6 +205,11 @@ OPS_MINUTE_MODEL_EXAMPLES_UPDATE=1 bash tests/planning/run.sh check-minute-model
 ```
 
 `check-minute-model.ts` toetst de dagregels (werkdag van een moment, D1–D7) en de migratiefunctie los.
+De werkdagfunctie staat bij de gedeelde kalenderregels in `src/engine/calendar/workdayRules.ts`.
+Een nachtblok di 22:00–wo 06:00 hoort bij dinsdag, ook voor een moment wo 02:00 en het einde wo 06:00.
+Buiten een echt werkblok geldt de klokdatum; de functie verzint geen blok op een vrije dag.
+Een eindmoment om 24:00 (00:00 van de volgende dag) hoort bij de vorige dag. De check bewaakt ook
+vrije dagen, een feestdag en kalendertijd. Deze regels zijn nog niet aangesloten op de app.
 
 ## Een geval toevoegen
 

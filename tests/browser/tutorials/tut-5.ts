@@ -13,8 +13,6 @@ const notStale: Check = { state: (s: Snap) => (s.stale ? ['planning nog verouder
 const status = (nl: string, en: string): Check => ({ see: statusBar, text: l(nl, en) });
 const OVERALLOCATED = l('⚠ 1 resource(s) overbezet', '⚠ 1 resource(s) overallocated');
 
-/** De urenmelding bij het openen van een stand met urentaken (tutorial 5 stap 1 zegt erop te klikken). */
-export const enableHourPlanningFromNotice: Action = { click: { button: l('Urenplanning aanzetten', 'Enable hour planning') } };
 
 /** Eén resource in de conceptrij: naam, type, eventueel Max. eenheden en Eenheid, Enter. */
 const resource = (name: L, type: L, max?: string, unit?: string): Action[] => [
@@ -53,10 +51,9 @@ export const TUTORIAL_5: TutorialScript = {
   steps: [
     {
       id: 'startpunt',
-      do: [enableHourPlanningFromNotice],
+      do: [],
       expect: [
         notStale,
-        { state: s => (s.ui.enableHourPlanning ? [] : ['urenplanning staat uit']) },
         status('Einde: 01-09-2027', 'End: 01-09-2027'),
         status('Kritiek pad: 8 taken, 48 werkdagen', 'Critical path: 8 tasks, 48 work days'),
         { notSee: statusBar, text: l('overbezet', 'overallocated') },

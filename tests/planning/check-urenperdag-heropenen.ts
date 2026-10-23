@@ -165,7 +165,7 @@ function route(fmt: Format, libHpdAfter: number, libDayAfter: [number, number]):
     const backLib = back.resourceCalendars?.find(c => c.name === LIB.name);
     checkCalendar(`${label} bibliotheekkalender`, backLib, libHpdAfter);
     // P6 XML: de dagtaak op de bibliotheekkalender blijft 5 d. MSPDI: bekende grens (ook op main, zie
-    // de gids ref-import-exportformaten): 40 h ÷ 10,5 = 3,8 ⇒ 4 d na de eerste ronde.
+    // de gids ref-import-exportformaten): 40 h ÷ 10,5. F5a-1 rondt die hoeveelheid niet meer af.
     eq(`${label} dagtaak op bibliotheekkalender`,
       back.tasks.find(t => t.name === LIB_TASK.name)?.time.scheduleDuration, libDayAfter[round - 1]);
     cal = back.calendar;
@@ -174,7 +174,7 @@ function route(fmt: Format, libHpdAfter: number, libDayAfter: [number, number]):
   }
 }
 route(P6, FILE_HPD, [5, 5]);
-route(MSPDI, WERKTIJD, [4, 4]);
+route(MSPDI, WERKTIJD, [40 / WERKTIJD, 40 / WERKTIJD]);
 
 // ── §2 Zonder eigen of met ongeldige waarde volgt de kalender de blokken ────────────────────────────
 for (const fmt of [P6, MSPDI]) {
@@ -215,7 +215,7 @@ for (const fmt of [P6, MSPDI]) {
 }
 
 // ── §5 De echte openroute (store, herberekenen) na export: samenloop met #363 ──────────────────────
-const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, hourDataNotice: false, linkedOpen: true } as const;
+const OPEN = { filePath: null, fileHandle: null, recompute: true, fit: false, linkedOpen: true } as const;
 for (const fmt of [P6, MSPDI]) {
   const xml = quiet(() => fmt.write(CAL, TASKS, []));
   const parsed = await parseOpenedFile({ name: 'heropenen.xml', text: xml } as never);
@@ -311,8 +311,8 @@ if (corpus && existsSync(join(twinDir, 'mpp14timephased.mpp'))) {
 }
 // Een dagkalender (geen blokken, geen promotie) uit een vreemd bestand: `<MinutesPerDay>` 600 (10 u)
 // naast werktijden van 8 u. De lezer zet de bestandswaarde al bij het bouwen van de projectkalender, dus
-// rekent de vertraging (`LinkLag` 14400 tienden = 24 u) met 10 u: 2,4 ⇒ 2 d (de lezer rondt af op hele
-// dagen). Met de werktijd (8 u) zou het 3 d zijn.
+// bewaart F5a-1 de vertraging (`LinkLag` 14400 tienden = 24 u) als 1440 minuten, onafhankelijk van de
+// bestandswaarde of werktijd. De maatmarkering voor dagen volgt in F5a-2.
 {
   const dayCal: WorkCalendar = { ...CAL, id: 'cal-dag', workStartHour: 8, workEndHour: 16, workTime: undefined };
   const dayOnly = (name: string): Task => {
@@ -326,7 +326,7 @@ if (corpus && existsSync(join(twinDir, 'mpp14timephased.mpp'))) {
     [written.match(/<LinkLag>([^<]*)</)?.[1], MSPDI.writtenHpd(written)], ['14400', '480']);
   const back = quiet(() => readMSPDI(MSPDI.setFileHpd(written, '600')));
   eq('§8 MSPDI-dagkalender: testvoorwaarde geen uurkalender; bestandswaarde 10 u', [!!back.calendar.workTime, back.calendar.hoursPerDay], [false, 10]);
-  eq('§8 MSPDI-dagkalender: vertraging rekent met de bestandswaarde, 2 d', [back.sequences[0]?.lagDays, back.sequences[0]?.lagMinutes], [2, undefined]);
+  eq('§8 MSPDI-dagkalender: vertraging blijft 1440 minuten', [back.sequences[0]?.lagDays, back.sequences[0]?.lagMinutes], [0, 1440]);
 }
 
 if (fails > 0) {

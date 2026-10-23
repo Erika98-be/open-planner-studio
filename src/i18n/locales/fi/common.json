@@ -321,9 +321,6 @@
     "themeHighContrast": "Suuri kontrasti",
     "themeFollowSystem": "Seuraa järjestelmän teemaa",
     "themeSystemHint": "Seuraa järjestelmän värimaailmaa (nyt: {{theme}}).",
-    "hourPlanningSection": "Tuntisuunnittelu",
-    "enableHourPlanning": "Ota tuntisuunnittelu käyttöön",
-    "enableHourPlanningHint": "Ottaa käyttöön tunti- ja minuuttiaikataulutuksen: tuntiasteikon, työvuorot työaikakaistoineen ja tarkat tehtäväpalkit. Pois ⇒ sovellus toimii kokonaan päiväkohtaisesti kuten ennen.",
     "showTaskTypes": "Tehtävätyypit käyttöön",
     "showTaskTypesHint": "Valitse tehtävän kohdalla, mikä muuttuu, kun kesto, kuormitusaste tai työ muuttuu, kuten Task Type MS Projectissa ja Duration Type P6:ssa. Pois: kesto ja kuormitusaste pysyvät ennallaan. Tiedosto, joka sisältää tehtävätyyppien asetuksia tai tallennettua työtä, näyttää ne myös silloin, kun tämä on pois päältä.",
     "allowMixedDayHour": "Salli sekoitettu päivä/tuntisuunnittelu",
@@ -1094,10 +1091,6 @@
     "day": "päivä",
     "month": "kuukausi",
     "year": "vuosi"
-  },
-  "hourData": {
-    "notice": "Tämä tiedosto sisältää tuntisuunnittelua.",
-    "enable": "Ota tuntisuunnittelu käyttöön"
   },
   "recordedDates": {
     "activeCount_one": "Aikataulu näytetään sellaisena kuin Primavera sen tallensi. Kun lasketaan uudelleen, {{count}} tehtävä siirtyisi.",

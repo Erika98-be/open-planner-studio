@@ -67,7 +67,6 @@ const H12: WorkCalendar = {
 function freshContext() {
   const ctx = createAppStoreContext();
   const S = ctx.store.getState;
-  S().setUI({ enableHourPlanning: true });
   S().setCalendar(H8);
   S().setProject({ defaultTaskDurationUnit: 'hours', startDate: '2026-09-07' });
   return ctx;

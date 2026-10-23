@@ -13,7 +13,7 @@ import {
 import type { Task } from '@/types/task';
 import type { WorkCalendar } from '@/types/calendar';
 import { readAccentColor, sizeCanvasToContainer } from './useCanvasLayer';
-import { hourSnapMinutesFor, snapTimelineDate } from './timelineSnap';
+import { hourSnapMinutesFor, snapTimelineDate, splitWorkdayStart, splitWorkdayMinutes, splitWorkdayUnits } from './timelineSnap';
 import { listenWindowDrag } from '@/hooks/listenWindowDrag';
 import { shownStart } from '@/utils/taskDates';
 
@@ -46,8 +46,10 @@ interface FrozenGesture {
   offsetMinutes: number;
   minOffsetMinutes: number;
   unitMinutes: number;
+  minimumGap: number;
   anchorDate: Date;
   eng: CalendarEngine;
+  cal: WorkCalendar;
   hourMode: boolean;
   undoKey: string;
   /** Is er al iets gecommit? Bepaalt of Esc een undo-stap moet terugdraaien. */
@@ -66,7 +68,6 @@ interface UseSplitGestureOptions {
   effectiveCalById: Map<string, WorkCalendar>;
   zoom: number;
   enableQuarterHourZoom: boolean;
-  enableHourPlanning: boolean;
   getTask: (id: string) => Task | undefined;
   setTaskSplits: (taskId: string, pieces: SplitPiece[] | null, opts?: { coalesceKey?: string }) => unknown;
   undo: () => void;
@@ -87,14 +88,14 @@ interface UseSplitGestureOptions {
  */
 export function useSplitGesture({
   canvasRef, containerRef, overlayCanvasRef, rendererRef, axis, calendar, effectiveCalById,
-  zoom, enableQuarterHourZoom, enableHourPlanning, getTask, setTaskSplits, undo,
+  zoom, enableQuarterHourZoom, getTask, setTaskSplits, undo,
 }: UseSplitGestureOptions) {
   const [state, setState] = useState<SplitGestureState | null>(null);
   const frozenRef = useRef<FrozenGesture | null>(null);
 
   /** De uur-snap van de sleep is dezelfde als die van `useBarDrag`: de actieve minor-tier, met
    *  een kwartier alleen wanneer die zoom is aangezet. In dag-modus doet dit niets. */
-  const hourSnapMinutes = hourSnapMinutesFor(zoom, enableQuarterHourZoom, enableHourPlanning);
+  const hourSnapMinutes = hourSnapMinutesFor(zoom, enableQuarterHourZoom);
 
   /** Kalender, modus en werkduur van een taak — één bron voor start, move en hover. */
   const contextFor = useCallback((task: Task) => {
@@ -103,14 +104,16 @@ export function useSplitGesture({
     const eng = new CalendarEngine(hourMode ? calendarForEngine(cal) : cal);
     const hoursPerDay = eng.hoursPerDay;
     return {
-      eng, hourMode, hoursPerDay,
+      eng, cal, hourMode, hoursPerDay,
       workMinutes: durationMinutesOf(task, { isHourMode: hourMode, hoursPerDay }),
-      unitMinutes: splitUnitMinutes(task, hoursPerDay, hourSnapMinutes),
+      unitMinutes: hourMode && hourSnapMinutes === 1440 ? 0 : splitUnitMinutes(task, hoursPerDay, hourSnapMinutes),
     };
   }, [calendar, effectiveCalById, hourSnapMinutes]);
 
   const snapAt = useCallback(
-    (x: number, hourMode: boolean) => snapTimelineDate(axis, x, hourMode, hourSnapMinutes),
+    (x: number, hourMode: boolean, eng: CalendarEngine, cal: WorkCalendar) => hourMode && hourSnapMinutes === 1440
+      ? splitWorkdayStart(axis.xToDate(x), eng, cal)
+      : snapTimelineDate(axis, x, hourMode, hourSnapMinutes),
     [axis, hourSnapMinutes],
   );
 
@@ -130,8 +133,8 @@ export function useSplitGesture({
     const hit = renderer.getTaskBarBounds(x, clientY - rect.top);
     const bar = hit ? renderer.getTaskBarRect(hit.task.id) : null;
     if (!hit || !bar) { setState(null); return; }
-    const { hourMode } = contextFor(hit.task);
-    const at = snapAt(x, hourMode);
+    const { hourMode, eng, cal } = contextFor(hit.task);
+    const at = snapAt(x, hourMode, eng, cal);
     if (!at) { setState(null); return; }
     setState({
       taskId: hit.task.id,
@@ -139,9 +142,9 @@ export function useSplitGesture({
       currentX: axis.dateToX(at),
       top: bar.top, bottom: bar.bottom,
       atIso: hourMode ? formatInstant(at, 'hour') : formatDate(at),
-      gapUnits: 0, hourMode, dragging: false,
+      gapUnits: 0, hourMode: hourSnapMinutes !== 1440 && hourMode, dragging: false,
     });
-  }, [canvasRef, rendererRef, axis, contextFor, snapAt]);
+  }, [canvasRef, rendererRef, axis, contextFor, snapAt, hourSnapMinutes]);
 
   const clearHover = useCallback(() => { if (!frozenRef.current) setState(null); }, []);
 
@@ -157,11 +160,11 @@ export function useSplitGesture({
     if (!canvas || !renderer || !task) return false;
     const bar = renderer.getTaskBarRect(task.id);
     if (!bar) return false;
-    const { eng, hourMode, hoursPerDay, workMinutes, unitMinutes } = contextFor(task);
+    const { eng, cal, hourMode, hoursPerDay, workMinutes, unitMinutes } = contextFor(task);
     const pieces0 = toSplitPieces(task.splitGaps, workMinutes);
     if (!pieces0) return false; // niet-wélgevormde importsplit: alleen-lezen
     const x = input.startClientX - canvas.getBoundingClientRect().left;
-    const at = snapAt(x, hourMode);
+    const at = snapAt(x, hourMode, eng, cal);
     if (!at) return false;
     // De balk staat op de getoonde start (`shownStart`, `GanttRenderer.barGeometry`): een taak die
     // door een voorganger is opgeschoven houdt haar `scheduleStart`-anker op de projectstart. Vanaf
@@ -171,21 +174,22 @@ export function useSplitGesture({
     const { workMinutes: offsetMinutes, inGap } = workOffsetAtDate(pieces0, taskStart, at, eng, hourMode);
     if (inGap) return false;
     const minOffsetMinutes = completedWorkMinutes(task, hoursPerDay);
+    const minimumGap = hourMode && hourSnapMinutes === 1440 ? splitWorkdayMinutes(at, eng, cal) : unitMinutes;
     // Proefsplits met de kleinste pauze: kan die niet, dan kan geen enkele lengte hier.
-    if (!splitAt(pieces0, offsetMinutes, unitMinutes, unitMinutes, minOffsetMinutes).ok) return false;
+    if (!splitAt(pieces0, offsetMinutes, minimumGap, unitMinutes, minOffsetMinutes).ok) return false;
     frozenRef.current = {
-      taskId: task.id, pieces0, offsetMinutes, minOffsetMinutes, unitMinutes,
-      anchorDate: at, eng, hourMode, undoKey: `split:${task.id}:${++splitSeq}`, committed: false,
+      taskId: task.id, pieces0, offsetMinutes, minOffsetMinutes, unitMinutes, minimumGap,
+      anchorDate: at, eng, cal, hourMode, undoKey: `split:${task.id}:${++splitSeq}`, committed: false,
     };
     setState({
       taskId: task.id,
       anchorX: axis.dateToX(at), currentX: axis.dateToX(at),
       top: bar.top, bottom: bar.bottom,
       atIso: hourMode ? formatInstant(at, 'hour') : formatDate(at),
-      gapUnits: 0, hourMode, dragging: true,
+      gapUnits: 0, hourMode: hourSnapMinutes !== 1440 && hourMode, dragging: true,
     });
     return true;
-  }, [canvasRef, rendererRef, axis, getTask, contextFor, snapAt]);
+  }, [canvasRef, rendererRef, axis, getTask, contextFor, snapAt, hourSnapMinutes]);
 
   // Automatisch berekenen wacht tot het gebaar af is (zie `useBarDrag`).
   const dragging = !!state?.dragging;
@@ -210,17 +214,17 @@ export function useSplitGesture({
       const canvas = canvasRef.current;
       if (!g || !canvas) return;
       const x = event.clientX - canvas.getBoundingClientRect().left;
-      const at = snapAt(x, g.hourMode);
+      const at = snapAt(x, g.hourMode, g.eng, g.cal);
       if (!at) return;
       // Pauzelengte = de werkafstand tussen de klikdag en de dag onder de muis, minstens één
       // eenheid. Terugslepen naar links geeft 0 ⇒ weer de kleinst mogelijke pauze.
       const measured = workAxisMinutesBetween(g.anchorDate, at, g.eng, g.hourMode);
-      const gapMinutes = Math.max(g.unitMinutes, measured);
+      const gapMinutes = Math.max(g.minimumGap, measured);
       commit(gapMinutes);
       setState(prev => (prev ? {
         ...prev,
         currentX: axis.dateToX(at),
-        gapUnits: Math.round(gapMinutes / g.unitMinutes),
+        gapUnits: g.hourMode && hourSnapMinutes === 1440 ? splitWorkdayUnits(g.anchorDate, gapMinutes, g.eng, g.cal) : Math.round(gapMinutes / g.unitMinutes),
       } : prev));
     };
 
@@ -228,7 +232,7 @@ export function useSplitGesture({
       const g = frozenRef.current;
       // Losse klik zonder beweging: één commit met de kleinste pauze (klikken is
       // "onderbreek hier", slepen is "zo lang").
-      if (g && !g.committed) commit(g.unitMinutes);
+      if (g && !g.committed) commit(g.minimumGap);
       stop();
     };
 
@@ -242,7 +246,7 @@ export function useSplitGesture({
     };
 
     return listenWindowDrag({ onMove: handleMouseMove, onUp: handleMouseUp, onKeyDown: handleKeyDown });
-  }, [state?.dragging, canvasRef, axis, snapAt, setTaskSplits, undo, stop]);
+  }, [state?.dragging, canvasRef, axis, snapAt, setTaskSplits, undo, stop, hourSnapMinutes]);
 
   // Geleidelijn op het gedeelde overlay-canvas — dezelfde laag waarop `useDependencyDraw` zijn
   // sleeplijn tekent. Dat kan omdat de twee modi elkaar uitsluiten (`setUI`), dus er staat nooit
