@@ -194,11 +194,15 @@ test('Taak bewerken: voortgang opslaan volgt dezelfde regels als het eigenschapp
       after.setViewStartDate('2026-06-01');
       after.setScroll(0, 0);
     }, { ids: [panelId, dialogId], actualStart });
-    const actualPanelPoint = await barPoint(page, panelId);
-    await page.mouse.click(actualPanelPoint.x, actualPanelPoint.y);
+    // Na de fixturewissel kan de vorige balkgeometrie nog staan; de rasterrij heeft een vaste plek.
+    await page.locator(`[data-grid-row-key="${panelId}"] [data-grid-column-id="task.name"]`).first().click();
     await pressSlider(page, page.locator('[data-ops-progress-slider]').first(), { end: true });
     await expect.poll(() => readTask(page, panelId).then(t => t.completion)).toBe(1);
-    dialog = await openDialogByDoubleClick(page, dialogId);
+    await page.locator(`[data-grid-row-key="${dialogId}"] [data-grid-column-id="task.name"]`).first().click({ button: 'right' });
+    await page.getByRole('button', { name: /^(Edit|Bewerken)\.\.\.$/ }).click();
+    dialog = page.locator('[data-ops-task-dialog]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-ops-task-name]')).toBeFocused();
     await pressSlider(page, dialog.locator('[data-ops-progress-slider]'), { end: true });
     await dialog.locator('[data-ops-task-save]').click();
     await expect(dialog).toBeHidden();
