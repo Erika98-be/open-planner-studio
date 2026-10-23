@@ -1,4 +1,4 @@
-// PR #563, reviewrondes 1 en 2: ingevoerde feiten, relatieondergrenzen en mijlpaalkanten behouden.
+// PR #563, reviewrondes 1 t/m 3: ingevoerde feiten, relatieondergrenzen en mijlpaalkanten behouden.
 import './domStub';
 import { createAppStoreContext } from '@/state/appStore';
 import { createTaskDialogSave, draftWithActualStart, draftWithActualFinish } from '@/state/taskDialogSave';
@@ -144,6 +144,36 @@ for (const profile of ['ops', 'p6', 'msproject'] as const) {
     f.S().tasks.find(t => t.id === milestone)!.time.earlyStart, '2026-07-08T09:00');
 }
 
+// Reviewronde 3: kalendertijdlag rekent vanaf de vastgelegde 18:00, vóór de kalendersnap.
+for (const profile of ['ops', 'p6', 'msproject'] as const) {
+  for (const [lagMinutes, lagUnit, start] of [
+    [960, 'ELAPSEDTIME', '2026-06-04T10:00'],
+    [480, 'WORKTIME', '2026-06-05T08:00'],
+  ] as const) {
+    const f = fixture();
+    f.S().setProject({ schedulingProfile: { id: profile, baseId: profile, name: '', overrides: {} } });
+    const label = `R3 ${profile} FS ${lagMinutes} ${lagUnit}`;
+    eq(label + ': werkelijke start toegestaan', f.S().enterTaskProgress(f.id,
+      { field: 'actualStart', value: '2026-06-03T18:00' }, { today: '2026-06-03' }).ok, true);
+    eq(label + ': 100% toegestaan', f.S().enterTaskProgress(f.id,
+      { field: 'completion', value: 1 }, { today: '2026-06-03' }).ok, true);
+    eq(label + ': ingevoerde actuals', [f.task().time.actualStart, f.task().time.actualFinish],
+      ['2026-06-03T18:00', '2026-06-03T18:00']);
+    const successor = f.S().addTask({ name: 'Na voltooide taak', time: { ...f.task().time,
+      actualStart: undefined, actualFinish: undefined, completion: 0, remainingMinutes: undefined,
+    } });
+    f.S().addSequence({ predecessorId: f.id, successorId: successor, type: 'FINISH_START',
+      lagDays: 0, lagMinutes, lagUnit });
+    f.S().runCPM();
+    eq(label + ': actuals behouden', [f.task().time.actualStart, f.task().time.actualFinish],
+      ['2026-06-03T18:00', '2026-06-03T18:00']);
+    eq(label + ': voltooid met oorspronkelijke duur',
+      [f.task().status, f.task().time.completion, f.task().time.durationMinutes, f.task().time.remainingMinutes],
+      ['COMPLETED', 1, 480, 0]);
+    eq(label + ': opvolger', f.S().tasks.find(t => t.id === successor)!.time.earlyStart, start);
+  }
+}
+
 // Punt 3: status, percentage en duur volgen hetzelfde afleidingspunt, bij invoer én plakken.
 for (const route of ['raster', 'plakken', 'plakken-met-naam']) for (const [field, value] of [
   ['task.status', 'COMPLETED'], ['task.time.completion', 1],
@@ -213,5 +243,5 @@ for (const [start, end, moment] of [
 }
 
 for (const failure of failures) console.log('XX ' + failure);
-console.log(`F1 reviewrondes 1 en 2: ${checks} controles, ${failures.length} fouten`);
+console.log(`F1 reviewrondes 1 t/m 3: ${checks} controles, ${failures.length} fouten`);
 if (failures.length) process.exit(1);
