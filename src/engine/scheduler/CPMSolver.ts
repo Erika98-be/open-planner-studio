@@ -1308,7 +1308,17 @@ export class CPMSolver {
       const totalDays = splitTotalSpanDays(task, eng);
       if (totalDays <= 0) return new Date(end.getTime());
       const firstDay = eng.subtractWorkDays(utcDayStart(end), totalDays);
-      return this.dayFirstBandStart(eng, firstDay) ?? firstDay;
+      const firstStart = this.dayFirstBandStart(eng, firstDay) ?? firstDay;
+      // F2 telt hele dagen vanaf de vroege startdag. Bewaar het startmoment binnen die dag
+      // ook achteruit; terugknippen naar 07:00 geeft anders negatieve speling op de voorganger.
+      if (actualEarlyStart) {
+        const earlyDayStart = this.dayFirstBandStart(eng, actualEarlyStart);
+        if (earlyDayStart) {
+          const offset = Math.max(0, actualEarlyStart.getTime() - earlyDayStart.getTime());
+          return new Date(firstStart.getTime() + offset);
+        }
+      }
+      return firstStart;
     }
     const totalDays = splitTotalSpanDays(task, eng);
     return eng.subtractWorkDays(end, totalDays);
@@ -2812,9 +2822,8 @@ export class CPMSolver {
     if (!c?.hard || (c.type !== 'MSO' && c.type !== 'MFO')) return null;
     const d = this.constraintInstant(c, eng);
     if (!d) return null;
-    // D2/N1: behoud een geldige eindgrens; alleen datumloze invoer of dagenmaat.
+    // D2/N1: invoer zonder tijd is al genormaliseerd; behoud de geldige eindgrens.
     const snapped = c.type === 'MFO' && eng.isHourMode
-      && (!c.date?.includes('T') || taskDurationUnit(task) !== 'hours')
       && this.snapOnOrBefore(eng, d).getTime() === d.getTime()
       ? d : this.snapOnOrAfter(eng, d);
     return c.type === 'MSO' ? snapped : this.startFromFinish(eng, snapped, task);
@@ -2827,9 +2836,8 @@ export class CPMSolver {
     if (!c?.hard || (c.type !== 'MSO' && c.type !== 'MFO')) return null;
     const d = this.constraintInstant(c, eng);
     if (!d) return null;
-    // D2/N1: behoud een geldige eindgrens; alleen datumloze invoer of dagenmaat.
+    // D2/N1: invoer zonder tijd is al genormaliseerd; behoud de geldige eindgrens.
     const snapped = c.type === 'MFO' && eng.isHourMode
-      && (!c.date?.includes('T') || taskDurationUnit(task) !== 'hours')
       && this.snapOnOrBefore(eng, d).getTime() === d.getTime()
       ? d : this.snapOnOrAfter(eng, d);
     return c.type === 'MFO' ? snapped : this.addDuration(eng, snapped, task);
@@ -3709,6 +3717,17 @@ export class CPMSolver {
 
       const useP6RemainingProgress = this.options.schedulingOptions?.p6UseRemainingStartForProgress === true
         && task.time.actualStart !== undefined && task.time.completion > 0 && task.time.completion < 1;
+      // Een hele F2-dag kan alleen vóór deze grens eindigen als zijn laatste werkblok past.
+      // Een opvolger om woensdag 08:00 laat dus hooguit dinsdag 16:00 toe, niet woensdag 16:00.
+      if (lateFinishSource === 'successorConstraint' && predCal.isHourMode
+        && taskDurationUnit(task) !== 'hours' && !isZeroDurationMilestone(task) && !isElapsedTask(task)) {
+        const dayEnd = this.dayLastBandEnd(predCal, lateFinish);
+        if (dayEnd && lateFinish < dayEnd) {
+          const dayStart = this.dayFirstBandStart(predCal, lateFinish);
+          if (dayStart) lateFinish = predCal.prevWorkInstantBefore(dayStart);
+        }
+      }
+
       const computedLateStart = useP6RemainingProgress
         ? this.subRemainingDuration(predCal, lateFinish, task)
         : this.subDuration(predCal, lateFinish, task, earlyDates.get(taskId)?.es ?? null);

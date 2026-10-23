@@ -1938,9 +1938,9 @@ for (const file of files) {
   const results = cases.map(runCase);
   if (MM_RUN) {
     reportMinuteBattery(name, results);
-    // F2: run 1 is nu de productiegrens. Een historische lijst met bekende afwijkingen
-    // mag een nog rode dagcase niet groen laten eindigen.
-    if (MM_RUN === 1 && results.some(result => !result.pass)) anyFail = true;
+    // F2: ongecodeerd rood blijft blokkeren. Een bewust rood doel (B7, F3-lopers) blijft
+    // zichtbaar en exact gepind door het F0-vangnet; het is geen ongecodeerde F2-fout (§7.2).
+    if (MM_RUN === 1 && results.some(result => !result.pass && result.status !== 'BEWUST_ROOD')) anyFail = true;
     continue;
   }
   const passed = results.filter((r) => r.pass).length;

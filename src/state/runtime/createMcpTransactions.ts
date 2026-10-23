@@ -538,8 +538,9 @@ function createMcpDraft(
       // De taak zoals de patch haar achterlaat, eerst op een kopie (muteert niets): `top` overschrijft
       // top-level waarden, `timePatch` de losse sleutels. Per saldo niets gewijzigd ⇒ no-op, zie
       // `updateTaskFields` hierboven (geen `isDirty`).
-      const next: Task = { ...task, ...top };
-      next.time = patchTime(next.time);
+      // Vergelijk dezelfde momenten als de opgeslagen taak vóór de no-op- en gevolgregels.
+      // Anders wist een opnieuw ingevoerde SNET-datum zonder tijd onterecht de nivelleergaten.
+      const next = normalizeTaskDates({ ...task, ...top, time: patchTime(task.time) }, s);
       if (sameValue(task, next)) return;
       const dateNeutralPatch = changesOnlyDateNeutralFields(task, next);
       // Duur korter dan het gedane werk, zie `updateTaskFields` hierboven: vóór enige mutatie.
