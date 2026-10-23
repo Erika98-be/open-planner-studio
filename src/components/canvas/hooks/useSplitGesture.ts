@@ -171,7 +171,7 @@ export function useSplitGesture({
     // dat anker meten schuift de split precies die opschuiving op.
     const startIso = shownStart(task);
     const taskStart = startIso.includes('T') ? parseInstant(startIso) : parseDate(startIso);
-    const { workMinutes: offsetMinutes, inGap } = workOffsetAtDate(pieces0, taskStart, at, eng, hourMode);
+    const { workMinutes: offsetMinutes, inGap } = workOffsetAtDate(pieces0, taskStart, at, eng, hourSnapMinutes === 1440 || hourMode);
     if (inGap) return false;
     const minOffsetMinutes = completedWorkMinutes(task, hoursPerDay);
     const minimumGap = hourSnapMinutes === 1440 ? splitWorkdayMinutes(at, eng, cal) : unitMinutes;
@@ -218,7 +218,7 @@ export function useSplitGesture({
       if (!at) return;
       // Pauzelengte = de werkafstand tussen de klikdag en de dag onder de muis, minstens één
       // eenheid. Terugslepen naar links geeft 0 ⇒ weer de kleinst mogelijke pauze.
-      const measured = workAxisMinutesBetween(g.anchorDate, at, g.eng, g.hourMode);
+      const measured = workAxisMinutesBetween(g.anchorDate, at, g.eng, hourSnapMinutes === 1440 || g.hourMode);
       const gapMinutes = Math.max(g.minimumGap, measured);
       commit(gapMinutes);
       setState(prev => (prev ? {

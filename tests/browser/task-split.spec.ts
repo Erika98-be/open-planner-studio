@@ -441,6 +441,13 @@ test('F4a: splitsen en stukslepen bij dagzoom volgen de werkdag van de taakkalen
     await page.mouse.click(p.x, p.y);
     await page.keyboard.press('Escape');
   };
+  const asDays = async () => {
+    await page.evaluate(id => {
+      const s = window.__OPS__!.store.getState();
+      const task = s.tasks.find(t => t.id === id)!;
+      s.updateTask(id, { time: { ...task.time, durationUnit: 'days', durationMinutes: undefined, scheduleDuration: 10 } });
+    }, taskId);
+  };
   const gaps = () => splitGapsOf(page, taskId);
   await seed('eight', 960);
   await split('2026-06-02');
@@ -491,4 +498,16 @@ test('F4a: splitsen en stukslepen bij dagzoom volgen de werkdag van de taakkalen
   await seed('night');
   await split('2026-06-06', 10);
   await expect.poll(gaps).toEqual([{ afterMinutes: 2400, gapMinutes: 480, source: 'user' }]);
+
+  // Ook een dagenmaat-taak meet bij dagzoom de werkafstand op haar kalender, niet in vaste dagslots.
+  await seed('short');
+  await asDays();
+  await split('2026-06-08');
+  await expect.poll(gaps).toEqual([{ afterMinutes: 2280, gapMinutes: 480, source: 'user' }]);
+  await seed('short');
+  await asDays();
+  await split('2026-06-04');
+  p = await pointAt('2026-06-05', 9);
+  await drag(page, p, (await pointAt('2026-06-08', 9)).x);
+  await expect.poll(gaps).toEqual([{ afterMinutes: 1440, gapMinutes: 840, source: 'user' }]);
 });
