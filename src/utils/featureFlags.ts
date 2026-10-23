@@ -16,7 +16,7 @@ export type FeatureFlagValues = Record<string, boolean>;
 /** Onbekende ids en functies met nog nieuwe IFC-data blijven altijd uit. */
 export function isFeatureEnabled(values: Readonly<FeatureFlagValues>, id: string): boolean {
   return FEATURE_FLAGS.some(flag => flag.id === id && !flag.writesNewIfcData)
-    && Object.hasOwn(values, id) && values[id] === true;
+    && Object.prototype.hasOwnProperty.call(values, id) && values[id] === true;
 }
 
 /** Alleen booleans overnemen. Bewaarde ids zonder register-entry zijn inert. */

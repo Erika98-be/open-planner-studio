@@ -2,10 +2,11 @@
 // sectie Project eruit. Dit is de ENE gedeelde `SettingsPanelContent`-component op drie ingangen
 // (tandwiel-popup, Instellingen-ribbontab, Backstage → Instellingen) — deze test bewijst dat alle
 // drie daadwerkelijk dezelfde tabs/sectiekoppen tonen ná echte klikken, niet alleen ná een
-// store-fixture. De dev-brug wordt hier bewust niet gebruikt: openen/sluiten/tab-wisselen gaat
-// via echte DOM-interacties; assertions lezen alleen zichtbare tekst.
-import { expect, test } from './fixtures/ops';
-import type { Locator } from '@playwright/test';
+// store-fixture. Openen/sluiten/tab-wisselen en de verborgen schakelaars gaan via echte
+// DOM-interacties; de brug zet alleen de herlaadfixture en leest de opgeslagen keuzes.
+import { expect, test, waitForOps, waitForWelcomeDialog } from './fixtures/ops';
+import type { Locator, Page } from '@playwright/test';
+import type { FeatureFlag } from '@/utils/featureFlags';
 
 const TAB_LABELS: RegExp[] = [
   /^(Appearance|Weergave)$/,
@@ -81,7 +82,40 @@ async function assertThreeTabsAndSections(container: Locator): Promise<void> {
   await expect(container.getByText(PROJECT_SECTION_TEXT, { exact: true })).toHaveCount(0);
 }
 
-test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs zonder de sectie Project', async ({ page, ops: _ops }) => {
+/** Het productregister blijft leeg. Alleen deze pagina krijgt twee tijdelijke testfuncties. */
+async function seedFeatureFlags(page: Page): Promise<void> {
+  const flags: FeatureFlag[] = [
+    { id: 'browser-example', nameKey: 'settings.experimentalSection', descriptionKey: 'settings.versionHint', writesNewIfcData: false },
+    { id: 'browser-ifc', nameKey: 'settings.version', writesNewIfcData: true },
+  ];
+  await page.evaluate(async fixtures => {
+    const registryPath = '/src/utils/featureFlags.ts';
+    const { FEATURE_FLAGS } = await import(/* @vite-ignore */ registryPath);
+    FEATURE_FLAGS.splice(0, FEATURE_FLAGS.length, ...fixtures);
+  }, flags);
+}
+
+/** Lees via dezelfde functie als een toekomstige feature, zonder de geteste actie te vervangen. */
+async function enabledExample(page: Page): Promise<boolean> {
+  return page.evaluate(async () => {
+    const registryPath = '/src/utils/featureFlags.ts';
+    const { isFeatureEnabled } = await import(/* @vite-ignore */ registryPath);
+    return isFeatureEnabled(window.__OPS__!.store.getState().ui.featureFlags, 'browser-example');
+  });
+}
+
+async function reloadSettingsApp(page: Page): Promise<void> {
+  await page.reload();
+  await waitForOps(page);
+  await waitForWelcomeDialog(page);
+  await page.evaluate(() => {
+    window.__OPS__!.store.getState().setUI({ showWelcomeDialog: false, showTourOverlay: false });
+  });
+  await seedFeatureFlags(page);
+}
+
+test('de drie instellingen-ingangen delen tabs en verborgen, bewaarde experimentele schakelaars', async ({ page, ops: _ops }) => {
+  test.setTimeout(60_000);
   await page.evaluate(async () => {
     const localePath = '/src/i18n/config.ts';
     const { setLocale } = await import(/* @vite-ignore */ localePath);
@@ -118,4 +152,116 @@ test('gear-popup, Instellingen-ribbontab en Backstage tonen dezelfde drie tabs z
     await setLocale('nl');
   });
   await assertThreeTabsAndSections(backstage.locator('.backstage-main'));
+
+  // Verborgen bediening: één losse klik en zelfs 6 s langzaam klikken (> 0,5 s ertussen)
+  // ontgrendelen niet. De stilgezette Playwright-klok voorkomt echte wachttijd en grensflaky's.
+  const backstageSettings = backstage.locator('.backstage-main');
+  const version = backstageSettings.locator('[data-ops-settings-version]');
+  const experimental = backstageSettings.locator('[data-ops-experimental-settings]');
+  await version.scrollIntoViewIfNeeded();
+  await page.clock.install();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
+  await version.click();
+  await expect(experimental).toHaveCount(0);
+  for (let i = 0; i < 12; i++) {
+    await page.clock.runFor(501);
+    await version.click();
+  }
+  await expect(experimental).toHaveCount(0);
+  // Ook veel clicks zonder vijf seconden verstreken tijd zijn onvoldoende.
+  await version.click({ clickCount: 12 });
+  await expect(experimental).toHaveCount(0);
+
+  // Precies 0,5 s is toegestaan; vóór 5 s blijft het blok verborgen.
+  await page.clock.runFor(501);
+  await version.click();
+  for (let i = 0; i < 9; i++) {
+    await page.clock.runFor(500);
+    await version.click();
+  }
+  await expect(experimental).toHaveCount(0);
+  await page.clock.runFor(500);
+  await version.click();
+  await expect(experimental).toBeVisible();
+  await expect(experimental).toContainText(/There are no experimental features at the moment\.|Er zijn nu geen experimentele functies\./);
+  await expect(experimental.getByRole('checkbox')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('ops-experimentalSettingsVisible'))).toBe('true');
+  await page.clock.resume();
+
+  // Hetzelfde ontgrendelde blok staat in de tandwiel-popup, nu met testflags.
+  await backstage.locator('[data-ops-backstage-back]').click();
+  await seedFeatureFlags(page);
+  expect(await enabledExample(page)).toBe(false);
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
+  await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
+  const gearExperimental = gearDialog.locator('[data-ops-experimental-settings]');
+  const example = gearExperimental.locator('[data-ops-feature-flag="browser-example"]');
+  await expect(gearExperimental).toBeVisible();
+  await expect(example).not.toBeChecked();
+  await expect(gearExperimental.getByRole('checkbox')).toHaveCount(1);
+  await expect(gearExperimental.locator('[data-ops-feature-flag="browser-ifc"]')).toHaveCount(0);
+  await example.check();
+  expect(await enabledExample(page)).toBe(true);
+
+  // Echte themakeuze: het nieuwe blok past in zowel Light als Dark, met de bestaande kleurrollen.
+  for (const theme of ['light', 'dark']) {
+    await gearDialog.getByRole('button', { name: TAB_LABELS[0] }).click();
+    await gearDialog.locator(`[data-ops-theme-card="${theme}"]`).click();
+    await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
+    await expect(example).toBeChecked();
+    await gearExperimental.scrollIntoViewIfNeeded();
+    expect(await gearDialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/experimental-settings-${theme}.png` });
+  }
+
+  // Verbergen bewaart de keuzes en verbergt ook na een echte reload.
+  await gearExperimental.getByRole('button', { name: /^(Hide|Verbergen)$/ }).click();
+  await expect(gearExperimental).toHaveCount(0);
+  expect(await enabledExample(page)).toBe(true);
+  expect(await page.evaluate(() => localStorage.getItem('ops-experimentalSettingsVisible'))).toBe('false');
+  await reloadSettingsApp(page);
+  await expect.poll(() => enabledExample(page)).toBe(true);
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
+  await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
+  await expect(gearExperimental).toHaveCount(0);
+
+  // Via echte Tab/Shift+Tab naar het versienummer. Enter blijft ingedrukt: volgende down-events
+  // zijn native repeat-events. Er is geen synthetische dispatchEvent of store-ontgrendeling.
+  const gearVersion = gearDialog.locator('[data-ops-settings-version]');
+  await gearVersion.click();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(gearVersion).toBeFocused();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
+  await page.keyboard.down('Enter');
+  for (let i = 0; i < 9; i++) {
+    await page.clock.runFor(500);
+    await page.keyboard.down('Enter');
+  }
+  await expect(gearExperimental).toHaveCount(0);
+  await page.clock.runFor(500);
+  await page.keyboard.down('Enter');
+  await page.keyboard.up('Enter');
+  await expect(gearExperimental).toBeVisible();
+  await expect(example).toBeChecked();
+  await page.clock.resume();
+  await gearDialog.locator('.modal-close-btn').click();
+
+  // De lint-ingang en Backstage delen de zichtbaarheid en de aangevinkte keuze.
+  await page.locator('.ribbon-tab').filter({ hasText: /^(Settings|Instellingen)$/ }).click();
+  await page.locator('.ribbon-content').getByRole('button', { name: /^(App settings|App-instellingen)$/, exact: true }).click();
+  await ribbonDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
+  await expect(ribbonDialog.locator('[data-ops-feature-flag="browser-example"]')).toBeChecked();
+  await ribbonDialog.locator('.modal-close-btn').click();
+  await page.locator('.ribbon-tab--file').click();
+  await backstage.locator('.backstage-nav-item').filter({ hasText: /^(App settings|App-instellingen)$/ }).click();
+  await backstage.getByRole('button', { name: TAB_LABELS[2] }).click();
+  await expect(backstage.locator('[data-ops-feature-flag="browser-example"]')).toBeChecked();
+
+  // Ook de ontgrendelde zichtbaarheid zelf overleeft herladen; geen tweede gebaar nodig.
+  await reloadSettingsApp(page);
+  await expect.poll(() => enabledExample(page)).toBe(true);
+  await page.getByTitle(/^(App settings|App-instellingen)$/, { exact: true }).click();
+  await gearDialog.getByRole('button', { name: TAB_LABELS[2] }).click();
+  await expect(example).toBeChecked();
 });
