@@ -162,7 +162,8 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
 - **Claude Desktop bundle = a plug, not a planner.** `integrations/claude-desktop/` (`manifest.json` +
   `src/proxy.ts`) is an MCP Bundle (`.mcpb`) whose stdio server forwards every message to the bridge of the
   running desktop app (`127.0.0.1:<port>/mcp`, token and port from the install dialog). It must never contain
-  app code; `build:mcpb` fails if `src/` ends up in the bundle. Its manifest version is in the bump register;
+  app code; `build:mcpb` fails if `src/` ends up in the bundle. Keep `proxy.ts` free of manifest, transport and
+  client code (that lives in `main.ts`/`config.ts`): it is an interim step and moves into the single plugin of #570. Its manifest version is in the bump register;
   `release.yml` (job `build-mcpb`) attaches it to every release. Detail: `docs/mcp-verificatie.md`.
 - **Rust is thin.** Exactly three commands (`install_kind`, `mcp_bridge_start`, `mcp_bridge_stop`); every new
   command is public surface. File I/O: extend `src/services/fileAccess/`, not a Rust command.

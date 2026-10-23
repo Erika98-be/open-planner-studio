@@ -71,7 +71,8 @@ niet: `docs/mcp-verificatie.md`.
 
 **Claude Desktop-bundel.** `integrations/claude-desktop/` is een MCP Bundle (`.mcpb`): een stdio-server die elk
 bericht doorstuurt naar de bridge van de draaiende app (`src/proxy.ts`), met token en poort uit het
-installatievenster. Geen planner, geen kern; `scripts/build-mcpb.mjs` faalt als `src/` in de bundel komt.
+installatievenster (`src/config.ts`). `proxy.ts` blijft vrij van manifest-, transport- en clientcode: de bundel is een
+tussenstap en de module gaat op in de ene plugin uit #570. Geen planner, geen kern; `scripts/build-mcpb.mjs` faalt als `src/` in de bundel komt.
 Wijzig je het HTTP-contract van de bridge (statuscodes, sessieheader, `404` bij een onbekende sessie), loop dan ook
 `proxy.ts` na; `tests/mcp/cases-mcpb.ts` start de gebouwde server uit de ZIP tegen `bridgeMirror.ts`. Een
 wijzigende tool wordt na sessieverlies bewust niet herhaald (het drift-anker is dan weg); welke tools lezen, haalt

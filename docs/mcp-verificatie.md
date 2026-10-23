@@ -154,14 +154,17 @@ legt vast wat de app als MCP-server levert, wat niet, en welke test het bewijst.
 
 ## Claude Desktop-bundel (`.mcpb`)
 
-Besluit eigenaar (Nozzit, 2026-10-23): een stekker naar de draaiende app, geen losse kern zonder app.
+Besluit eigenaar (Nozzit, 2026-10-23): een stekker naar de draaiende app, geen losse kern zonder app. Dit is een
+tussenstap: volgens het ontwerp "één plugin, drie situaties" (#570) gaat de bundel later op in één plugin die
+ook headless werkt en het token zelf uit `<appDataDir>/mcp/runtime.json` leest.
 
 - Formaat: MCP Bundle volgens https://github.com/modelcontextprotocol/mcpb (`MANIFEST.md`, `manifest_version`
   `0.3`). Een `.mcpb` is een ZIP met `manifest.json`, `icon.png` (het app-icoon, 512×512, de maat die `mcpb validate` aanraadt), `server/index.mjs`,
   `LICENSE`, `LICENSE.GPL` en `THIRD-PARTY-NOTICES.md`. Claude Desktop installeert hem met een dubbelklik en
   toont een venster voor de `user_config`: *Token* (verplicht, `sensitive`: afgeschermd ingevoerd en veilig bewaard door
   Claude Desktop) en *Port* (standaard 3877). Claude Desktop levert zelf Node.js mee; de gebruiker installeert niets.
-- Bron: `integrations/claude-desktop/` (`manifest.json`, `src/proxy.ts`, `src/main.ts`). Bouwen:
+- Bron: `integrations/claude-desktop/` (`manifest.json`, `src/main.ts`, `src/config.ts` en de doorstuurmodule
+  `src/proxy.ts`, die geen manifest, transport of client kent en later in de headless server terugkomt). Bouwen:
   `npm run build:mcpb` → `dist-mcpb/open-planner-studio-<versie>.mcpb` en de uitgepakte inhoud in
   `dist-mcpb/bundle/`. De server is één ESM-bestand (esbuild, `node18`, geminificeerd), zonder
   runtime-dependencies; hij bevat alleen `@modelcontextprotocol/sdk` (`StdioServerTransport`) en zod. De

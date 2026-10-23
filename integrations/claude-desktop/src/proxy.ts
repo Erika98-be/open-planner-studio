@@ -1,6 +1,9 @@
-// Doorstuurlogica van de Claude Desktop-bundel (`.mcpb`): stdio-berichten van Claude Desktop gaan
-// één voor één als HTTP-POST naar de MCP-bridge van de draaiende desktop-app, en de antwoorden gaan
-// terug. De bundel bevat geen planner: zonder draaiende app is er niets om mee te praten.
+// Doorstuurlogica naar de MCP-bridge van de draaiende desktop-app: elk MCP-bericht van een client gaat
+// één voor één als HTTP-POST naar de bridge, en de antwoorden gaan terug. Deze module kent geen
+// transport (stdio), geen manifest en geen client: wie hem gebruikt, levert poort, token, een `send` en
+// de tekst waar de gebruiker token en poort instelt (`settingsHint`). Nu gebruikt de Claude
+// Desktop-bundel hem (`main.ts`, `config.ts`); later de ene plugin die ook headless werkt (#570), die
+// het token uit het runtimebestand van de app leest.
 //
 // Het HTTP-contract van de bridge staat in `src-tauri/src/mcp_bridge.rs` (kopie voor tests:
 // `tests/mcp/bridgeMirror.ts`): `POST http://127.0.0.1:<poort>/mcp`, `Authorization: Bearer <token>`,
@@ -11,12 +14,11 @@
 // Keuzes:
 //   - Strikt één bericht tegelijk (zoals de bridge zelf). Zo kunnen twee requests niet tegelijk een
 //     verloren sessie herstellen en twee sessies openen.
-//   - Draait de app niet (of klopt het token niet) bij het starten van Claude Desktop, dan
-//     beantwoordt de bundel `initialize` zelf en biedt hij één statustool aan. Zo blijft de extensie
-//     ingeschakeld en krijgt het model een heldere fout in plaats van een stille lege toollijst.
-//     Komt de app later online, dan verbindt de bundel bij het volgende bericht en meldt hij
-//     `notifications/tools/list_changed`.
-//   - Sessieverlies (404: app herstart): de bundel opent een nieuwe sessie met de oorspronkelijke
+//   - Draait de app niet (of klopt het token niet) bij `initialize`, dan beantwoordt deze module
+//     `initialize` zelf en biedt hij één statustool aan. Zo blijft de client verbonden en krijgt het
+//     model een heldere fout in plaats van een stille lege toollijst. Komt de app later online, dan
+//     verbindt hij bij het volgende bericht en meldt hij `notifications/tools/list_changed`.
+//   - Sessieverlies (404: app herstart): hij opent een nieuwe sessie met de oorspronkelijke
 //     `initialize`-parameters. Een leesrequest herhaalt hij daarna; een wijzigende tool niet, want
 //     het drift-anker van de oude sessie is weg en de wijziging kan op een ander document landen.
 //     Die krijgt een heldere fout ("not carried out").
@@ -30,29 +32,6 @@ export const STATUS_TOOL_NAME = 'open_planner_studio_status';
 /** Protocolversie voor een lokaal `initialize`-antwoord als de client er geen noemt. */
 const FALLBACK_PROTOCOL_VERSION = '2025-06-18';
 
-export interface ProxyConfig {
-  port: number;
-  token: string;
-  /** Meldingen over de instellingen (bijv. een ongeldige poort); gaan naar stderr. */
-  notes: string[];
-}
-
-/** Leest token en poort uit de omgeving die het manifest (`mcp_config.env`) zet. */
-export function readProxyConfig(env: Record<string, string | undefined>): ProxyConfig {
-  const notes: string[] = [];
-  let token = (env.OPS_MCP_TOKEN ?? '').trim();
-  // Een niet-ingevulde manifestvariabele kan letterlijk blijven staan.
-  if (token.startsWith('${')) token = '';
-  const rawPort = (env.OPS_MCP_PORT ?? '').trim();
-  let port = DEFAULT_BRIDGE_PORT;
-  if (rawPort !== '' && !rawPort.startsWith('${')) {
-    const parsed = Number(rawPort);
-    if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 65535) port = parsed;
-    else notes.push(`Invalid port "${rawPort}"; using ${DEFAULT_BRIDGE_PORT}.`);
-  }
-  return { port, token, notes };
-}
-
 export type ProxyFailure =
   | { kind: 'no-token' }
   | { kind: 'token' }
@@ -61,9 +40,11 @@ export type ProxyFailure =
   | { kind: 'refused'; message: string }
   | { kind: 'http'; status: number };
 
-/** De Engelse uitleg voor het model (en via het model voor de gebruiker). */
-export function failureMessage(failure: ProxyFailure, port: number): string {
-  const settings = 'the settings of the Open Planner Studio extension in Claude Desktop (Settings › Extensions)';
+/**
+ * De Engelse uitleg voor het model (en via het model voor de gebruiker). `settings` zegt waar de gebruiker
+ * token en poort instelt, bijv. "the settings of the … extension in Claude Desktop".
+ */
+export function failureMessage(failure: ProxyFailure, port: number, settings: string): string {
   switch (failure.kind) {
     case 'no-token':
       return 'No token is set for Open Planner Studio. Ask the user to open Open Planner Studio, go to the MCP tab, '
@@ -96,8 +77,10 @@ export const SESSION_RESET_MESSAGE =
 export interface BridgeProxyOptions {
   port: number;
   token: string;
-  /** Versie van de bundel (= appversie), voor het lokale `initialize`-antwoord. */
+  /** Versie van de server (= appversie), voor het lokale `initialize`-antwoord. */
   version: string;
+  /** Waar de gebruiker token en poort instelt; komt in de foutmeldingen (zie `failureMessage`). */
+  settingsHint: string;
   fetchImpl?: typeof fetch;
   requestTimeoutMs?: number;
   log?: (line: string) => void;
@@ -239,7 +222,7 @@ export function createBridgeProxy(opts: BridgeProxyOptions, send: (message: JSON
 
   /** Antwoord zonder bridge: de client krijgt een bruikbare uitleg in plaats van een kale fout. */
   async function answerOffline(id: Id, method: string, failure: ProxyFailure): Promise<void> {
-    const message = failureMessage(failure, opts.port);
+    const message = failureMessage(failure, opts.port, opts.settingsHint);
     if (method === 'tools/list') {
       servedOfflineTools = true;
       await reply(id, { tools: [STATUS_TOOL] });
@@ -288,7 +271,7 @@ export function createBridgeProxy(opts: BridgeProxyOptions, send: (message: JSON
       failure = await connectUpstream();
     }
     if (failure) {
-      await toolError(id, failureMessage(failure, opts.port));
+      await toolError(id, failureMessage(failure, opts.port, opts.settingsHint));
       return;
     }
     await reply(id, {
@@ -308,7 +291,7 @@ export function createBridgeProxy(opts: BridgeProxyOptions, send: (message: JSON
       return;
     }
     // Lokaal antwoorden: de extensie blijft bruikbaar en verbindt zodra de app er is.
-    const message = failureMessage(failure as ProxyFailure, opts.port);
+    const message = failureMessage(failure as ProxyFailure, opts.port, opts.settingsHint);
     log(`not connected: ${message}`);
     await reply(id, {
       protocolVersion: typeof params.protocolVersion === 'string' ? params.protocolVersion : FALLBACK_PROTOCOL_VERSION,
@@ -388,7 +371,7 @@ export function createBridgeProxy(opts: BridgeProxyOptions, send: (message: JSON
         // Een request zonder antwoord laat de client hangen; geef dus altijd iets terug.
         const raw = message as unknown as Json;
         if ((typeof raw.id === 'string' || typeof raw.id === 'number') && typeof raw.method === 'string') {
-          await replyError(raw.id, `Internal error in the Open Planner Studio extension: ${describeError(error)}`, -32603)
+          await replyError(raw.id, `Internal error in the Open Planner Studio MCP proxy: ${describeError(error)}`, -32603)
             .catch(() => {});
         }
       });

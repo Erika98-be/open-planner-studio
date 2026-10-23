@@ -4,7 +4,8 @@
 //
 // stdout is het MCP-kanaal: log daarom alleen naar stderr (Claude Desktop bewaart dat in zijn logs).
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createBridgeProxy, readProxyConfig } from './proxy';
+import { createBridgeProxy } from './proxy';
+import { CLAUDE_DESKTOP_SETTINGS_HINT, readProxyConfig } from './config';
 
 /** Gezet door `scripts/build-mcpb.mjs` (= appversie). */
 declare const __OPS_MCPB_VERSION__: string;
@@ -16,7 +17,7 @@ for (const note of config.notes) log(note);
 
 const transport = new StdioServerTransport();
 const proxy = createBridgeProxy(
-  { port: config.port, token: config.token, version: __OPS_MCPB_VERSION__, log },
+  { port: config.port, token: config.token, version: __OPS_MCPB_VERSION__, settingsHint: CLAUDE_DESKTOP_SETTINGS_HINT, log },
   (message) => transport.send(message),
 );
 

@@ -27,12 +27,8 @@ import { getTools } from '@/services/mcp/toolRegistry';
 import { parseZipEntries } from '@/services/zip';
 import { MCP_DEFAULT_PORT } from '@/utils/settingsStore';
 import { startBridgeMirror, type BridgeMirror } from './bridgeMirror';
-import {
-  DEFAULT_BRIDGE_PORT,
-  SESSION_RESET_MESSAGE,
-  STATUS_TOOL_NAME,
-  readProxyConfig,
-} from '../../integrations/claude-desktop/src/proxy';
+import { DEFAULT_BRIDGE_PORT, SESSION_RESET_MESSAGE, STATUS_TOOL_NAME } from '../../integrations/claude-desktop/src/proxy';
+import { readProxyConfig } from '../../integrations/claude-desktop/src/config';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const appPkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { version: string; license: string };
