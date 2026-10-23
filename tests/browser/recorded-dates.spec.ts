@@ -237,7 +237,8 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   expect(oldB).toMatchObject({ start: '2026-03-16T07:00', pending: true, stale: false });
   await page.getByRole('button', { name: /^(Table|Tabel)$/ }).click();
   const nameCell = taskCell(page, oldB.id, 'task.name');
-  await nameCell.dblclick();
+  await nameCell.click();
+  await page.keyboard.press('F2');
   const nameInput = nameCell.locator('input');
   await expect(nameInput).toBeVisible();
   await nameInput.fill('B hernoemd');
@@ -250,6 +251,50 @@ test('datums zoals opgeslagen: een XER met restverschillen opent in de modus, me
   await page.keyboard.press('F5');
   await expect.poll(() => page.evaluate(id => window.__OPS__!.store.getState().tasks.find(t => t.id === id)!.time.earlyStart, oldB.id))
     .toBe('2026-03-09T07:00');
+
+  // B5 geval 5: het echte bezettingsoverzicht mag een slapende open omzetting niet publiceren.
+  // Een tweede, moderne slaper bewijst dat de achtergrondhook daadwerkelijk doorrekent.
+  const sleepingBefore = await page.evaluate(() => {
+    const app = window.__OPS__!.store;
+    const current = app.getState();
+    const company = current.companies[0];
+    const make = (id: string, name: string, modern: boolean) => ({
+      id, filePath: null, isDirty: false, datesAsRecorded: false,
+      timeModel: modern ? 'MINUTES-1' : undefined,
+      recordedTimesOrigin: 'ifc-own' as const, importPristine: false,
+      project: { ...current.project, name, companyId: company.id, companyName: company.name },
+      calendar: current.calendar, resourceCalendars: current.calendars,
+      tasks: current.tasks.map(task => task.name === 'B hernoemd' ? {
+        ...task, time: { ...task.time, earlyStart: '2026-03-16T07:00', earlyFinish: '2026-03-20T16:00' },
+      } : task),
+      sequences: current.sequences, resources: current.resources, assignments: current.assignments,
+    });
+    app.getState().restoreDocuments([
+      make('b5-active', 'B5 actief', true), make('b5-old', 'B5 slapend oud', false), make('b5-modern', 'B5 slapend modern', true),
+    ], 'b5-active');
+    return JSON.stringify(app.getState().documents.find(d => d.id === 'b5-old')!.payload);
+  });
+  await page.getByRole('button', { name: /^(Resources)$/, exact: true }).click();
+  await page.locator('button.ribbon-btn[data-ops-ribbon-item="openResourcePanel"]').click();
+  await page.locator('[data-ops-occupancy-view-button]').click();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().documents
+    .find(d => d.id === 'b5-modern')!.payload!.scheduleStale)).toBe(false);
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    const old = s.documents.find(d => d.id === 'b5-old')!.payload!;
+    return { payload: JSON.stringify(old), pending: old.minuteModelPending, stale: old.scheduleStale, events: s.historyEvents.length };
+  })).toEqual({ payload: sleepingBefore, pending: true, stale: true, events: 0 });
+  await page.getByRole('tab', { name: 'B5 slapend oud', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.__OPS__!.store.getState().minuteModelPending)).toBe(false);
+  expect(await page.evaluate(() => window.__OPS__!.store.getState().historyEvents.length)).toBe(1);
+  await page.keyboard.press('ControlOrMeta+z');
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => {
+    const s = window.__OPS__!.store.getState();
+    return { start: s.tasks.find(t => t.name === 'B hernoemd')!.time.earlyStart, mode: s.datesAsRecorded,
+      pending: s.minuteModelPending, stale: s.scheduleStale };
+  })).toEqual({ start: '2026-03-16T07:00', mode: true, pending: true, stale: false });
 });
 
 // Eigenaarsbesluit 2026-09-09: "het moet altijd gaan zoals het nu bij XER werkt". Dezelfde
