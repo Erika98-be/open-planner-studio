@@ -87,6 +87,26 @@ eq('opgeslagen werk: totaal 12 uur blijft behouden', rounded(assignmentPlacement
 eq('curve: bestaande FRONT_LOADED-slots gewogen naar overlap', rounded(assignmentPlacementLoad(base, { ...assignment, curve: 'FRONT_LOADED' }, engine, placement).units), [1, 1.5, 0.5, 0]);
 const curveValues = { ...assignment, curveValues: [0, ...Array<number>(10).fill(2), ...Array<number>(10).fill(1)] };
 eq('exacte curve: werkbehoud', rounded([assignmentPlacementLoad(base, curveValues, engine, placement).units.reduce((a, b) => a + b, 0)]), [3]);
+const fractionalCurve = task('2026-06-03T12:00', '2026-06-05T16:00', 2.5);
+eq('gebroken curveduur: geen afronding van het werktotaal', rounded([assignmentPlacementLoad(
+  fractionalCurve, { ...assignment, curve: 'BELL' }, engine,
+  { ...placement, finish: parseInstant('2026-06-05T16:00') },
+).units.reduce((a, b) => a + b, 0)]), [2.5]);
+const fractionalDay = workPlacement(shortEngine, { start: parseInstant('2026-06-05T10:00'), duration: 1, measure: 'workdays' });
+eq('dagenmaat: twee halve dagen met verschillende daglengten', rounded(fractionalDay.days.map(d => d.share)), [0.5, 0.5]);
+eq('dagenmaat: werkelijk eindmoment', fractionalDay.finish.toISOString(), '2026-06-08T11:00:00.000Z');
+
+const brokenBands = { ...calendar, workTime: makeBands([1, 2, 3, 4, 5], [{ start: 420, end: 720 }, { start: 780, end: 960 }]) };
+const lunch = workPlacement(new CalendarEngine(brokenBands), {
+  start: parseInstant('2026-06-03T12:00'), finish: parseInstant('2026-06-03T15:00'), measure: 'minutes',
+});
+eq('pauze is geen werk', rounded(lunch.days.map(d => d.minutes)), [120]);
+const exceptionCalendar = { ...calendar, holidays: [{ name: 'vrij', startDate: '2026-06-04', endDate: '2026-06-04' }],
+  workingExceptions: [{ name: 'zaterdag', startDate: '2026-06-06', endDate: '2026-06-06', bands: [{ start: 480, end: 600 }] }] };
+const exceptionDays = workPlacement(new CalendarEngine(exceptionCalendar), {
+  start: parseInstant('2026-06-04T08:00'), finish: parseInstant('2026-06-06T10:00'), measure: 'workdays',
+});
+eq('feestdag overgeslagen, korte werkende uitzondering telt één', exceptionDays.days.map(d => [d.iso, d.share]), [['2026-06-05', 1], ['2026-06-06', 1]]);
 
 const nightCalendar = { ...calendar, workTime: makeBands([1, 2, 3, 4, 5], [{ start: 1320, end: 1800 }]) };
 const night = workPlacement(new CalendarEngine(nightCalendar), {

@@ -1,7 +1,7 @@
 // Belasting-/overallocatie-engine. Twee bouwstenen:
-// `distributeUnits` (curve-verdeling van eenheden over de duur van een toewijzing — de ENE
-// functie die zowel het histogram als de nivelleerder voedt) en `computeResourceLoad`
-// (dag-granulaire belasting/capaciteit/overallocatie over alle resources+toewijzingen).
+// `assignmentPlacementLoad` deelt werk over concrete werkblokken en deeldagen; het histogram
+// en de nivelleerder gebruiken dezelfde uitkomst. Het oude dagslotpad (`assignmentDayUnits`
+// met `distributeUnits`) blijft beschikbaar voor datums zonder tijd, tot de F3c-/F4b-aansluiting.
 import type { Resource, ResourceAssignment, ResourceCurve } from '@/types/resource';
 import { exceedsCapacity } from '@/engine/scheduler/capacityTolerance';
 import { groupBy } from '@/utils/collections';
@@ -273,7 +273,14 @@ export function assignmentPlacementLoad(
       // werkblok. Ook een rest voorbij het laatste blok blijft behouden op de laatste werkdag.
       let cursor = p.afterMinutes;
       const end = cursor + p.minutes;
-      for (const r of ranges) {
+      let lo = 0;
+      let hi = ranges.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (ranges[mid].afterMinutes + ranges[mid].minutes <= cursor) lo = mid + 1; else hi = mid;
+      }
+      for (let i = lo; i < ranges.length; i++) {
+        const r = ranges[i];
         const stop = Math.min(end, r.afterMinutes + r.minutes);
         if (stop > cursor) {
           units[r.day] += p.workMinutes * (stop - cursor) / p.minutes / mpd;
@@ -292,8 +299,11 @@ export function assignmentPlacementLoad(
     return { days, units: days.map(d => d.share * assignment.unitsPerDay) };
   }
   const source = assignmentDayUnits(task, assignment, mpd, null);
-  // Bij ontbreken van opgeslagen werk volgt het totaal de effectieve plaatsingsmaat.
-  const scale = assignment.remainingWorkMinutes !== undefined ? 1 : totalShare / task.time.scheduleDuration;
+  // Bij ontbreken van opgeslagen werk volgt het totaal de effectieve plaatsingsmaat. De oude
+  // formule kan haar som op hele eenheden ronden; dat mag een gebroken plaatsing niet verlengen.
+  const storedWork = assignment.remainingWorkMinutes !== undefined && Number.isFinite(assignment.remainingWorkMinutes);
+  const sourceTotal = source.reduce((sum, u) => sum + u, 0);
+  const scale = storedWork ? 1 : sourceTotal > 0 ? assignment.unitsPerDay * totalShare / sourceTotal : 0;
   let position = 0;
   const units = days.map(d => {
     const end = position + d.share / totalShare * source.length;
