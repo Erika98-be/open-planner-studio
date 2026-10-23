@@ -10,7 +10,6 @@ import { generateId } from '@/utils/id';
 import { parseInstant, parseDate, localTodayIso } from '@/utils/dateUtils';
 import { normalizeImportedProgress, deriveImportedWorkRules, rebuildImportedHierarchy, reconstructResourceIds } from '@/services/importNormalize';
 import { emptyMissingScheduleDates, importDateTimeOrUndefined, isoDatePrefixOrToday, parseImportedInstant, resolveMissingScheduleDates } from '@/services/importDates';
-import { tenthsOfMinutesToDays } from '@/services/importDurations';
 import { descendantText, toInt, toFloat } from '@/services/xmlDom';
 import { hasMsProjectImportLoss, type ImportResult } from '@/services/importTypes';
 import { scanMspdiImportLoss } from '@/services/msproject/mspdiImportLoss';
@@ -119,10 +118,10 @@ function explicitOpsMilestoneKind(te: Element, enabled: boolean): MilestoneKind 
 /**
  * Alleen een door OPS zelf gedefinieerde marker is een expliciete taakeenheid. DurationFormat is in
  * MSPDI een presentatieformaat en mag een bestaand uurproject dus niet stil herinterpreteren. Een
- * vreemd of legacy bestand zonder marker volgt de regel: uurkalender ⇒ minutenbron.
+ * vreemd of legacy bestand zonder marker gebruikt altijd minuten als bron (T15).
  */
-function taskDurationUnit(te: Element, hourCalendar: boolean, opsMarkerFieldId: string | null): 'days' | 'hours' {
-  return explicitOpsDurationUnit(te, opsMarkerFieldId) ?? (hourCalendar ? 'hours' : 'days');
+function taskDurationUnit(te: Element, opsMarkerFieldId: string | null): 'days' | 'hours' {
+  return explicitOpsDurationUnit(te, opsMarkerFieldId) ?? 'hours';
 }
 
 /** Bovengrens op het aantal `<Calendar>`-elementen dat de resourcekalenderlus materialiseert. Een
@@ -158,13 +157,14 @@ function parseMSPDate(s: string): string {
   return isoDatePrefixOrToday(s);
 }
 
-/** ISO-8601-duur met tijdcomponent (`PT{H}H{M}M{S}S`) → minuten; `null` als er geen tijdcomponent is.
- *  Decimalen (`PT22.5H`) zijn toegestaan: ISO 8601 staat ze toe en oudere OPS-exports schreven ze. */
+/** ISO-8601-duur → minuten. Een dagcomponent telt verstreken dagen (1440 min), zoals het oude
+ *  dagpad. Decimalen (`PT22.5H`) zijn toegestaan; oudere OPS-exports schreven ze. */
 function mspDurationMinutes(s: string): number | null {
   if (!s) return null;
-  const m = s.match(/PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?/);
-  if (!m || (!m[1] && !m[2] && !m[3])) return null;
-  return Math.round(parseFloat(m[1] || '0') * 60 + parseFloat(m[2] || '0') + parseFloat(m[3] || '0') / 60);
+  const m = s.match(/^P(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/);
+  if (!m || (!m[1] && !m[2] && !m[3] && !m[4])) return null;
+  return Math.round(parseFloat(m[1] || '0') * 1440 + parseFloat(m[2] || '0') * 60
+    + parseFloat(m[3] || '0') + parseFloat(m[4] || '0') / 60);
 }
 
 /**
@@ -174,13 +174,13 @@ function mspDurationMinutes(s: string): number | null {
  */
 function parseMSPDuration(s: string, hoursPerDay: number): number {
   if (!s) return 0;
+  const dayMatch = s.match(/^P(\d+(?:\.\d+)?)D$/);
+  if (dayMatch) return parseFloat(dayMatch[1]);
   const mins = mspDurationMinutes(s);
   if (mins != null) {
     const perDay = hoursPerDay * 60;
-    return perDay > 0 ? Math.round(mins / perDay) : 0;
+    return perDay > 0 ? mins / perDay : 0;
   }
-  const dayMatch = s.match(/P(\d+)D/);
-  if (dayMatch) return parseInt(dayMatch[1]);
   return 0;
 }
 
@@ -313,10 +313,9 @@ export function readMSPDI(content: string): ImportResult {
 
   // Uur-modus-beslissing per kalender (discriminator a/b/c) vóór het bouwen van de taken.
   // `effCalIdOfUid` geeft per taak de effectieve kalender-id (de projectkalender, -1 of ontbrekend =
-  // projectkalender). `taskHourById` voedt de lag-eenheid-keuze verderop.
+  // projectkalender).
   const calById = new Map<string, WorkCalendar>([calendar, ...resourceCalendars].map(c => [c.id, c]));
   const effCalIdOfUid = (calUid: number): string => calUidToId.get(calUid) ?? calendar.id;
-  const taskHourById = new Map<string, boolean>();
 
   const cSignalCalIds = new Set<string>();
   for (let i = 0; i < taskElements.length; i++) {
@@ -388,7 +387,7 @@ export function readMSPDI(content: string): ImportResult {
 
     const durationStr = getElementText(te, 'Duration');
     // Duur: uur ⇒ minuten (bron van waarheid, geen afronding); dag ⇒ het dag-pad.
-    const durationUnit = taskDurationUnit(te, isHour, durationUnitMarkerFieldId);
+    const durationUnit = taskDurationUnit(te, durationUnitMarkerFieldId);
     const durationMinutes = durationUnit === 'hours' ? (mspDurationMinutes(durationStr) ?? 0) : undefined;
     // Urentaak: dagengetal via `hourTaskScheduleDuration`; dagtaak: de opgeslagen uren per dag.
     const duration = durationUnit === 'hours'
@@ -558,7 +557,6 @@ export function readMSPDI(content: string): ImportResult {
       ...(effortDriven ? { effortDriven: true } : {}),
     });
     outlineLevels.push(getElementText(te, 'OutlineLevel') ? outlineLevel : undefined);
-    taskHourById.set(id, isHour);
 
     // Parse predecessor links within task element
     const predLinks = te.getElementsByTagName('PredecessorLink');
@@ -588,13 +586,9 @@ export function readMSPDI(content: string): ImportResult {
   // met LinkLag in tienden van een procent; 4/6/8/10/12 = elapsed duren (24/7); rest = werktijd
   // in tienden van minuten.
   //
-  // Elapsed MINUTEN/UREN (4 = "emin", 6 = "ehr") zijn een uur-lag: minuut-exact `lagMinutes` +
-  // ELAPSEDTIME, ongeacht de modus van de opvolger (dag-afronding zou van "12 ehr" 24 uur en van
-  // "8 ehr" 0 maken). In een dagproject rondt de CPM zo'n lag zelf af op hele kalenderdagen
-  // (`resolveEffectiveLagDays`, factor 24); de waarde zelf (en een terugexport) blijft exact.
-  // Elapsed dagen/weken/maanden (8/10/12) blijven hele elapsed dagen.
+  // LinkLag draagt altijd tienden van minuten. LagFormat is de weergave-eenheid:
+  // ook verstreken dagen/weken/maanden blijven minuutgetrouw (I1/I2, T15).
   const ELAPSED_DURATION_FORMATS = new Set([4, 6, 8, 10, 12]);
-  const ELAPSED_SUBDAY_FORMATS = new Set([4, 6]);
   const sequences: Sequence[] = [];
   for (const link of pendingLinks) {
     const predId = uidToId.get(link.predUid);
@@ -609,18 +603,9 @@ export function readMSPDI(content: string): ImportResult {
     if (link.lagFormat === 19 || link.lagFormat === 20) {
       seq.lagPercent = link.lag / 10;
       if (link.lagFormat === 20) seq.lagUnit = 'ELAPSEDTIME';
-    } else if (ELAPSED_SUBDAY_FORMATS.has(link.lagFormat)) {
-      // LinkLag is al in tienden van (klok)minuten.
-      seq.lagMinutes = Math.round(link.lag / 10);
-      seq.lagUnit = 'ELAPSEDTIME';
-    } else if (ELAPSED_DURATION_FORMATS.has(link.lagFormat)) {
-      seq.lagDays = Math.round(link.lag / 10 / 60 / 24);
-      seq.lagUnit = 'ELAPSEDTIME';
-    } else if (taskHourById.get(link.successorId)) {
-      // Uur-opvolger ⇒ lag minuut-precies (tienden van minuten ÷ 10, geen dag-afronding).
-      seq.lagMinutes = Math.round(link.lag / 10);
     } else {
-      seq.lagDays = tenthsOfMinutesToDays(link.lag, hoursPerDay);
+      seq.lagMinutes = Math.round(link.lag / 10);
+      if (ELAPSED_DURATION_FORMATS.has(link.lagFormat)) seq.lagUnit = 'ELAPSEDTIME';
     }
     sequences.push(seq);
   }

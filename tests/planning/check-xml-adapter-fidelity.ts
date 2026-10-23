@@ -330,7 +330,7 @@ async function main(): Promise<void> {
     const back = readMSPDI(xml);
     eq('#4 round-trip "+3eu"', lagFields(lagInto(back, 'B')), { lagDays: 0, lagMinutes: 180, lagUnit: 'ELAPSEDTIME' });
     eq('#4 round-trip "+2u" ongewijzigd', lagFields(lagInto(back, 'C')), { lagDays: 0, lagMinutes: 120 });
-    eq('#4 round-trip "+2ed" ongewijzigd', lagFields(lagInto(back, 'D')), { lagDays: 2, lagUnit: 'ELAPSEDTIME' });
+    eq('#4 round-trip "+2ed" als exacte kalenderminuten (T15)', lagFields(lagInto(back, 'D')), { lagDays: 0, lagMinutes: 2880, lagUnit: 'ELAPSEDTIME' });
     eq('#4 round-trip "+2d" ongewijzigd (uur-opvolger ⇒ werkminuten)', lagFields(lagInto(back, 'E')), { lagDays: 0, lagMinutes: 960 });
 
     // Planning: B start 3 klokuren na het einde van A (12:00 → 15:00), vóór én na de rondreis.

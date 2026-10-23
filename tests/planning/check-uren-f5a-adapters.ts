@@ -37,11 +37,12 @@ function p6Xml(marker = false, lag = 3, rest = 12): string {
 }
 
 // I1, I2, I3, T15: een volledige dagduur zonder tijdsignaal wordt toch urenmaat.
-// Ook de bestaande OPS-dagenmarkering mag rest of lag nooit afronden.
+// De bestaande OPS-dagenmarkering blijft leesbaar. De ruwe rest toetsen we zonder voortgang;
+// normalisatie van gemarkeerde dagtaken valt onder F2/F5a-2.
 for (const marker of [false, true]) {
   const tag = marker ? 'bestaande dagenmarkering' : 'zonder markering';
   const msp = mspXml(marker);
-  const r = readMSPDI(marker ? msp.replaceAll('<PercentComplete>50</PercentComplete>', '<PercentComplete>0</PercentComplete>').replaceAll('<ActualStart>2026-06-01T08:00:00</ActualStart>', '') : msp);
+  const r = readMSPDI(marker ? msp.split('<PercentComplete>50</PercentComplete>').join('<PercentComplete>0</PercentComplete>').split('<ActualStart>2026-06-01T08:00:00</ActualStart>').join('') : msp);
   eq(`MSPDI ${tag}: I1 lag 4 u`, [r.sequences[0]?.lagDays, r.sequences[0]?.lagMinutes], [0, 240]);
   eq(`MSPDI ${tag}: I3 rest 12 u`, marker ? r.tasks[0]?.time.remainingTime : r.tasks[0]?.time.remainingMinutes, marker ? 1.5 : 720);
   eq(`MSPDI ${tag}: T15 eenheid`, r.tasks[0]?.time.durationUnit, marker ? 'days' : 'hours');
@@ -51,7 +52,7 @@ for (const marker of [false, true]) {
     eq(`MSPDI ${tag}: I2 36 verstreken uur, formaat ${format}`, [elapsed?.lagMinutes, elapsed?.lagDays, elapsed?.lagUnit], [2160, 0, 'ELAPSEDTIME']);
   }
   const p6 = p6Xml(marker);
-  const p = readP6XML(marker ? p6.replaceAll('<Status>In Progress</Status>', '<Status>Not Started</Status>').replaceAll('<PhysicalPercentComplete>0.5</PhysicalPercentComplete>', '<PhysicalPercentComplete>0</PhysicalPercentComplete>') : p6);
+  const p = readP6XML(marker ? p6.split('<Status>In Progress</Status>').join('<Status>Not Started</Status>').split('<PhysicalPercentComplete>0.5</PhysicalPercentComplete>').join('<PhysicalPercentComplete>0</PhysicalPercentComplete>').split('<ActualStartDate>2026-06-01T08:00:00</ActualStartDate>').join('') : p6);
   eq(`P6 ${tag}: I5 lag 3 u`, [p.sequences[0]?.lagDays, p.sequences[0]?.lagMinutes], [0, 180]);
   eq(`P6 ${tag}: I5 rest 12 u`, marker ? p.tasks[0]?.time.remainingTime : p.tasks[0]?.time.remainingMinutes, marker ? 1.5 : 720);
   eq(`P6 ${tag}: T15 eenheid`, p.tasks[0]?.time.durationUnit, marker ? 'days' : 'hours');
@@ -93,13 +94,22 @@ for (const [name, writer, reader] of [
   }
 }
 
-// I7: een geërfde taakkalender met 10 u werktijd, projectkalender 8 u.
-const long = { ...source.calendar, id: 'lang', name: 'Lange dagen', hoursPerDay: 10,
-  workStartHour: 7, workEndHour: 17, workTime: undefined };
+// I7: werktijd van de gekozen lagkalender, ook als opgeslagen uren per dag afwijken.
+const long = { ...source.calendar, id: 'lang', name: 'Lange dagen', hoursPerDay: 8,
+  workStartHour: 7, workEndHour: 17, workTime: { byWeekday: {
+    1: [{ start: 420, end: 1020 }], 2: [{ start: 420, end: 1020 }], 3: [{ start: 420, end: 1020 }],
+    4: [{ start: 420, end: 1020 }], 5: [{ start: 420, end: 1020 }], 6: [], 7: [],
+  } } };
 source.resourceCalendars = [long];
-succ.calendarId = long.id;
+pred.calendarId = long.id;
 source.sequences = [{ ...source.sequences[0], lagMinutes: undefined, lagDays: 1 }];
-eq('I7: lag 1 dag op 10 u-taakkalender', /<LinkLag>6000<\/LinkLag>/.test(writeMsp(source)), true);
+for (const [lagCalendar, expected] of [[undefined, 6000], ['predecessor', 6000],
+  ['successor', 4800], ['projectDefault', 4800], ['24hour', 14400]] as const) {
+  source.project.schedulingOptions = { lagCalendar };
+  const back = readMSPDI(writeMsp(source));
+  eq(`I7: lagkalender ${lagCalendar ?? 'standaard'}`, back.sequences[0]?.lagMinutes, expected / 10);
+}
+source.project.schedulingOptions = undefined;
 
 // I6: P6 bakt procentlag op de minuut uit, ook bij een dagtaak en een afwijkende taakkalender.
 for (const [unit, duration, minutes, hpd, percent, expected] of [
@@ -115,6 +125,23 @@ for (const [unit, duration, minutes, hpd, percent, expected] of [
   source.sequences = [{ ...source.sequences[0], lagDays: 0, lagPercent: percent }];
   const r = readP6XML(writeP6(source));
   eq(`I6: ${unit}, ${hpd} u/dag, ${percent}%`, r.sequences[0]?.lagMinutes, Math.round(expected * 60));
+}
+
+pred.time.durationUnit = 'days';
+pred.time.durationType = 'ELAPSEDTIME';
+pred.time.scheduleDuration = 3;
+source.sequences = [{ ...source.sequences[0], lagDays: 0, lagMinutes: 13, lagPercent: 50 }];
+eq('I6: kalendertijd-voorganger en procent gaat voor minuten', readP6XML(writeP6(source)).sequences[0]?.lagMinutes, 2160);
+pred.isMilestone = true;
+eq('I6: mijlpaal heeft geen procentduur', readP6XML(writeP6(source)).sequences[0]?.lagMinutes, 0);
+
+// T15 bewaart ook de dagcomponent van een verstreken ISO-duur in minuten.
+const dayDuration = readMSPDI(mspXml(false, 0, 7, 'P1DT12H', 'P1D'));
+eq('MSPDI verstreken ISO-duur en rest', [dayDuration.tasks[0]?.time.durationMinutes, dayDuration.tasks[0]?.time.remainingMinutes], [2160, 1440]);
+// Een afgerond percentage mag een expliciet vastgelegde rest niet overschrijven.
+for (const [name, r] of [['MSPDI', readMSPDI(mspXml(false, 1, 7, 'PT24H', 'PT12H13M'))],
+  ['P6', readP6XML(p6Xml(false, -23 / 60, 733 / 60))]] as const) {
+  eq(`${name}: rest onafhankelijk van percentage`, r.tasks[0]?.time.remainingMinutes, 733);
 }
 
 // MSPDI bewaart procentlag en kalendertijd zelfstandig; ze vallen niet onder dagafronding.
