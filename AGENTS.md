@@ -264,6 +264,14 @@ bridge tests against the real Rust bridge). Docs: `docs/release-verificatie.md`,
 
 ## Conventions
 
+- **Feature flags:** add a temporary entry to `src/utils/featureFlags.ts` with an id, typed i18n
+  name/description keys and `writesNewIfcData`; read it through `isFeatureEnabled(ui.featureFlags, id)`.
+  Flags default to off. Keep `writesNewIfcData: true` (no checkbox, always off) until the IFC
+  save/load round-trip is complete; only then mark the data as supported (`false`). The hidden
+  Experimental block in Settings → Advanced is unlocked by activating its version number for
+  5 seconds with at most 0.5 s between activations (clicks or held Enter). Visibility and choices
+  persist per device; hiding keeps the choices. The PR that enables a feature by default also
+  removes its flag and the corresponding checks.
 - **Working language is Dutch**: code comments, commit messages and the canonical source translations.
   This file is English on purpose; the `.claude/rules/` files are Dutch.
 - **Side findings go to [`knownbugs.md`](knownbugs.md).** Anything you run into that is not part of your own
